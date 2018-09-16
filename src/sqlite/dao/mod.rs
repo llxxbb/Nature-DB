@@ -1,4 +1,4 @@
-use data::*;
+use ::*;
 use diesel::prelude::*;
 pub use self::delivery::*;
 pub use self::error::*;

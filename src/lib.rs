@@ -1,3 +1,5 @@
+//! Define the data used all over the project, not only by `fg-service`
+
 #![feature(custom_attribute)]
 #![feature(extern_prelude)]
 #![feature(rustc_private)]
@@ -17,5 +19,28 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 
+use nature_common::*;
+pub use self::cache::*;
+pub use self::converter_cfg::*;
+pub use self::delivery::*;
+pub use self::instance::*;
+pub use self::orm::*;
+pub use self::plan::*;
+pub use self::sqlite::*;
+#[cfg(test)]
+pub use self::test::*;
+pub use self::thing::*;
+pub use self::trait_define::*;
 
-pub mod data;
+mod thing;
+mod delivery;
+#[cfg(test)]
+mod test;
+mod converter_cfg;
+
+mod sqlite;
+mod cache;
+mod trait_define;
+mod orm;
+mod instance;
+mod plan;

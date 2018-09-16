@@ -1,4 +1,4 @@
-use data::PlanInfo;
+use ::PlanInfo;
 use diesel::prelude::*;
 use nature_common::*;
 use super::*;

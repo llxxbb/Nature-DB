@@ -1,6 +1,6 @@
 extern crate rand;
 
-use data::*;
+use ::*;
 use lru_time_cache::LruCache;
 use self::rand::{Rng, thread_rng};
 use std::collections::HashMap;

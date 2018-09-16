@@ -1,6 +1,6 @@
 extern crate r2d2;
 
-use data::*;
+use ::*;
 use lru_time_cache::LruCache;
 use std::sync::Mutex;
 use std::time::Duration;

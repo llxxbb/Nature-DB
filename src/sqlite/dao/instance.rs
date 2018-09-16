@@ -98,7 +98,7 @@ impl InstanceDaoImpl {
 
 #[cfg(test)]
 mod test {
-    use data::sqlite::dao::instance::InstanceDaoImpl;
+    use ::sqlite::dao::instance::InstanceDaoImpl;
     use std::collections::HashMap;
     use std::collections::HashSet;
     use super::*;

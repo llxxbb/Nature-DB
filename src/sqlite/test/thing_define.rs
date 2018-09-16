@@ -1,6 +1,6 @@
+use ::*;
+use ::thing::ThingDefine;
 use chrono::prelude::*;
-use data::*;
-use data::thing::ThingDefine;
 
 
 #[test]

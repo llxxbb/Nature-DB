@@ -1,5 +1,5 @@
+use Carrier;
 use chrono::prelude::*;
-use data::Carrier;
 use nature_common::*;
 use nature_common::util::u128_to_vec_u8;
 use serde::Serialize;
