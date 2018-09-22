@@ -6,7 +6,7 @@ use super::*;
 pub struct InstanceDaoImpl;
 
 impl InstanceDaoTrait for InstanceDaoImpl {
-    fn insert(instance: &Instance) -> Result<usize, NatureError> {
+    fn insert(instance: &Instance) -> Result<usize> {
         use self::schema::instances;
         let new = RawInstance::new(instance)?;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
@@ -19,7 +19,7 @@ impl InstanceDaoTrait for InstanceDaoImpl {
     }
 
     /// check whether source stored earlier
-    fn is_exists(ins: &Instance) -> Result<bool, NatureError> {
+    fn is_exists(ins: &Instance) -> Result<bool> {
         use self::schema::instances::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let def = instances
@@ -39,7 +39,7 @@ impl InstanceDaoTrait for InstanceDaoImpl {
             Err(e) => Err(DbError::from(e))
         }
     }
-    fn get_by_id(instance_id: u128) -> Result<Option<Instance>, NatureError> {
+    fn get_by_id(instance_id: u128) -> Result<Option<Instance>> {
         use self::schema::instances::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let def = instances
@@ -57,7 +57,7 @@ impl InstanceDaoTrait for InstanceDaoImpl {
         }
     }
 
-    fn get_by_key(biz_key: &str, row_id: u128) -> Result<Option<Instance>, NatureError> {
+    fn get_by_key(biz_key: &str, row_id: u128) -> Result<Option<Instance>> {
         use self::schema::instances::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let def = instances
@@ -78,7 +78,7 @@ impl InstanceDaoTrait for InstanceDaoImpl {
 }
 
 impl InstanceDaoImpl {
-    pub fn delete(ins: &Instance) -> Result<usize, NatureError> {
+    pub fn delete(ins: &Instance) -> Result<usize> {
         debug!("delete instance, id is : {:?}", ins.id);
         use self::schema::instances::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();

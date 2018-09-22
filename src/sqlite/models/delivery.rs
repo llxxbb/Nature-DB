@@ -20,7 +20,7 @@ pub struct RawDelivery {
 }
 
 impl RawDelivery {
-    pub fn new<T: Serialize + Send + Debug>(carrier: &Carrier<T>) -> Result<RawDelivery, NatureError> {
+    pub fn new<T: Serialize + Send + Debug>(carrier: &Carrier<T>) -> Result<RawDelivery> {
         let json = serde_json::to_string(&carrier.content)?;
         Ok(RawDelivery {
             id: u128_to_vec_u8(carrier.id),

@@ -15,7 +15,7 @@ lazy_static! {
 }
 
 pub trait OneStepFlowCacheTrait {
-    fn get(from: &Thing) -> Result<Option<Vec<OneStepFlow>>, NatureError>;
+    fn get(from: &Thing) -> Result<Option<Vec<OneStepFlow>>>;
 }
 
 pub struct OneStepFlowCacheImpl<T> {
@@ -23,7 +23,7 @@ pub struct OneStepFlowCacheImpl<T> {
 }
 
 impl<T> OneStepFlowCacheTrait for OneStepFlowCacheImpl<T> where T: OneStepFlowDaoTrait {
-    fn get(from: &Thing) -> Result<Option<Vec<OneStepFlow>>, NatureError> {
+    fn get(from: &Thing) -> Result<Option<Vec<OneStepFlow>>> {
 //        debug!("get relation for thing : {:?}", from);
         let (relations, balances) = Self::get_balanced(from)?;
         if relations.is_none() {
@@ -35,7 +35,7 @@ impl<T> OneStepFlowCacheTrait for OneStepFlowCacheImpl<T> where T: OneStepFlowDa
 }
 
 impl<T> OneStepFlowCacheImpl<T> where T: OneStepFlowDaoTrait {
-    fn get_balanced(from: &Thing) -> Result<(Option<Vec<OneStepFlow>>, Option<HashMap<Thing, Range<f32>>>), NatureError> {
+    fn get_balanced(from: &Thing) -> Result<(Option<Vec<OneStepFlow>>, Option<HashMap<Thing, Range<f32>>>)> {
         let mut cache = CACHE_MAPPING.lock().unwrap();
         if let Some(balances) = cache.get(from) {
 //            debug!("get balances from cache for thing : {:?}", from);

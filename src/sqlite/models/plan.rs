@@ -15,7 +15,7 @@ pub struct RawPlanInfo {
 }
 
 impl RawPlanInfo {
-    pub fn new(plan: &PlanInfo) -> Result<RawPlanInfo, NatureError> {
+    pub fn new(plan: &PlanInfo) -> Result<RawPlanInfo> {
         let upstream = format!("{}:{}:{}:{}", plan.from_thing.key, plan.from_thing.version, plan.from_sn, plan.from_sta_ver);
         Ok(RawPlanInfo {
             upstream,
@@ -25,7 +25,7 @@ impl RawPlanInfo {
             create_time: Local::now().naive_local(),
         })
     }
-    pub fn to_plan_info(&self) -> Result<PlanInfo, NatureError> {
+    pub fn to_plan_info(&self) -> Result<PlanInfo> {
         let x: Vec<&str> = self.upstream.split(":").collect();
         if x.len() != 4 {
             return Err(NatureError::VerifyError("format error : ".to_owned() + &self.upstream));

@@ -4,7 +4,7 @@ use super::*;
 pub struct ThingDefineDaoImpl;
 
 impl ThingDefineDaoTrait for ThingDefineDaoImpl {
-    fn get(thing: &Thing) -> Result<Option<ThingDefine>, NatureError> {
+    fn get(thing: &Thing) -> Result<Option<ThingDefine>> {
         use super::schema::thing_defines::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let def = thing_defines.filter(key.eq(&thing.key))
@@ -20,7 +20,7 @@ impl ThingDefineDaoTrait for ThingDefineDaoImpl {
         }
     }
 
-    fn insert(define: &ThingDefine) -> Result<usize, NatureError> {
+    fn insert(define: &ThingDefine) -> Result<usize> {
         use self::schema::thing_defines;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let rtn = diesel::insert_into(thing_defines::table)
@@ -32,7 +32,7 @@ impl ThingDefineDaoTrait for ThingDefineDaoImpl {
         }
     }
 
-    fn delete(thing: &Thing) -> Result<usize, NatureError> {
+    fn delete(thing: &Thing) -> Result<usize> {
         use self::schema::thing_defines::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let rtn = diesel::delete(thing_defines.filter(key.eq(&thing.key)).filter(version.eq(thing.version)))

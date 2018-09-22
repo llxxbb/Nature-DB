@@ -19,7 +19,7 @@ pub struct RawOneStepFlow {
 }
 
 impl OneStepFlow {
-    pub fn from_row(val: RawOneStepFlow) -> Result<OneStepFlow, NatureError> {
+    pub fn from_row(val: RawOneStepFlow) -> Result<OneStepFlow> {
         let selector = match val.selector {
             None => None,
             Some(x) => {

@@ -12,7 +12,7 @@ pub enum Protocol {
 impl FromStr for Protocol {
     type Err = NatureError;
 
-    fn from_str(s: &str) -> Result<Self, NatureError> {
+    fn from_str(s: &str) -> Result<Self> {
         let cmp = &*s.to_uppercase();
         match cmp {
             "LOCALRUST" => Ok(Protocol::LocalRust),

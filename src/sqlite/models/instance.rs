@@ -25,7 +25,7 @@ pub struct RawInstance {
 }
 
 impl RawInstance {
-    pub fn to(&self) -> Result<Instance, NatureError> {
+    pub fn to(&self) -> Result<Instance> {
         let from = match &self.from_thing {
             None => None,
             Some(k) => Some(FromInstance {
@@ -68,7 +68,7 @@ impl RawInstance {
 }
 
 impl RawInstance {
-    pub fn new(instance: &Instance) -> Result<RawInstance, NatureError> {
+    pub fn new(instance: &Instance) -> Result<RawInstance> {
         let (from_thing, from_version, from_status_version) = match instance.from {
             None => (None, None, None),
             Some(ref from) => (Some(from.thing.key.clone()), Some(from.thing.version), Some(from.status_version))
