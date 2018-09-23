@@ -4,12 +4,11 @@ use super::*;
 pub struct StorePlanDaoImpl;
 
 impl StorePlanDaoTrait for StorePlanDaoImpl {
-    fn save(plan: &PlanInfo) -> Result<()> {
+    fn save(plan: &RawPlanInfo) -> Result<()> {
         use self::schema::plan;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
-        let will_save = RawPlanInfo::new(plan)?;
         let rtn = diesel::insert_into(plan::table)
-            .values(will_save)
+            .values(plan)
             .execute(conn);
         match rtn {
             Ok(x) => match x {
@@ -42,6 +41,7 @@ impl StorePlanDaoTrait for StorePlanDaoImpl {
 }
 
 impl StorePlanDaoImpl {
+    #[allow(dead_code)]
     fn delete(from_full_pall: &str) -> Result<usize> {
         use self::schema::plan::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
@@ -55,7 +55,6 @@ impl StorePlanDaoImpl {
 
 #[cfg(test)]
 mod test {
-    use nature_common::*;
     use std::collections::HashMap;
     use std::collections::HashSet;
     use super::*;
@@ -76,7 +75,7 @@ mod test {
                 version: 0,
                 thing_type: ThingType::Business,
             },
-            plan: vec!(Instance {
+            plan: vec![Instance {
                 id: 217789594388339757346716979317903552035,
                 data: InstanceNoID {
                     thing: Thing {
@@ -93,19 +92,30 @@ mod test {
                     status_version: 0,
                     from: None,
                 },
-            }),
+            }],
         };
-        let _ = StorePlanDaoImpl::save(&info);
+        let plan_info = RawPlanInfo::new(&info).unwrap();
+        let _ = StorePlanDaoImpl::save(&plan_info);
 
         // save twice will get `DaoDuplicated` error
-        assert_eq!(StorePlanDaoImpl::save(&info).err(), Some(NatureError::DaoDuplicated("".to_string())));
+        assert_eq!(
+            StorePlanDaoImpl::save(&plan_info).err(),
+            Some(NatureError::DaoDuplicated("".to_string()))
+        );
 
-        // get it 
+        // get it
 
-        let rtn = StorePlanDaoImpl::get("/local_converter/from:0:229195495639599414319914352480091205021:0").unwrap().unwrap();
+        let rtn = StorePlanDaoImpl::get(
+            "/local_converter/from:0:229195495639599414319914352480091205021:0",
+        ).unwrap().unwrap();
         assert_eq!(rtn.to.key, "/local_converter/to");
 
         // delete it
-        assert_eq!(StorePlanDaoImpl::delete("/local_converter/from:0:229195495639599414319914352480091205021:0").unwrap(), 1);
+        assert_eq!(
+            StorePlanDaoImpl::delete(
+                "/local_converter/from:0:229195495639599414319914352480091205021:0"
+            ).unwrap(),
+            1
+        );
     }
 }
