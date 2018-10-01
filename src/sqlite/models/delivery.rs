@@ -1,9 +1,11 @@
 use Carrier;
 use chrono::prelude::*;
+use define::*;
 use nature_common::*;
 use nature_common::util::u128_to_vec_u8;
 use serde::Serialize;
 use std::fmt::Debug;
+use lazy_static::__Deref;
 use super::super::schema::delivery;
 
 #[derive(Debug)]
@@ -22,6 +24,9 @@ pub struct RawDelivery {
 impl RawDelivery {
     pub fn new<T: Serialize + Send + Debug>(carrier: &Carrier<T>) -> Result<RawDelivery> {
         let json = serde_json::to_string(&carrier.content)?;
+        if json.len() > *DELIVERY_CONTENT_MAX_LENGTH.deref() {
+            return Err(NatureError::DaoLogicalError("data's length can' be over : ".to_owned() + &DELIVERY_CONTENT_MAX_LENGTH.to_string()));
+        }
         Ok(RawDelivery {
             id: u128_to_vec_u8(carrier.id),
             thing: carrier.content.thing.clone(),

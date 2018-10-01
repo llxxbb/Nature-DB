@@ -2,7 +2,6 @@
 
 #![allow(proc_macro_derive_resolution_fallback)]
 #![feature(custom_attribute)]
-#![feature(extern_prelude)]
 #![feature(rustc_private)]
 #![feature(int_to_from_bytes)]
 #![feature(range_contains)]
@@ -31,7 +30,7 @@ pub use self::sqlite::*;
 #[cfg(test)]
 pub use self::test::*;
 pub use self::thing::*;
-pub use self::trait_define::*;
+pub use self::define::*;
 
 mod thing;
 mod delivery;
@@ -41,7 +40,7 @@ mod converter_cfg;
 
 mod sqlite;
 mod cache;
-mod trait_define;
+mod define;
 mod orm;
 mod instance;
 mod plan;

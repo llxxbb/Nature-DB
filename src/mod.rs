@@ -11,7 +11,7 @@ pub use self::sqlite::*;
 #[cfg(test)]
 pub use self::test::*;
 pub use self::thing::*;
-pub use self::trait_define::*;
+pub use self::define::*;
 
 
 mod thing;
@@ -22,7 +22,7 @@ mod converter_cfg;
 
 mod sqlite;
 mod cache;
-mod trait_define;
+mod define;
 mod orm;
 mod instance;
 mod plan;

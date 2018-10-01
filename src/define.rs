@@ -1,4 +1,5 @@
 use serde::Serialize;
+use std::env;
 use std::fmt::Debug;
 use super::*;
 
@@ -37,4 +38,19 @@ pub trait StorePlanDaoTrait {
     /// replace the plan if plan exists.
     fn save(plan: &RawPlanInfo) -> Result<()>;
     fn get(key: &str) -> Result<Option<PlanInfo>>;
+}
+
+lazy_static! {
+    pub static ref INSTANCE_CONTENT_MAX_LENGTH : usize = {
+        env::var("INSTANCE_CONTENT_MAX_LENGTH").unwrap_or("65535".to_string()).parse::<usize>().unwrap()
+    };
+    pub static ref INSTANCE_CONTEXT_MAX_LENGTH : usize = {
+        env::var("INSTANCE_CONTEXT_MAX_LENGTH").unwrap_or("65535".to_string()).parse::<usize>().unwrap()
+    };
+    pub static ref DELIVERY_CONTENT_MAX_LENGTH : usize = {
+        env::var("DELIVERY_CONTENT_MAX_LENGTH").unwrap_or("16777215".to_string()).parse::<usize>().unwrap()
+    };
+    pub static ref PLAN_CONTENT_MAX_LENGTH : usize = {
+        env::var("PLAN_CONTENT_MAX_LENGTH").unwrap_or("16777215".to_string()).parse::<usize>().unwrap()
+    };
 }

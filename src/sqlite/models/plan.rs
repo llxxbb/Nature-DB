@@ -1,5 +1,8 @@
-use ::*;
+use ::PlanInfo;
 use chrono::prelude::*;
+use define::*;
+use lazy_static::__Deref;
+use nature_common::*;
 use serde_json;
 use super::super::schema::plan;
 
@@ -21,7 +24,13 @@ impl RawPlanInfo {
             upstream,
             to_biz: plan.to.key.clone(),
             to_version: plan.to.version,
-            content: serde_json::to_string(&plan.plan)?,
+            content: {
+                let json = serde_json::to_string(&plan.plan)?;
+                if json.len() > *PLAN_CONTENT_MAX_LENGTH.deref() {
+                    return Err(NatureError::DaoLogicalError("content's length can' be over : ".to_owned() + &PLAN_CONTENT_MAX_LENGTH.to_string()));
+                }
+                json
+            },
             create_time: Local::now().naive_local(),
         })
     }

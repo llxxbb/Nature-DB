@@ -7,7 +7,6 @@ authors = ["XueBin Li"]
 
 nature_common = {path = "../Nature-Common"}
 
-dotenv = "0.11"
 rand = "0.4"
 chrono = { version = "0.4", features = ["serde"] }
 lru_time_cache = "0.8"
@@ -26,4 +25,4 @@ diesel = { version = "1.3", default-features = false, features = ["sqlite","chro
 r2d2 = "0.8"
 r2d2-diesel = "1.0"
 cdrs = "1.2"
-#rusqlite = {version = "0.13", features=["bundled"]}
+

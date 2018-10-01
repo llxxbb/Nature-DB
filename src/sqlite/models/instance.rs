@@ -1,4 +1,6 @@
 use chrono::prelude::*;
+use define::*;
+use lazy_static::__Deref;
 use nature_common::*;
 use nature_common::util::vec_to_u128;
 use serde_json;
@@ -77,10 +79,21 @@ impl RawInstance {
             id: instance.id.to_ne_bytes().to_vec(),
             thing: instance.thing.key.clone(),
             version: instance.thing.version,
-            content: instance.content.clone(),
-            context: match instance.content.len() {
-                0 => None,
-                _ => Some(serde_json::to_string(&instance.context)?)
+            content: {
+                if instance.content.len() > *INSTANCE_CONTENT_MAX_LENGTH.deref() {
+                    return Err(NatureError::DaoLogicalError("content's length can' be over : ".to_owned() + &INSTANCE_CONTENT_MAX_LENGTH.to_string()));
+                }
+                instance.content.clone()
+            },
+            context: {
+                let ctx_len = instance.context.len();
+                if ctx_len > *INSTANCE_CONTEXT_MAX_LENGTH.deref() {
+                    return Err(NatureError::DaoLogicalError("context's length can' be over : ".to_owned() + &INSTANCE_CONTEXT_MAX_LENGTH.to_string()));
+                }
+                match ctx_len {
+                    0 => None,
+                    _ => Some(serde_json::to_string(&instance.context)?)
+                }
             },
             status: match instance.status.len() {
                 0 => None,
