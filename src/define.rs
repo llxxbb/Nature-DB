@@ -23,6 +23,7 @@ pub trait DeliveryDaoTrait {
     fn delete(id: u128) -> Result<usize>;
     fn move_to_error<T: Sized + Serialize + Debug>(err: CarryError<T>) -> Result<()>;
     fn update_execute_time(_id: u128, new_time: i64) -> Result<()>;
+    fn increase_times(_id: Vec<u8>) -> Result<()>;
     fn get<T: Sized + Serialize + Debug>(id: u128) -> Result<Carrier<T>>;
 }
 

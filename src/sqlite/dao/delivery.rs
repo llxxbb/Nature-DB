@@ -1,8 +1,9 @@
-use super::*;
+use *;
 use diesel::result::*;
 use nature_common::util::*;
 use serde::Serialize;
 use std::fmt::Debug;
+use super::*;
 
 pub struct DeliveryDaoImpl;
 
@@ -51,6 +52,18 @@ impl DeliveryDaoTrait for DeliveryDaoImpl {
 
     fn update_execute_time(_id: u128, _new_time: i64) -> Result<()> {
         unimplemented!()
+    }
+
+    fn increase_times(record_id: Vec<u8>) -> Result<()> {
+        use self::schema::delivery::dsl::*;
+        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let rtn = diesel::update(delivery.filter(id.eq(record_id)))
+            .set(retried_times.eq(retried_times + 1)).
+            execute(conn);
+        match rtn {
+            Ok(_) => Ok(()),
+            Err(err) => Err(DbError::from(err)),
+        }
     }
 
     fn get<T: Sized + Serialize + Debug>(_id: u128) -> Result<Carrier<T>> {

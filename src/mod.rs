@@ -10,11 +10,11 @@ pub use self::plan::*;
 pub use self::sqlite::*;
 #[cfg(test)]
 pub use self::test::*;
-pub use self::thing::*;
+pub use self::thing_define::*;
 pub use self::define::*;
 
 
-mod thing;
+mod thing_define;
 mod delivery;
 #[cfg(test)]
 mod test;

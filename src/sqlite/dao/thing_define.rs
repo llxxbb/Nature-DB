@@ -1,5 +1,6 @@
 use diesel::prelude::*;
 use super::*;
+use ThingDefine;
 
 pub struct ThingDefineDaoImpl;
 

@@ -1,5 +1,6 @@
 use diesel::prelude::*;
 use super::*;
+use converter_cfg::OneStepFlow;
 
 pub struct OneStepFlowDaoImpl;
 
