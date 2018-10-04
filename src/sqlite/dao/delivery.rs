@@ -46,8 +46,28 @@ impl DeliveryDaoTrait for DeliveryDaoImpl {
         }
     }
 
-    fn move_to_error<T: Sized + Serialize + Debug>(_err: CarryError<T>) -> Result<()> {
-        unimplemented!()
+    fn carrier_to_error<T: Serialize + Debug>(err: &NatureError, carrier: &Carrier<T>) -> Result<usize> {
+        let raw = RawDelivery::new(carrier)?;
+        Self::raw_to_error(err,&raw)
+    }
+
+    fn raw_to_error(err: &NatureError, raw: &RawDelivery) -> Result<usize> {
+        use self::schema::delivery_error;
+        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let rd = RawDeliveryError::from_raw(err, raw);
+        let rtn = diesel::insert_into(delivery_error::table).values(rd).execute(conn);
+        match rtn {
+            Ok(num) => Ok(num),
+            Err(Error::DatabaseError(kind, info)) => match kind {
+                DatabaseErrorKind::UniqueViolation => Ok(1),
+                DatabaseErrorKind::__Unknown => Err(NatureError::DaoEnvironmentError(format!("{:?}", info))),
+                _ => Err(NatureError::DaoLogicalError(format!("{:?}", info))),
+            },
+            Err(e) => {
+                error!("insert delivery_error to db occurred error");
+                Err(DbError::from(e))
+            }
+        }
     }
 
     fn update_execute_time(_id: u128, _new_time: i64) -> Result<()> {
@@ -67,6 +87,10 @@ impl DeliveryDaoTrait for DeliveryDaoImpl {
     }
 
     fn get<T: Sized + Serialize + Debug>(_id: u128) -> Result<Carrier<T>> {
+        unimplemented!()
+    }
+
+    fn get_overdue() -> Result<Option<Vec<RawDelivery>>> {
         unimplemented!()
     }
 }

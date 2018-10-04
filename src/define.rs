@@ -21,10 +21,12 @@ pub trait OneStepFlowDaoTrait {
 pub trait DeliveryDaoTrait {
     fn insert<T: Sized + Serialize + Send + Debug>(carrier: &Carrier<T>) -> Result<u128>;
     fn delete(id: u128) -> Result<usize>;
-    fn move_to_error<T: Sized + Serialize + Debug>(err: CarryError<T>) -> Result<()>;
+    fn carrier_to_error<T: Serialize + Debug>(err: &NatureError, carrier: &Carrier<T>) -> Result<usize>;
+    fn raw_to_error(err: &NatureError, raw: &RawDelivery) -> Result<usize>;
     fn update_execute_time(_id: u128, new_time: i64) -> Result<()>;
     fn increase_times(_id: Vec<u8>) -> Result<()>;
     fn get<T: Sized + Serialize + Debug>(id: u128) -> Result<Carrier<T>>;
+    fn get_overdue() -> Result<Option<Vec<RawDelivery>>>;
 }
 
 pub trait InstanceDaoTrait {
