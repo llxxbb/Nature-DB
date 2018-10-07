@@ -1,12 +1,14 @@
 extern crate rand;
 
-use ::*;
+use converter_cfg::OneStepFlow;
+use define::OneStepFlowDaoTrait;
 use lru_time_cache::LruCache;
+use nature_common::*;
 use self::rand::{Rng, thread_rng};
 use std::collections::HashMap;
-use std::marker::PhantomData;
 use std::ops::Range;
 use std::ptr;
+use std::rc::Rc;
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -15,17 +17,17 @@ lazy_static! {
 }
 
 pub trait OneStepFlowCacheTrait {
-    fn get(from: &Thing) -> Result<Option<Vec<OneStepFlow>>>;
+    fn get(&self, from: &Thing) -> Result<Option<Vec<OneStepFlow>>>;
 }
 
-pub struct OneStepFlowCacheImpl<T> {
-    dao: PhantomData<T>
+pub struct OneStepFlowCacheImpl {
+    dao: Rc<OneStepFlowDaoTrait>
 }
 
-impl<T> OneStepFlowCacheTrait for OneStepFlowCacheImpl<T> where T: OneStepFlowDaoTrait {
-    fn get(from: &Thing) -> Result<Option<Vec<OneStepFlow>>> {
+impl OneStepFlowCacheTrait for OneStepFlowCacheImpl {
+    fn get(&self, from: &Thing) -> Result<Option<Vec<OneStepFlow>>> {
 //        debug!("get relation for thing : {:?}", from);
-        let (relations, balances) = Self::get_balanced(from)?;
+        let (relations, balances) = self.get_balanced(from)?;
         if relations.is_none() {
             Ok(None)
         } else {
@@ -34,15 +36,15 @@ impl<T> OneStepFlowCacheTrait for OneStepFlowCacheImpl<T> where T: OneStepFlowDa
     }
 }
 
-impl<T> OneStepFlowCacheImpl<T> where T: OneStepFlowDaoTrait {
-    fn get_balanced(from: &Thing) -> Result<(Option<Vec<OneStepFlow>>, Option<HashMap<Thing, Range<f32>>>)> {
+impl OneStepFlowCacheImpl {
+    fn get_balanced(&self, from: &Thing) -> Result<(Option<Vec<OneStepFlow>>, Option<HashMap<Thing, Range<f32>>>)> {
         let mut cache = CACHE_MAPPING.lock().unwrap();
         if let Some(balances) = cache.get(from) {
 //            debug!("get balances from cache for thing : {:?}", from);
             return Ok(balances.clone());
         }
 //        debug!("get balances from db for thing : {:?}", from);
-        let rtn = match T::get_relations(from) {
+        let rtn = match self.dao.get_relations(from) {
             Ok(None) => (None, None),
             Ok(Some(relations)) => {
                 let label_groups = Self::get_label_groups(&relations);

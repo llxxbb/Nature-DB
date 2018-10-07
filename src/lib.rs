@@ -13,6 +13,10 @@ extern crate lazy_static;
 #[macro_use]
 extern crate log;
 extern crate lru_time_cache;
+#[cfg(test)]
+extern crate mockers;
+#[cfg(test)]
+extern crate mockers_derive;
 extern crate nature_common;
 extern crate serde;
 #[macro_use]
@@ -22,20 +26,16 @@ extern crate serde_json;
 use nature_common::*;
 pub use self::cache::*;
 pub use self::converter_cfg::*;
+pub use self::define::*;
 pub use self::delivery::*;
 pub use self::instance::*;
 pub use self::orm::*;
 pub use self::plan::*;
 pub use self::sqlite::*;
-#[cfg(test)]
-pub use self::test::*;
 pub use self::thing_define::*;
-pub use self::define::*;
 
 mod thing_define;
 mod delivery;
-#[cfg(test)]
-mod test;
 mod converter_cfg;
 
 mod sqlite;
@@ -44,3 +44,5 @@ mod define;
 mod orm;
 mod instance;
 mod plan;
+
+pub mod service;

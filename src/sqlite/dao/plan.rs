@@ -4,7 +4,7 @@ use super::*;
 pub struct StorePlanDaoImpl;
 
 impl StorePlanDaoTrait for StorePlanDaoImpl {
-    fn save(plan: &RawPlanInfo) -> Result<()> {
+    fn save(&self, plan: &RawPlanInfo) -> Result<()> {
         use self::schema::plan;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let rtn = diesel::insert_into(plan::table)
@@ -22,7 +22,7 @@ impl StorePlanDaoTrait for StorePlanDaoImpl {
         }
     }
 
-    fn get(key: &str) -> Result<Option<PlanInfo>> {
+    fn get(&self, key: &str) -> Result<Option<PlanInfo>> {
         use super::schema::plan::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let def = match plan.filter(upstream.eq(&key)).load::<RawPlanInfo>(conn) {
@@ -62,6 +62,7 @@ mod test {
     #[test]
     fn save_and_get() {
         // save it
+        let tester = StorePlanDaoImpl {};
         let info = PlanInfo {
             from_thing: Thing {
                 key: "/local_converter/from".to_string(),
@@ -95,17 +96,17 @@ mod test {
             }],
         };
         let plan_info = RawPlanInfo::new(&info).unwrap();
-        let _ = StorePlanDaoImpl::save(&plan_info);
+        let _ = tester.save(&plan_info);
 
         // save twice will get `DaoDuplicated` error
         assert_eq!(
-            StorePlanDaoImpl::save(&plan_info).err(),
+            tester.save(&plan_info).err(),
             Some(NatureError::DaoDuplicated("".to_string()))
         );
 
         // get it
 
-        let rtn = StorePlanDaoImpl::get(
+        let rtn = tester.get(
             "/local_converter/from:0:229195495639599414319914352480091205021:0",
         ).unwrap().unwrap();
         assert_eq!(rtn.to.key, "/local_converter/to");

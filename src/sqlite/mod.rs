@@ -7,8 +7,4 @@ pub mod schema;
 mod conn;
 mod models;
 
-
-#[cfg(test)]
-mod test;
-
 pub mod dao;

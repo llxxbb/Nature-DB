@@ -1,11 +1,11 @@
+use converter_cfg::OneStepFlow;
 use diesel::prelude::*;
 use super::*;
-use converter_cfg::OneStepFlow;
 
 pub struct OneStepFlowDaoImpl;
 
 impl OneStepFlowDaoTrait for OneStepFlowDaoImpl {
-    fn get_relations(from: &Thing) -> Result<Option<Vec<OneStepFlow>>> {
+    fn get_relations(&self, from: &Thing) -> Result<Option<Vec<OneStepFlow>>> {
         use self::schema::one_step_flow::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let def = match one_step_flow

@@ -1,9 +1,6 @@
 use chrono::prelude::*;
-use delivery::Carrier;
 use nature_common::*;
-use serde::Serialize;
 use sqlite::models::delivery::RawDelivery;
-use std::fmt::Debug;
 use super::super::schema::delivery_error;
 
 #[derive(Debug)]
@@ -28,10 +25,5 @@ impl RawDeliveryError {
             create_time: raw.create_time.clone(),
             msg: format!("{:?}", err),
         }
-    }
-
-    pub fn from_carrier<T>(err: &NatureError, carrier: &Carrier<T>) -> Result<Self> where T: Serialize + Debug {
-        let raw = RawDelivery::new(carrier)?;
-        Ok(Self::from_raw(err, &raw))
     }
 }

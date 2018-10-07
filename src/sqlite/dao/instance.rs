@@ -6,7 +6,7 @@ use super::*;
 pub struct InstanceDaoImpl;
 
 impl InstanceDaoTrait for InstanceDaoImpl {
-    fn insert(instance: &Instance) -> Result<usize> {
+    fn insert(&self, instance: &Instance) -> Result<usize> {
         use self::schema::instances;
         let new = RawInstance::new(instance)?;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
@@ -19,7 +19,7 @@ impl InstanceDaoTrait for InstanceDaoImpl {
     }
 
     /// check whether source stored earlier
-    fn is_exists(ins: &Instance) -> Result<bool> {
+    fn is_exists(&self, ins: &Instance) -> Result<bool> {
         use self::schema::instances::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let def = instances
@@ -39,7 +39,7 @@ impl InstanceDaoTrait for InstanceDaoImpl {
             Err(e) => Err(DbError::from(e))
         }
     }
-    fn get_by_id(instance_id: u128) -> Result<Option<Instance>> {
+    fn get_by_id(&self, instance_id: u128) -> Result<Option<Instance>> {
         use self::schema::instances::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let def = instances
@@ -57,7 +57,7 @@ impl InstanceDaoTrait for InstanceDaoImpl {
         }
     }
 
-    fn get_by_key(biz_key: &str, row_id: u128) -> Result<Option<Instance>> {
+    fn get_by_key(&self, biz_key: &str, row_id: u128) -> Result<Option<Instance>> {
         use self::schema::instances::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let def = instances
@@ -101,10 +101,13 @@ mod test {
     use ::sqlite::dao::instance::InstanceDaoImpl;
     use std::collections::HashMap;
     use std::collections::HashSet;
+    use std::env;
     use super::*;
 
     #[test]
     fn instance_insert_exists_delete_test() {
+        let tester = InstanceDaoImpl {};
+        env::set_var("DATABASE_URL", "nature.sqlite");
         // prepare data to insert
         let instance = Instance {
             id: 0,
@@ -125,21 +128,23 @@ mod test {
             },
         };
         // delete if it exists
-        if let Ok(true) = InstanceDaoImpl::is_exists(&instance) {
+        if let Ok(true) = tester.is_exists(&instance) {
             let _ = InstanceDaoImpl::delete(&instance);
         }
         // insert one
-        assert_eq!(Ok(1), InstanceDaoImpl::insert(&instance));
+        assert_eq!(Ok(1), tester.insert(&instance));
         // insert twice
-        assert_eq!(InstanceDaoImpl::insert(&instance), Err(NatureError::DaoDuplicated("".to_string())));
+        assert_eq!(tester.insert(&instance), Err(NatureError::DaoDuplicated("".to_string())));
         // exists
-        assert_eq!(true, InstanceDaoImpl::is_exists(&instance).unwrap());
+        assert_eq!(true, tester.is_exists(&instance).unwrap());
         // delete it
         assert_eq!(1, InstanceDaoImpl::delete(&instance).unwrap());
     }
 
     #[test]
     fn get_last_status() {
+        let tester = InstanceDaoImpl {};
+        env::set_var("DATABASE_URL", "nature.sqlite");
         // prepare data to insert
         let mut instance = Instance {
             id: 0,
@@ -160,21 +165,21 @@ mod test {
             },
         };
         // delete old if exists
-        if let Ok(true) = InstanceDaoImpl::is_exists(&instance) {
+        if let Ok(true) = tester.is_exists(&instance) {
             let _ = InstanceDaoImpl::delete(&instance);
         }
         instance.data.status_version = 111;
-        if let Ok(true) = InstanceDaoImpl::is_exists(&instance) {
+        if let Ok(true) = tester.is_exists(&instance) {
             let _ = InstanceDaoImpl::delete(&instance);
         }
         // insert one
         instance.data.status_version = 123;
-        assert_eq!(Ok(1), InstanceDaoImpl::insert(&instance));
+        assert_eq!(Ok(1), tester.insert(&instance));
         // insert two
         instance.data.status_version = 111;
-        assert_eq!(Ok(1), InstanceDaoImpl::insert(&instance));
+        assert_eq!(Ok(1), tester.insert(&instance));
         // get last
-        if let Ok(Some(x)) = InstanceDaoImpl::get_by_id(instance.id) {
+        if let Ok(Some(x)) = tester.get_by_id(instance.id) {
             assert_eq!(123, x.status_version);
         } else {
             panic!("shouldn't get error");
