@@ -21,7 +21,7 @@ pub trait OneStepFlowCacheTrait {
 }
 
 pub struct OneStepFlowCacheImpl {
-    dao: Rc<OneStepFlowDaoTrait>
+    pub dao: Rc<OneStepFlowDaoTrait>
 }
 
 impl OneStepFlowCacheTrait for OneStepFlowCacheImpl {
