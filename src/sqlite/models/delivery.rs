@@ -8,7 +8,7 @@ use serde::Serialize;
 use std::fmt::Debug;
 use super::super::schema::delivery;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[derive(Insertable, Queryable, QueryableByName)]
 #[table_name = "delivery"]
 pub struct RawDelivery {

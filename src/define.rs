@@ -20,11 +20,11 @@ pub trait OneStepFlowDaoTrait {
 
 pub trait DeliveryDaoTrait {
     fn insert(&self, raw: &RawDelivery) -> Result<usize>;
-    fn delete(&self, id: &Vec<u8>) -> Result<usize>;
+    fn delete(&self, record_id: &Vec<u8>) -> Result<usize>;
     fn raw_to_error(&self, err: &NatureError, raw: &RawDelivery) -> Result<usize>;
     fn update_execute_time(&self, _id: &Vec<u8>, delay: i64) -> Result<()>;
     fn increase_times(&self, _id: Vec<u8>) -> Result<()>;
-    fn get(&self, id: &Vec<u8>) -> Result<RawDelivery>;
+    fn get(&self, record_id: &Vec<u8>) -> Result<Option<RawDelivery>>;
     fn get_overdue(&self, seconds: &str) -> Result<Vec<RawDelivery>>;
 }
 

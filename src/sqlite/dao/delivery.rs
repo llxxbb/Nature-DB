@@ -1,5 +1,6 @@
 use *;
 use diesel::result::*;
+use self::schema::delivery::dsl::*;
 use super::*;
 
 pub struct DeliveryDaoImpl;
@@ -27,10 +28,9 @@ impl DeliveryDaoTrait for DeliveryDaoImpl {
         }
     }
 
-    fn delete(&self, carrier_id: &Vec<u8>) -> Result<usize> {
-        use self::schema::delivery::dsl::*;
+    fn delete(&self, record_id: &Vec<u8>) -> Result<usize> {
         let conn: &SqliteConnection = &CONN.lock().unwrap();
-        let rtn = diesel::delete(delivery.filter(id.eq(carrier_id))).execute(conn);
+        let rtn = diesel::delete(delivery.filter(id.eq(record_id))).execute(conn);
         match rtn {
             Ok(num) => Ok(num),
             Err(err) => Err(DbError::from(err)),
@@ -61,7 +61,6 @@ impl DeliveryDaoTrait for DeliveryDaoImpl {
     }
 
     fn increase_times(&self, record_id: Vec<u8>) -> Result<()> {
-        use self::schema::delivery::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let rtn = diesel::update(delivery.filter(id.eq(record_id)))
             .set(retried_times.eq(retried_times + 1)).
@@ -72,8 +71,19 @@ impl DeliveryDaoTrait for DeliveryDaoImpl {
         }
     }
 
-    fn get(&self, _id: &Vec<u8>) -> Result<RawDelivery> {
-        unimplemented!()
+    fn get(&self, record_id: &Vec<u8>) -> Result<Option<RawDelivery>> {
+        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let def = delivery.filter(id.eq(record_id))
+            .limit(1)
+            .load::<RawDelivery>(conn);
+        match def {
+            Ok(rtn) => match rtn.len() {
+                0 => Ok(None),
+                1 => Ok(Some(rtn[0].clone())),
+                _ => Err(NatureError::SystemError("should less than 2 record return".to_string())),
+            }
+            Err(e) => Err(DbError::from(e))
+        }
     }
 
     fn get_overdue(&self, seconds: &str) -> Result<Vec<RawDelivery>> {
@@ -95,13 +105,13 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_get_overdue() {
+    fn test_delete_insert_get_and_overdue() {
         env::set_var("DATABASE_URL", "nature.sqlite");
         let dao = DeliveryDaoImpl {};
-        let id = vec![1, 2, 3, 4, 5, ];
+        let record_id = vec![1, 2, 3, 4, 5, ];
 
         // delete it after being used
-        let _ = dao.delete(&id);
+        let _ = dao.delete(&record_id);
 
         // no data
         let x = dao.get_overdue("0");
@@ -111,7 +121,7 @@ mod test {
         let time = Local::now();
         let time2 = Local::now() - Duration::seconds(10);
         let raw = RawDelivery {
-            id,
+            id: record_id.clone(),
             thing: "lxb".to_string(),
             data_type: 1,
             data: "hello".to_string(),
@@ -123,12 +133,18 @@ mod test {
         let rtn = dao.insert(&raw);
         assert_eq!(rtn, Ok(1));
 
+        // very get function
+        let rtn = dao.get(&record_id);
+        assert_eq!(rtn, Ok(Some(raw)));
+        println!(" get {:?}", rtn.unwrap().unwrap());
+
         // verify overdue
         let x = dao.get_overdue("5");
-        println!("{:?}", x);
-        assert_eq!(x.unwrap().len(), 1);
+        let vec = x.unwrap();
+        assert_eq!(vec.len(), 1);
+        println!(" the overdue date: {:?}", vec[0]);
 
         // delete it after being used
-        let _ = dao.delete(&raw.id);
+        let _ = dao.delete(&record_id);
     }
 }
