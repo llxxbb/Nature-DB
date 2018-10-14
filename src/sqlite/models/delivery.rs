@@ -9,7 +9,7 @@ use std::fmt::Debug;
 use super::super::schema::delivery;
 
 #[derive(Debug, Clone)]
-#[derive(Insertable)]
+#[derive(Insertable, Queryable, QueryableByName)]
 #[table_name = "delivery"]
 pub struct RawDelivery {
     pub id: Vec<u8>,
@@ -27,14 +27,14 @@ impl RawDelivery {
         if json.len() > *DELIVERY_CONTENT_MAX_LENGTH.deref() {
             return Err(NatureError::DaoLogicalError("data's length can' be over : ".to_owned() + &DELIVERY_CONTENT_MAX_LENGTH.to_string()));
         }
-        let time = Local::now().timestamp_millis();
+        let time = Local::now().naive_local();
         Ok(RawDelivery {
             id: u128_to_vec_u8(generate_id(&task)?),
             thing: thing.to_string(),
             data_type,
             data: json,
-            create_time: NaiveDateTime::from_timestamp(time, 0),
-            execute_time: NaiveDateTime::from_timestamp(time, 0),
+            create_time: time,
+            execute_time: time,
             retried_times: 0,
         })
     }

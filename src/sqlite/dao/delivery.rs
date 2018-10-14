@@ -76,7 +76,59 @@ impl DeliveryDaoTrait for DeliveryDaoImpl {
         unimplemented!()
     }
 
-    fn get_overdue(&self) -> Result<Option<Vec<RawDelivery>>> {
-        unimplemented!()
+    fn get_overdue(&self, seconds: &str) -> Result<Vec<RawDelivery>> {
+        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let rtn = diesel::sql_query(format!("select * from delivery where execute_time < datetime('now','localtime','-{} seconds') limit 100", seconds))
+            .load::<RawDelivery>(conn);
+        match rtn {
+            Ok(rtn) => Ok(rtn),
+            Err(e) => Err(DbError::from(e))
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use chrono::Duration;
+    use chrono::prelude::*;
+    use std::env;
+    use super::*;
+
+    #[test]
+    fn test_get_overdue() {
+        env::set_var("DATABASE_URL", "nature.sqlite");
+        let dao = DeliveryDaoImpl {};
+        let id = vec![1, 2, 3, 4, 5, ];
+
+        // delete it after being used
+        let _ = dao.delete(&id);
+
+        // no data
+        let x = dao.get_overdue("0");
+        assert_eq!(x.unwrap().len(), 0);
+
+        // insert one and test
+        let time = Local::now();
+        let time2 = Local::now() - Duration::seconds(10);
+        let raw = RawDelivery {
+            id,
+            thing: "lxb".to_string(),
+            data_type: 1,
+            data: "hello".to_string(),
+            create_time: time.naive_local(),
+            execute_time: time2.naive_local(),
+            retried_times: 1,
+        };
+        println!(" insert for {:?}", &raw);
+        let rtn = dao.insert(&raw);
+        assert_eq!(rtn, Ok(1));
+
+        // verify overdue
+        let x = dao.get_overdue("5");
+        println!("{:?}", x);
+        assert_eq!(x.unwrap().len(), 1);
+
+        // delete it after being used
+        let _ = dao.delete(&raw.id);
     }
 }

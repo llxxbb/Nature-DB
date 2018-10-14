@@ -25,7 +25,7 @@ pub trait DeliveryDaoTrait {
     fn update_execute_time(&self, _id: &Vec<u8>, delay: i64) -> Result<()>;
     fn increase_times(&self, _id: Vec<u8>) -> Result<()>;
     fn get(&self, id: &Vec<u8>) -> Result<RawDelivery>;
-    fn get_overdue(&self) -> Result<Option<Vec<RawDelivery>>>;
+    fn get_overdue(&self, seconds: &str) -> Result<Vec<RawDelivery>>;
 }
 
 pub trait InstanceDaoTrait {
