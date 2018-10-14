@@ -22,8 +22,8 @@ pub trait DeliveryDaoTrait {
     fn insert(&self, raw: &RawDelivery) -> Result<usize>;
     fn delete(&self, record_id: &Vec<u8>) -> Result<usize>;
     fn raw_to_error(&self, err: &NatureError, raw: &RawDelivery) -> Result<usize>;
-    fn update_execute_time(&self, _id: &Vec<u8>, delay: i64) -> Result<()>;
-    fn increase_times(&self, _id: Vec<u8>) -> Result<()>;
+    fn update_execute_time(&self, record_id: &Vec<u8>, delay: i64) -> Result<()>;
+    fn increase_times_and_delay(&self, record_id: &Vec<u8>, delay: i32) -> Result<usize>;
     fn get(&self, record_id: &Vec<u8>) -> Result<Option<RawDelivery>>;
     fn get_overdue(&self, seconds: &str) -> Result<Vec<RawDelivery>>;
 }

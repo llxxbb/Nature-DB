@@ -1,5 +1,6 @@
 use *;
 use diesel::result::*;
+use nature_common::util::id_tool::vec_to_hex_string;
 use self::schema::delivery::dsl::*;
 use super::*;
 
@@ -60,14 +61,14 @@ impl DeliveryDaoTrait for DeliveryDaoImpl {
         unimplemented!()
     }
 
-    fn increase_times(&self, record_id: Vec<u8>) -> Result<()> {
+    fn increase_times_and_delay(&self, record_id: &Vec<u8>, delay: i32) -> Result<usize> {
         let conn: &SqliteConnection = &CONN.lock().unwrap();
-        let rtn = diesel::update(delivery.filter(id.eq(record_id)))
-            .set(retried_times.eq(retried_times + 1)).
-            execute(conn);
-        match rtn {
-            Ok(_) => Ok(()),
-            Err(err) => Err(DbError::from(err)),
+        let sql = format!("update delivery set retried_times = retried_times + 1, execute_time = datetime(execute_time, 'localtime', '+{} seconds') where id = x'{}'", delay, vec_to_hex_string(&record_id));
+        println!("{}", &sql);
+        match diesel::sql_query(sql)
+            .execute(conn) {
+            Err(e) => Err(DbError::from(e)),
+            Ok(num) => Ok(num)
         }
     }
 
@@ -105,10 +106,10 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_delete_insert_get_and_overdue() {
+    fn delivery_dao_test() {
         env::set_var("DATABASE_URL", "nature.sqlite");
         let dao = DeliveryDaoImpl {};
-        let record_id = vec![1, 2, 3, 4, 5, ];
+        let record_id = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
 
         // delete it after being used
         let _ = dao.delete(&record_id);
@@ -133,16 +134,21 @@ mod test {
         let rtn = dao.insert(&raw);
         assert_eq!(rtn, Ok(1));
 
-        // very get function
-        let rtn = dao.get(&record_id);
-        assert_eq!(rtn, Ok(Some(raw)));
-        println!(" get {:?}", rtn.unwrap().unwrap());
-
         // verify overdue
         let x = dao.get_overdue("5");
         let vec = x.unwrap();
         assert_eq!(vec.len(), 1);
         println!(" the overdue date: {:?}", vec[0]);
+
+        // increase retry times and execute_time
+        let rtn = dao.increase_times_and_delay(&record_id, 20);
+        assert_eq!(rtn.unwrap(), 1);
+
+        // very get function
+        let rtn = dao.get(&record_id);
+        let rtn = rtn.unwrap().unwrap();
+        assert_eq!(rtn.retried_times, 2);
+        assert_eq!((rtn.execute_time - Duration::seconds(20)).format("%Y-%m-%d %H:%M:%S").to_string(), raw.execute_time.format("%Y-%m-%d %H:%M:%S").to_string());
 
         // delete it after being used
         let _ = dao.delete(&record_id);
