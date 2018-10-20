@@ -5,6 +5,8 @@
 #![feature(rustc_private)]
 #![feature(int_to_from_bytes)]
 #![feature(range_contains)]
+#![feature(try_from)]
+
 extern crate chrono;
 #[macro_use]
 extern crate diesel;
@@ -27,15 +29,15 @@ use nature_common::*;
 pub use self::cache::*;
 pub use self::converter_cfg::*;
 pub use self::define::*;
-pub use self::delivery::*;
 pub use self::instance::*;
 pub use self::orm::*;
 pub use self::plan::*;
 pub use self::sqlite::*;
+pub use self::task_type::*;
 pub use self::thing_define::*;
 
 mod thing_define;
-mod delivery;
+mod task_type;
 mod converter_cfg;
 
 mod sqlite;
