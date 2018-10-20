@@ -11,7 +11,7 @@ use super::super::schema::instances;
 #[derive(Insertable, Queryable, Debug, Clone)]
 #[table_name = "instances"]
 pub struct RawInstance {
-    id: Vec<u8>,
+    instance_id: Vec<u8>,
     thing: String,
     version: i32,
     content: String,
@@ -39,7 +39,7 @@ impl RawInstance {
                 status_version: self.from_status_version.unwrap(),
             })
         };
-        let id = vec_to_u128(&self.id);
+        let id = vec_to_u128(&self.instance_id);
         let context = match self.context {
             None => HashMap::new(),
             Some(ref s) => serde_json::from_str::<HashMap<String, String>>(s)?
@@ -76,7 +76,7 @@ impl RawInstance {
             Some(ref from) => (Some(from.thing.key.clone()), Some(from.thing.version), Some(from.status_version))
         };
         Ok(RawInstance {
-            id: instance.id.to_ne_bytes().to_vec(),
+            instance_id: instance.id.to_ne_bytes().to_vec(),
             thing: instance.thing.key.clone(),
             version: instance.thing.version,
             content: {

@@ -23,7 +23,7 @@ CREATE TABLE `one_step_flow` (
 );
 
 CREATE TABLE `instances` (
-	`id`	BLOB NOT NULL,
+	`instance_id`	BLOB NOT NULL,
 	`thing`	TEXT NOT NULL,
 	`version`	INTEGER NOT NULL,
 	`content`	TEXT NOT NULL,
@@ -36,28 +36,28 @@ CREATE TABLE `instances` (
 	`event_time`	DATETIME NOT NULL,
 	`execute_time`	DATETIME NOT NULL,
 	`create_time`	DATETIME NOT NULL,
-	PRIMARY KEY(`id`,`thing`,`version`,`status_version`)
+	PRIMARY KEY(`instance_id`,`thing`,`version`,`status_version`)
 );
 
-CREATE TABLE `delivery` (
-	`id`	BLOB NOT NULL,
+CREATE TABLE `task` (
+	`task_id`	BLOB NOT NULL,
 	`thing`	TEXT NOT NULL,
 	`data_type`	SMALLINT NOT NULL,
 	`data`	TEXT NOT NULL,
 	`create_time`	DATETIME NOT NULL,
 	`execute_time`	DATETIME NOT NULL,
 	`retried_times`	SMALLINT NOT NULL,
-	PRIMARY KEY(`id`)
+	PRIMARY KEY(`task_id`)
 );
 
-CREATE TABLE `delivery_error` (
-	`id`	BLOB NOT NULL,
+CREATE TABLE `task_error` (
+	`task_id`	BLOB NOT NULL,
 	`thing`	TEXT NOT NULL,
 	`data_type`	SMALLINT NOT NULL,
 	`data`	TEXT NOT NULL,
 	`create_time`	DATETIME NOT NULL,
 	`msg`	TEXT NOT NULL,
-	PRIMARY KEY(`id`)
+	PRIMARY KEY(`task_id`)
 );
 
 CREATE TABLE `plan` (

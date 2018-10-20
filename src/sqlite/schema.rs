@@ -1,29 +1,6 @@
 table! {
-    delivery (id) {
-        id -> Binary,
-        thing -> Text,
-        data_type -> SmallInt,
-        data -> Text,
-        create_time -> Timestamp,
-        execute_time -> Timestamp,
-        retried_times -> SmallInt,
-    }
-}
-
-table! {
-    delivery_error (id) {
-        id -> Binary,
-        thing -> Text,
-        data_type -> SmallInt,
-        data -> Text,
-        create_time -> Timestamp,
-        msg -> Text,
-    }
-}
-
-table! {
-    instances (id, thing, version, status_version) {
-        id -> Binary,
+    instances (instance_id, thing, version, status_version) {
+        instance_id -> Binary,
         thing -> Text,
         version -> Integer,
         content -> Text,
@@ -64,6 +41,29 @@ table! {
 }
 
 table! {
+    task (task_id) {
+        task_id -> Binary,
+        thing -> Text,
+        data_type -> SmallInt,
+        data -> Text,
+        create_time -> Timestamp,
+        execute_time -> Timestamp,
+        retried_times -> SmallInt,
+    }
+}
+
+table! {
+    task_error (task_id) {
+        task_id -> Binary,
+        thing -> Text,
+        data_type -> SmallInt,
+        data -> Text,
+        create_time -> Timestamp,
+        msg -> Text,
+    }
+}
+
+table! {
     thing_defines (key, version) {
         key -> Text,
         description -> Nullable<Text>,
@@ -75,10 +75,10 @@ table! {
 }
 
 allow_tables_to_appear_in_same_query!(
-    delivery,
-    delivery_error,
     instances,
     one_step_flow,
     plan,
+    task,
+    task_error,
     thing_defines,
 );

@@ -23,7 +23,7 @@ impl InstanceDaoTrait for InstanceDaoImpl {
         use self::schema::instances::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let def = instances
-            .filter(id.eq(ins.id.to_ne_bytes().to_vec()))
+            .filter(instance_id.eq(ins.id.to_ne_bytes().to_vec()))
             .filter(thing.eq(ins.thing.key.clone()))
             .filter(version.eq(ins.thing.version))
             .filter(status_version.eq(ins.status_version))
@@ -39,11 +39,11 @@ impl InstanceDaoTrait for InstanceDaoImpl {
             Err(e) => Err(DbError::from(e))
         }
     }
-    fn get_by_id(&self, instance_id: u128) -> Result<Option<Instance>> {
+    fn get_by_id(&self, record_id: u128) -> Result<Option<Instance>> {
         use self::schema::instances::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let def = instances
-            .filter(id.eq(u128_to_vec_u8(instance_id)))
+            .filter(instance_id.eq(u128_to_vec_u8(record_id)))
             .order(status_version.desc())
             .limit(1)
             .load::<RawInstance>(conn);
@@ -62,7 +62,7 @@ impl InstanceDaoTrait for InstanceDaoImpl {
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let def = instances
             .filter(thing.eq(biz_key))
-            .filter(id.eq(u128_to_vec_u8(row_id)))
+            .filter(instance_id.eq(u128_to_vec_u8(row_id)))
             .order(status_version.desc())
             .limit(1)
             .load::<RawInstance>(conn);
@@ -83,7 +83,7 @@ impl InstanceDaoImpl {
         use self::schema::instances::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let rows = instances
-            .filter(id.eq(ins.id.to_ne_bytes().to_vec()))
+            .filter(instance_id.eq(ins.id.to_ne_bytes().to_vec()))
             .filter(thing.eq(ins.thing.key.clone()))
             .filter(version.eq(ins.thing.version))
             .filter(status_version.eq(ins.status_version));

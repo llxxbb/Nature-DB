@@ -1,16 +1,16 @@
 use *;
 use diesel::result::*;
 use nature_common::util::id_tool::vec_to_hex_string;
-use self::schema::delivery::dsl::*;
+use self::schema::task::dsl::*;
 use super::*;
 
 pub struct DeliveryDaoImpl;
 
 impl DeliveryDaoTrait for DeliveryDaoImpl {
-    fn insert(&self, raw: &RawDelivery) -> Result<usize> {
-        use self::schema::delivery;
+    fn insert(&self, raw: &RawTask) -> Result<usize> {
+        use self::schema::task;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
-        let rtn = diesel::insert_into(delivery::table).values(raw).execute(conn);
+        let rtn = diesel::insert_into(task::table).values(raw).execute(conn);
         match rtn {
             Ok(num) => {
                 Ok(num)
@@ -31,18 +31,18 @@ impl DeliveryDaoTrait for DeliveryDaoImpl {
 
     fn delete(&self, record_id: &Vec<u8>) -> Result<usize> {
         let conn: &SqliteConnection = &CONN.lock().unwrap();
-        let rtn = diesel::delete(delivery.filter(id.eq(record_id))).execute(conn);
+        let rtn = diesel::delete(task.filter(task_id.eq(record_id))).execute(conn);
         match rtn {
             Ok(num) => Ok(num),
             Err(err) => Err(DbError::from(err)),
         }
     }
 
-    fn raw_to_error(&self, err: &NatureError, raw: &RawDelivery) -> Result<usize> {
-        use self::schema::delivery_error;
+    fn raw_to_error(&self, err: &NatureError, raw: &RawTask) -> Result<usize> {
+        use self::schema::task_error;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
-        let rd = RawDeliveryError::from_raw(err, raw);
-        let rtn = diesel::insert_into(delivery_error::table).values(rd).execute(conn);
+        let rd = RawTaskError::from_raw(err, raw);
+        let rtn = diesel::insert_into(task_error::table).values(rd).execute(conn);
         match rtn {
             Ok(num) => Ok(num),
             Err(Error::DatabaseError(kind, info)) => match kind {
@@ -73,11 +73,11 @@ impl DeliveryDaoTrait for DeliveryDaoImpl {
         }
     }
 
-    fn get(&self, record_id: &Vec<u8>) -> Result<Option<RawDelivery>> {
+    fn get(&self, record_id: &Vec<u8>) -> Result<Option<RawTask>> {
         let conn: &SqliteConnection = &CONN.lock().unwrap();
-        let def = delivery.filter(id.eq(record_id))
+        let def = task.filter(task_id.eq(record_id))
             .limit(1)
-            .load::<RawDelivery>(conn);
+            .load::<RawTask>(conn);
         match def {
             Ok(rtn) => match rtn.len() {
                 0 => Ok(None),
@@ -88,10 +88,10 @@ impl DeliveryDaoTrait for DeliveryDaoImpl {
         }
     }
 
-    fn get_overdue(&self, seconds: &str) -> Result<Vec<RawDelivery>> {
+    fn get_overdue(&self, seconds: &str) -> Result<Vec<RawTask>> {
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let rtn = diesel::sql_query(format!("select * from delivery where execute_time < datetime('now','localtime','-{} seconds') limit 100", seconds))
-            .load::<RawDelivery>(conn);
+            .load::<RawTask>(conn);
         match rtn {
             Ok(rtn) => Ok(rtn),
             Err(e) => Err(DbError::from(e))
@@ -122,8 +122,8 @@ mod test {
         // insert one and test
         let time = Local::now();
         let time2 = Local::now() - Duration::seconds(10);
-        let raw = RawDelivery {
-            id: record_id.clone(),
+        let raw = RawTask {
+            task_id: record_id.clone(),
             thing: "lxb".to_string(),
             data_type: 1,
             data: "hello".to_string(),
