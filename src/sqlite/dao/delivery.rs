@@ -61,6 +61,7 @@ impl DeliveryDaoTrait for DeliveryDaoImpl {
         unimplemented!()
     }
 
+    /// increase one times and delay `delay` seconds
     fn increase_times_and_delay(&self, record_id: &Vec<u8>, delay: i32) -> Result<usize> {
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let sql = format!("update delivery set retried_times = retried_times + 1, execute_time = datetime(execute_time, 'localtime', '+{} seconds') where id = x'{}'", delay, vec_to_hex_string(&record_id));
