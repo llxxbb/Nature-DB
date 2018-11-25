@@ -1,43 +1,5 @@
 use nature_common::*;
 use std::collections::HashSet;
-use std::str::FromStr;
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Ord, PartialOrd, Eq)]
-pub enum Protocol {
-    LocalRust,
-    Http,
-    Https,
-}
-
-impl FromStr for Protocol {
-    type Err = NatureError;
-
-    fn from_str(s: &str) -> Result<Self> {
-        let cmp = &*s.to_uppercase();
-        match cmp {
-            "LOCALRUST" => Ok(Protocol::LocalRust),
-            "HTTP" => Ok(Protocol::Http),
-            "HTTPS" => Ok(Protocol::Https),
-            _ => {
-                let msg = format!("unknown protocol : {}", s);
-                Err(NatureError::VerifyError(msg))
-            }
-        }
-    }
-}
-
-impl Default for Protocol {
-    fn default() -> Self {
-        Protocol::LocalRust
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Ord, PartialOrd, Eq)]
-pub struct Executor {
-    pub protocol: Protocol,
-    /// url do not contain's protocol define
-    pub url: String,
-}
 
 
 #[derive(Debug, Serialize, Deserialize)]
