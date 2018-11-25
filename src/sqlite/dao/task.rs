@@ -4,9 +4,9 @@ use nature_common::util::id_tool::vec_to_hex_string;
 use self::schema::task::dsl::*;
 use super::*;
 
-pub struct DeliveryDaoImpl;
+pub struct TaskDaoImpl;
 
-impl DeliveryDaoTrait for DeliveryDaoImpl {
+impl TaskDaoTrait for TaskDaoImpl {
     fn insert(&self, raw: &RawTask) -> Result<usize> {
         use self::schema::task;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
@@ -109,7 +109,7 @@ mod test {
     #[test]
     fn delivery_dao_test() {
         env::set_var("DATABASE_URL", "nature.sqlite");
-        let dao = DeliveryDaoImpl {};
+        let dao = TaskDaoImpl {};
         let record_id = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
 
         // delete it after being used

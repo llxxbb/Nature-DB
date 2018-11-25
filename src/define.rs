@@ -18,7 +18,7 @@ pub trait OneStepFlowDaoTrait {
     fn get_relations(&self, from: &Thing) -> Result<Option<Vec<OneStepFlow>>>;
 }
 
-pub trait DeliveryDaoTrait {
+pub trait TaskDaoTrait {
     fn insert(&self, raw: &RawTask) -> Result<usize>;
     fn delete(&self, record_id: &Vec<u8>) -> Result<usize>;
     fn raw_to_error(&self, err: &NatureError, raw: &RawTask) -> Result<usize>;
