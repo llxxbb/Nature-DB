@@ -3,7 +3,6 @@
 #![allow(proc_macro_derive_resolution_fallback)]
 #![feature(custom_attribute)]
 #![feature(rustc_private)]
-#![feature(int_to_from_bytes)]
 #![feature(range_contains)]
 #![feature(try_from)]
 
