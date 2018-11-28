@@ -1,8 +1,11 @@
-use *;
 use diesel::result::*;
+
+use *;
 use nature_common::util::id_tool::vec_to_hex_string;
-use self::schema::task::dsl::*;
+
 use super::*;
+
+use self::schema::task::dsl::*;
 
 pub struct TaskDaoImpl;
 
@@ -23,7 +26,7 @@ impl TaskDaoTrait for TaskDaoImpl {
                 _ => Err(NatureError::DaoLogicalError(format!("{:?}", info))),
             },
             Err(e) => {
-                error!("insert delivery error: {:?}", e);
+                error!("insert task error: {:?}", e);
                 Err(DbError::from(e))
             }
         }
@@ -51,7 +54,7 @@ impl TaskDaoTrait for TaskDaoImpl {
                 _ => Err(NatureError::DaoLogicalError(format!("{:?}", info))),
             },
             Err(e) => {
-                error!("insert delivery_error to db occurred error");
+                error!("insert task_error to db occurred error");
                 Err(DbError::from(e))
             }
         }
@@ -64,7 +67,7 @@ impl TaskDaoTrait for TaskDaoImpl {
     /// increase one times and delay `delay` seconds
     fn increase_times_and_delay(&self, record_id: &Vec<u8>, delay: i32) -> Result<usize> {
         let conn: &SqliteConnection = &CONN.lock().unwrap();
-        let sql = format!("update delivery set retried_times = retried_times + 1, execute_time = datetime(execute_time, 'localtime', '+{} seconds') where id = x'{}'", delay, vec_to_hex_string(&record_id));
+        let sql = format!("update task set retried_times = retried_times + 1, execute_time = datetime(execute_time, 'localtime', '+{} seconds') where task_id = x'{}'", delay, vec_to_hex_string(&record_id));
         println!("{}", &sql);
         match diesel::sql_query(sql)
             .execute(conn) {
@@ -90,7 +93,7 @@ impl TaskDaoTrait for TaskDaoImpl {
 
     fn get_overdue(&self, seconds: &str) -> Result<Vec<RawTask>> {
         let conn: &SqliteConnection = &CONN.lock().unwrap();
-        let rtn = diesel::sql_query(format!("select * from delivery where execute_time < datetime('now','localtime','-{} seconds') limit 100", seconds))
+        let rtn = diesel::sql_query(format!("select * from task where execute_time < datetime('now','localtime','-{} seconds') limit 100", seconds))
             .load::<RawTask>(conn);
         match rtn {
             Ok(rtn) => Ok(rtn),
@@ -101,13 +104,15 @@ impl TaskDaoTrait for TaskDaoImpl {
 
 #[cfg(test)]
 mod test {
+    use std::env;
+
     use chrono::Duration;
     use chrono::prelude::*;
-    use std::env;
+
     use super::*;
 
     #[test]
-    fn delivery_dao_test() {
+    fn task_dao_test() {
         env::set_var("DATABASE_URL", "nature.sqlite");
         let dao = TaskDaoImpl {};
         let record_id = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
