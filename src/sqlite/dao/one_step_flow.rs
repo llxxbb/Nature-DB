@@ -1,5 +1,7 @@
-use converter_cfg::OneStepFlow;
 use diesel::prelude::*;
+
+use converter_cfg::OneStepFlow;
+
 use super::*;
 
 pub struct OneStepFlowDaoImpl;
@@ -45,6 +47,20 @@ impl OneStepFlowDaoImpl {
         match rtn {
             Ok(x) => Ok(x),
             Err(e) => Err(DbError::from(e))
+        }
+    }
+    pub fn delete(one: RawOneStepFlow) -> Result<usize> {
+        use self::schema::one_step_flow::dsl::*;
+        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let rtn = diesel::delete(one_step_flow
+            .filter(from_thing.eq(one.from_thing))
+            .filter(from_version.eq(one.from_version))
+            .filter(to_thing.eq(one.to_thing))
+            .filter(to_version.eq(one.to_version))
+        ).execute(conn);
+        match rtn {
+            Ok(num) => Ok(num),
+            Err(err) => Err(DbError::from(err)),
         }
     }
 }
