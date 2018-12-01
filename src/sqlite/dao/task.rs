@@ -67,7 +67,7 @@ impl TaskDaoTrait for TaskDaoImpl {
     /// increase one times and delay `delay` seconds
     fn increase_times_and_delay(&self, record_id: &Vec<u8>, delay: i32) -> Result<usize> {
         let conn: &SqliteConnection = &CONN.lock().unwrap();
-        let sql = format!("update task set retried_times = retried_times + 1, execute_time = datetime(execute_time, 'localtime', '+{} seconds') where task_id = x'{}'", delay, vec_to_hex_string(&record_id));
+        let sql = format!("update task set retried_times = retried_times + 1, execute_time = datetime('now', '+{} seconds') where task_id = x'{}'", delay, vec_to_hex_string(&record_id));
         println!("{}", &sql);
         match diesel::sql_query(sql)
             .execute(conn) {
@@ -154,7 +154,8 @@ mod test {
         let rtn = dao.get(&record_id);
         let rtn = rtn.unwrap().unwrap();
         assert_eq!(rtn.retried_times, 2);
-        assert_eq!((rtn.execute_time - Duration::seconds(20)).format("%Y-%m-%d %H:%M:%S").to_string(), raw.execute_time.format("%Y-%m-%d %H:%M:%S").to_string());
+        let diff = rtn.execute_time.timestamp() - Local::now().timestamp();
+        assert_eq!(diff <= 20, true);
 
         // delete it after being used
         let _ = dao.delete(&record_id);
