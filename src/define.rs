@@ -1,6 +1,8 @@
+use std::env;
+
 #[cfg(test)]
 use mockers_derive::mocked;
-use std::env;
+
 use super::*;
 
 pub trait ThingDefineDaoTrait {
@@ -20,11 +22,11 @@ pub trait OneStepFlowDaoTrait {
 
 pub trait TaskDaoTrait {
     fn insert(&self, raw: &RawTask) -> Result<usize>;
-    fn delete(&self, record_id: &Vec<u8>) -> Result<usize>;
+    fn delete(&self, record_id: &[u8]) -> Result<usize>;
     fn raw_to_error(&self, err: &NatureError, raw: &RawTask) -> Result<usize>;
-    fn update_execute_time(&self, record_id: &Vec<u8>, delay: i64) -> Result<()>;
-    fn increase_times_and_delay(&self, record_id: &Vec<u8>, delay: i32) -> Result<usize>;
-    fn get(&self, record_id: &Vec<u8>) -> Result<Option<RawTask>>;
+    fn update_execute_time(&self, record_id: &[u8], delay: i64) -> Result<()>;
+    fn increase_times_and_delay(&self, record_id: &[u8], delay: i32) -> Result<usize>;
+    fn get(&self, record_id: &[u8]) -> Result<Option<RawTask>>;
     fn get_overdue(&self, seconds: &str) -> Result<Vec<RawTask>>;
 }
 
@@ -44,15 +46,15 @@ pub trait StorePlanDaoTrait {
 
 lazy_static! {
     pub static ref INSTANCE_CONTENT_MAX_LENGTH : usize = {
-        env::var("INSTANCE_CONTENT_MAX_LENGTH").unwrap_or("65535".to_string()).parse::<usize>().unwrap()
+        env::var("INSTANCE_CONTENT_MAX_LENGTH").unwrap_or_else(|_| "65535".to_string()).parse::<usize>().unwrap()
     };
     pub static ref INSTANCE_CONTEXT_MAX_LENGTH : usize = {
-        env::var("INSTANCE_CONTEXT_MAX_LENGTH").unwrap_or("65535".to_string()).parse::<usize>().unwrap()
+        env::var("INSTANCE_CONTEXT_MAX_LENGTH").unwrap_or_else(|_| "65535".to_string()).parse::<usize>().unwrap()
     };
     pub static ref TASK_CONTENT_MAX_LENGTH : usize = {
-        env::var("TASKY_CONTENT_MAX_LENGTH").unwrap_or("16777215".to_string()).parse::<usize>().unwrap()
+        env::var("TASKY_CONTENT_MAX_LENGTH").unwrap_or_else(|_| "16777215".to_string()).parse::<usize>().unwrap()
     };
     pub static ref PLAN_CONTENT_MAX_LENGTH : usize = {
-        env::var("PLAN_CONTENT_MAX_LENGTH").unwrap_or("16777215".to_string()).parse::<usize>().unwrap()
+        env::var("PLAN_CONTENT_MAX_LENGTH").unwrap_or_else(|_| "16777215".to_string()).parse::<usize>().unwrap()
     };
 }

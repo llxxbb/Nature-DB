@@ -32,7 +32,7 @@ impl TaskDaoTrait for TaskDaoImpl {
         }
     }
 
-    fn delete(&self, record_id: &Vec<u8>) -> Result<usize> {
+    fn delete(&self, record_id: &[u8]) -> Result<usize> {
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let rtn = diesel::delete(task.filter(task_id.eq(record_id))).execute(conn);
         match rtn {
@@ -60,12 +60,12 @@ impl TaskDaoTrait for TaskDaoImpl {
         }
     }
 
-    fn update_execute_time(&self, _id: &Vec<u8>, _delay: i64) -> Result<()> {
+    fn update_execute_time(&self, _id: &[u8], _delay: i64) -> Result<()> {
         unimplemented!()
     }
 
     /// increase one times and delay `delay` seconds
-    fn increase_times_and_delay(&self, record_id: &Vec<u8>, delay: i32) -> Result<usize> {
+    fn increase_times_and_delay(&self, record_id: &[u8], delay: i32) -> Result<usize> {
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let sql = format!("update task set retried_times = retried_times + 1, execute_time = datetime('now', '+{} seconds') where task_id = x'{}'", delay, vec_to_hex_string(&record_id));
         println!("{}", &sql);
@@ -76,7 +76,7 @@ impl TaskDaoTrait for TaskDaoImpl {
         }
     }
 
-    fn get(&self, record_id: &Vec<u8>) -> Result<Option<RawTask>> {
+    fn get(&self, record_id: &[u8]) -> Result<Option<RawTask>> {
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let def = task.filter(task_id.eq(record_id))
             .limit(1)

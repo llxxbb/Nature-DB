@@ -35,7 +35,7 @@ impl RawPlanInfo {
         })
     }
     pub fn to_plan_info(&self) -> Result<PlanInfo> {
-        let x: Vec<&str> = self.upstream.split(":").collect();
+        let x: Vec<&str> = self.upstream.split(':').collect();
         if x.len() != 4 {
             return Err(NatureError::VerifyError("format error : ".to_owned() + &self.upstream));
         }

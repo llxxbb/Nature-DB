@@ -22,7 +22,7 @@ impl RawTaskError {
             thing: raw.thing.clone(),
             data_type: raw.data_type,
             data: raw.data.clone(),
-            create_time: raw.create_time.clone(),
+            create_time: raw.create_time,
             msg: format!("{:?}", err),
         }
     }

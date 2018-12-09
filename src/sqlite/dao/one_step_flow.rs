@@ -26,10 +26,10 @@ impl OneStepFlowDaoTrait for OneStepFlowDaoImpl {
                         rtn.push(one);
                     }
                 }
-                if rtn.len() > 0 {
-                    return Ok(Some(rtn));
+                if rtn.is_empty() {
+                    Ok(Some(rtn))
                 } else {
-                    return Ok(None);
+                    Ok(None)
                 }
             }
             _ => Err(NatureError::SystemError("unknown error occurred".to_string())),

@@ -1,10 +1,5 @@
 extern crate rand;
 
-use converter_cfg::OneStepFlow;
-use define::OneStepFlowDaoTrait;
-use lru_time_cache::LruCache;
-use nature_common::*;
-use self::rand::{Rng, thread_rng};
 use std::collections::HashMap;
 use std::ops::Range;
 use std::ptr;
@@ -12,8 +7,19 @@ use std::rc::Rc;
 use std::sync::Mutex;
 use std::time::Duration;
 
+use lru_time_cache::LruCache;
+
+use converter_cfg::OneStepFlow;
+use define::OneStepFlowDaoTrait;
+use nature_common::*;
+
+use self::rand::{Rng, thread_rng};
+
+type ITEM = (Option<Vec<OneStepFlow>>, Option<HashMap<Thing, Range<f32>>>);
+type CACHE = Mutex<LruCache<Thing, ITEM>>;
+
 lazy_static! {
-    static ref CACHE_MAPPING: Mutex<LruCache<Thing, (Option<Vec<OneStepFlow>>, Option<HashMap<Thing, Range<f32>>>)>> = Mutex::new(LruCache::<Thing, (Option<Vec<OneStepFlow>>, Option<HashMap<Thing, Range<f32>>>)>::with_expiry_duration(Duration::from_secs(3600)));
+    static ref CACHE_MAPPING: CACHE = Mutex::new(LruCache::<Thing, ITEM>::with_expiry_duration(Duration::from_secs(3600)));
 }
 
 pub trait OneStepFlowCacheTrait {
@@ -37,7 +43,7 @@ impl OneStepFlowCacheTrait for OneStepFlowCacheImpl {
 }
 
 impl OneStepFlowCacheImpl {
-    fn get_balanced(&self, from: &Thing) -> Result<(Option<Vec<OneStepFlow>>, Option<HashMap<Thing, Range<f32>>>)> {
+    fn get_balanced(&self, from: &Thing) -> Result<ITEM> {
         let mut cache = CACHE_MAPPING.lock().unwrap();
         if let Some(balances) = cache.get(from) {
 //            debug!("get balances from cache for thing : {:?}", from);
@@ -57,11 +63,11 @@ impl OneStepFlowCacheImpl {
         Ok(cpy)
     }
 
-    fn weight_filter(relations: &Vec<OneStepFlow>, balances: &HashMap<Thing, Range<f32>>) -> Vec<OneStepFlow> {
+    fn weight_filter(relations: &[OneStepFlow], balances: &HashMap<Thing, Range<f32>>) -> Vec<OneStepFlow> {
         let mut rtn: Vec<OneStepFlow> = Vec::new();
         let rnd = thread_rng().gen::<f32>();
         for m in relations {
-            let _ = match balances.get(&m.to) {
+            match balances.get(&m.to) {
                 Some(rng) => if rng.contains(&rnd) {
                     rtn.push(m.clone());
                 },
@@ -75,7 +81,7 @@ impl OneStepFlowCacheImpl {
     fn weight_calculate(labels: &HashMap<String, Vec<OneStepFlow>>) -> HashMap<Thing, Range<f32>> {
         let mut rtn: HashMap<Thing, Range<f32>> = HashMap::new();
         // calculate "to `Thing`"'s weight
-        for (_, group) in labels {
+        for group in labels.values() {
             let sum = group.iter().fold(0i32, |sum, mapping| {
                 let proportion = match &mapping.weight {
                     None => 1,
@@ -108,7 +114,7 @@ impl OneStepFlowCacheImpl {
     }
 
     /// group by labels. Only one flow will be used when there are same label. This can be used to switch two different flows smoothly.
-    fn get_label_groups(maps: &Vec<OneStepFlow>) -> HashMap<String, Vec<OneStepFlow>> {
+    fn get_label_groups(maps: &[OneStepFlow]) -> HashMap<String, Vec<OneStepFlow>> {
 // labels as key, value : Mappings have same label
         let mut labels: HashMap<String, Vec<OneStepFlow>> = HashMap::new();
         for mapping in maps {
@@ -120,7 +126,7 @@ impl OneStepFlowCacheImpl {
             if label.is_empty() {
                 continue;
             }
-            let mappings = labels.entry(label).or_insert(Vec::new());
+            let mappings = labels.entry(label).or_insert_with(Vec::new);
             mappings.push(mapping.clone());
         }
         labels

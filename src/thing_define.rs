@@ -37,6 +37,6 @@ impl Default for ThingDefine {
 
 impl ThingDefine {
     pub fn is_status(&self) -> bool {
-        !self.states.is_none()
+        self.states.is_some()
     }
 }

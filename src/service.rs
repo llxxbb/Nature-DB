@@ -19,6 +19,12 @@ impl DBService {
     }
 }
 
+impl Default for service::DBService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 unsafe impl Sync for DBService{}
 
 lazy_static! {

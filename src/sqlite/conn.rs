@@ -1,7 +1,8 @@
-use diesel::Connection;
-use diesel::sqlite::SqliteConnection;
 use std::env;
 use std::sync::Mutex;
+
+use diesel::Connection;
+use diesel::sqlite::SqliteConnection;
 
 lazy_static! {
     pub static ref CONN :Mutex<SqliteConnection>  = Mutex::new(establish_connection());
@@ -12,7 +13,7 @@ fn establish_connection() -> SqliteConnection {
         .expect("DATABASE_URL must be set");
 
     SqliteConnection::establish(&database_url)
-        .expect(&format!("Error connectinstance_key_undefineding to {}", database_url))
+        .unwrap_or_else(|_| panic!("Error connectinstance_key_undefineding to {}", database_url))
 }
 
 //lazy_static! {
