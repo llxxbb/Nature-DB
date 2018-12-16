@@ -32,9 +32,9 @@ pub struct OneStepFlowCacheImpl {
 
 impl OneStepFlowCacheTrait for OneStepFlowCacheImpl {
     fn get(&self, from: &Thing) -> Result<Option<Vec<OneStepFlow>>> {
-//        debug!("get relation for thing : {:?}", from);
         let (relations, balances) = self.get_balanced(from)?;
         if relations.is_none() {
+            debug!("no route info for : {:?}", from);
             Ok(None)
         } else {
             Ok(Some(Self::weight_filter(&relations.unwrap(), &balances.unwrap())))
@@ -46,12 +46,14 @@ impl OneStepFlowCacheImpl {
     fn get_balanced(&self, from: &Thing) -> Result<ITEM> {
         let mut cache = CACHE_MAPPING.lock().unwrap();
         if let Some(balances) = cache.get(from) {
-//            debug!("get balances from cache for thing : {:?}", from);
+            debug!("get balances from cache for thing : {:?}", from);
             return Ok(balances.clone());
         }
-//        debug!("get balances from db for thing : {:?}", from);
         let rtn = match self.dao.get_relations(from) {
-            Ok(None) => (None, None),
+            Ok(None) => {
+                debug!("get none balances from db for thing : {:?}", from);
+                (None, None)
+            },
             Ok(Some(relations)) => {
                 let label_groups = Self::get_label_groups(&relations);
                 (Some(relations), Some(Self::weight_calculate(&label_groups)))

@@ -1,11 +1,15 @@
+use std::str::FromStr;
+
+use serde_json;
+
 use converter_cfg::*;
 use nature_common::*;
-use serde_json;
-use std::str::FromStr;
+
 use super::super::schema::one_step_flow;
 
 #[derive(Debug)]
 #[derive(Insertable, Queryable)]
+#[derive(Clone)]
 #[table_name = "one_step_flow"]
 pub struct RawOneStepFlow {
     pub from_thing: String,
@@ -25,9 +29,6 @@ impl OneStepFlow {
             None => None,
             Some(x) => {
                 let opt = serde_json::from_str::<Selector>(&x);
-                if let Err(e) = &opt {
-                    warn!("{:?}", e);
-                }
                 let s = opt?;
                 Some(s)
             }

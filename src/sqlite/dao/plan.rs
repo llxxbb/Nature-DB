@@ -1,4 +1,5 @@
 use PlanInfo;
+
 use super::*;
 
 pub struct StorePlanDaoImpl;
@@ -55,12 +56,18 @@ impl StorePlanDaoImpl {
 
 #[cfg(test)]
 mod test {
+    extern crate log;
+
     use std::collections::HashMap;
     use std::collections::HashSet;
+    use std::env;
+
     use super::*;
 
     #[test]
     fn save_and_get() {
+
+        env::set_var("DATABASE_URL", "nature.sqlite");
         // save it
         let tester = StorePlanDaoImpl {};
         let info = PlanInfo {
