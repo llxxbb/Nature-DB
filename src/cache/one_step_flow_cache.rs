@@ -53,7 +53,7 @@ impl OneStepFlowCacheImpl {
             Ok(None) => {
                 debug!("get none balances from db for thing : {:?}", from);
                 (None, None)
-            },
+            }
             Ok(Some(relations)) => {
                 let label_groups = Self::get_label_groups(&relations);
                 (Some(relations), Some(Self::weight_calculate(&label_groups)))
@@ -80,12 +80,12 @@ impl OneStepFlowCacheImpl {
     }
 
     /// weight group will be cached
-    fn weight_calculate(labels: &HashMap<String, Vec<OneStepFlow>>) -> HashMap<Thing, Range<f32>> {
+    fn weight_calculate(groups: &HashMap<String, Vec<OneStepFlow>>) -> HashMap<Thing, Range<f32>> {
         let mut rtn: HashMap<Thing, Range<f32>> = HashMap::new();
         // calculate "to `Thing`"'s weight
-        for group in labels.values() {
-            let sum = group.iter().fold(0i32, |sum, mapping| {
-                let proportion = match &mapping.weight {
+        for group in groups.values() {
+            let sum = group.iter().fold(0u32, |sum, mapping| {
+                let proportion = match &mapping.executor.weight {
                     None => 1,
                     Some(w) => w.proportion,
                 };
@@ -97,7 +97,7 @@ impl OneStepFlowCacheImpl {
             let mut begin = 0.0;
             let last = group.last().unwrap();
             for m in group {
-                let proportion = match &m.weight {
+                let proportion = match &m.executor.weight {
                     None => 1,
                     Some(w) => w.proportion,
                 };
@@ -120,11 +120,11 @@ impl OneStepFlowCacheImpl {
 // labels as key, value : Mappings have same label
         let mut labels: HashMap<String, Vec<OneStepFlow>> = HashMap::new();
         for mapping in maps {
-            if mapping.weight.is_none() {
+            if mapping.executor.weight.is_none() {
                 continue;
             }
-            let w = mapping.weight.clone();
-            let label = w.unwrap().label;
+            let w = mapping.executor.weight.clone();
+            let label = w.unwrap().group;
             if label.is_empty() {
                 continue;
             }

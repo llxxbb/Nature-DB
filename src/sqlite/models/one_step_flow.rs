@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use serde_json;
 
 use converter_cfg::*;
@@ -16,56 +14,28 @@ pub struct RawOneStepFlow {
     pub from_version: i32,
     pub to_thing: String,
     pub to_version: i32,
-    pub exe_protocol: String,
-    pub exe_url: String,
-    pub selector: Option<String>,
-    pub group: Option<String>,
-    pub weight: Option<i32>,
+    pub settings: String,
 }
 
 impl OneStepFlow {
-    pub fn from_row(val: RawOneStepFlow) -> Result<OneStepFlow> {
-        let selector = match val.selector {
-            None => None,
-            Some(x) => {
-                let opt = serde_json::from_str::<Selector>(&x);
-                let s = opt?;
-                Some(s)
+    pub fn from_raw(val: RawOneStepFlow) -> Result<Vec<OneStepFlow>> {
+        let settings = serde_json::from_str::<OneStepFlowSettings>(&val.settings)?;
+        let rtn = settings.executor.into_iter().map(|e| {
+            OneStepFlow {
+                from: Thing {
+                    key: val.from_thing,
+                    version: val.from_version,
+                    thing_type: ThingType::Business,
+                },
+                to: Thing {
+                    key: val.to_thing,
+                    version: val.to_version,
+                    thing_type: ThingType::Business,
+                },
+                selector: settings.selector.clone(),
+                executor: e,
             }
-        };
-        let weight = match val.group {
-            None => None,
-            Some(x) => {
-                let w = Weight {
-                    label: x,
-                    proportion: {
-                        match val.weight {
-                            None => 1 as i32,
-                            Some(y) => y
-                        }
-                    },
-                };
-                Some(w)
-            }
-        };
-        let rtn = OneStepFlow {
-            from: Thing {
-                key: val.from_thing,
-                version: val.from_version,
-                thing_type: ThingType::Business,
-            },
-            to: Thing {
-                key: val.to_thing,
-                version: val.to_version,
-                thing_type: ThingType::Business,
-            },
-            executor: Executor {
-                protocol: Protocol::from_str(&val.exe_protocol)?,
-                url: val.exe_url,
-            },
-            selector,
-            weight,
-        };
+        }).collect();
         Ok(rtn)
     }
 }

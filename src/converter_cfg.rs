@@ -1,6 +1,7 @@
-use nature_common::*;
 use std::collections::HashSet;
+use std::iter::Iterator;
 
+use nature_common::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RouteInfo {
@@ -47,18 +48,21 @@ pub struct Selector {
 pub struct OneStepFlow {
     pub from: Thing,
     pub to: Thing,
-    pub executor: Executor,
     pub selector: Option<Selector>,
-    pub weight: Option<Weight>,
+    pub executor: Executor,
 }
 
-/// used to gray deploy
+impl Iterator for OneStepFlow {
+    type Item = OneStepFlow;
+    fn next(&mut self) -> Option<Self::Item> {
+        Some(self.clone())
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
-pub struct Weight {
-    /// Used to distinguish converters which are same `OneStepFlow::from` and `OneStepFlow::to`
-    pub label: String,
-    /// indicate the proportion of the whole stream, the whole will the sum of the participate `Weight::proportion`
-    pub proportion: i32,
+pub struct OneStepFlowSettings {
+    pub selector: Option<Selector>,
+    pub executor: Vec<Executor>,
 }
 
 

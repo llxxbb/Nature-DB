@@ -14,11 +14,7 @@ CREATE TABLE `one_step_flow` (
 	`from_version`	INTEGER NOT NULL,
 	`to_thing`	TEXT NOT NULL,
 	`to_version`	INTEGER NOT NULL,
-	`exe_protocol`	TEXT NOT NULL,
-	`exe_url`	TEXT NOT NULL,
-	`selector`	TEXT,
-	`group`	TEXT,
-	`weight`	INTEGER,
+	`settings` TEXT NOT NULL,
 	PRIMARY KEY(`from_thing`,`from_version`,`to_thing`,`to_version`)
 );
 

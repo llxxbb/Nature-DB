@@ -22,11 +22,7 @@ table! {
         from_version -> Integer,
         to_thing -> Text,
         to_version -> Integer,
-        exe_protocol -> Text,
-        exe_url -> Text,
-        selector -> Nullable<Text>,
-        group -> Nullable<Text>,
-        weight -> Nullable<Integer>,
+        settings -> Text,
     }
 }
 

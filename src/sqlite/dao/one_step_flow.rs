@@ -22,8 +22,8 @@ impl OneStepFlowDaoTrait for OneStepFlowDaoImpl {
             x if x > 0 => {
                 let mut rtn: Vec<OneStepFlow> = Vec::new();
                 for d in def {
-                    match OneStepFlow::from_row(d) {
-                        Ok(one) => rtn.push(one),
+                    match OneStepFlow::from_raw(d) {
+                        Ok(multi) => multi.into_iter().for_each(|e| rtn.push(e)),
                         Err(e) => {
                             warn!("raw to `one_step_flow` occur error : {:?}", e);
                         }
@@ -80,7 +80,7 @@ mod test {
 
     #[test]
     fn one_step_test_for_http() {
-        let one = before_test("from_good","http");
+        let one = before_test("from_good", "http");
         let thing = Thing {
             key: "from_good".to_string(),
             version: 123,
