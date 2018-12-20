@@ -1,6 +1,5 @@
 use chrono::prelude::*;
 
-
 /// `Thing`'s extended information
 /// `DateTime` is not implement `Default` trait
 #[derive(Serialize, Deserialize, Debug, Queryable, Clone, PartialOrd, PartialEq)]
@@ -27,7 +26,7 @@ impl Default for ThingDefine {
         ThingDefine {
             key: String::new(),
             description: None,
-            version: 0,
+            version: 1,
             states: None,
             fields: None,
             create_time: Local::now().naive_local(),

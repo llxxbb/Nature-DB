@@ -17,23 +17,40 @@ pub struct RawOneStepFlow {
     pub settings: String,
 }
 
+impl RawOneStepFlow {
+    pub fn new(from: &Thing, to: &Thing, settings: &OneStepFlowSettings) -> Result<Self> {
+        let st = serde_json::to_string(settings)?;
+        let rtn = RawOneStepFlow {
+            from_thing: from.key.clone(),
+            from_version: from.version,
+            to_thing: to.key.clone(),
+            to_version: to.version,
+            settings: st,
+        };
+        Ok(rtn)
+    }
+}
+
 impl OneStepFlow {
     pub fn from_raw(val: RawOneStepFlow) -> Result<Vec<OneStepFlow>> {
+        let version = val.from_version;
         let settings = serde_json::from_str::<OneStepFlowSettings>(&val.settings)?;
+        let selector = settings.selector;
         let rtn = settings.executor.into_iter().map(|e| {
+            let id = uuid::Uuid::new_v4().to_string();
             OneStepFlow {
                 from: Thing {
-                    key: val.from_thing,
-                    version: val.from_version,
+                    key: val.from_thing.clone(),
+                    version,
                     thing_type: ThingType::Business,
                 },
                 to: Thing {
-                    key: val.to_thing,
+                    key: val.to_thing.clone(),
                     version: val.to_version,
                     thing_type: ThingType::Business,
                 },
-                selector: settings.selector.clone(),
-                executor: e,
+                selector: selector.clone(),
+                executor: Executor::from((e, id)),
             }
         }).collect();
         Ok(rtn)

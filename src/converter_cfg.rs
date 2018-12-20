@@ -28,7 +28,6 @@ pub struct Mission {
     pub to: Thing,
     pub executor: Executor,
     pub last_status_demand: Option<LastStatusDemand>,
-    pub weight: Option<Weight>,
 }
 
 
@@ -62,8 +61,7 @@ impl Iterator for OneStepFlow {
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct OneStepFlowSettings {
     pub selector: Option<Selector>,
-    pub executor: Vec<Executor>,
+    pub executor: Vec<ExecutorWithOptionWeight>,
 }
-
 
 

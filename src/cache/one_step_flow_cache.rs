@@ -85,23 +85,15 @@ impl OneStepFlowCacheImpl {
         // calculate "to `Thing`"'s weight
         for group in groups.values() {
             let sum = group.iter().fold(0u32, |sum, mapping| {
-                let proportion = match &mapping.executor.weight {
-                    None => 1,
-                    Some(w) => w.proportion,
-                };
-                sum + proportion
+                sum + mapping.executor.weight.proportion
             });
-            if sum <= 0 {
+            if sum == 0 {
                 continue;
             }
             let mut begin = 0.0;
             let last = group.last().unwrap();
             for m in group {
-                let proportion = match &m.executor.weight {
-                    None => 1,
-                    Some(w) => w.proportion,
-                };
-                let w = proportion as f32 / sum as f32;
+                let w = m.executor.weight.proportion as f32 / sum as f32;
                 let end = begin + w;
                 if ptr::eq(m, last) {
                     // last must great 1
@@ -117,18 +109,9 @@ impl OneStepFlowCacheImpl {
 
     /// group by labels. Only one flow will be used when there are same label. This can be used to switch two different flows smoothly.
     fn get_label_groups(maps: &[OneStepFlow]) -> HashMap<String, Vec<OneStepFlow>> {
-// labels as key, value : Mappings have same label
         let mut labels: HashMap<String, Vec<OneStepFlow>> = HashMap::new();
         for mapping in maps {
-            if mapping.executor.weight.is_none() {
-                continue;
-            }
-            let w = mapping.executor.weight.clone();
-            let label = w.unwrap().group;
-            if label.is_empty() {
-                continue;
-            }
-            let mappings = labels.entry(label).or_insert_with(Vec::new);
+            let mappings = labels.entry(mapping.executor.weight.group.clone()).or_insert_with(Vec::new);
             mappings.push(mapping.clone());
         }
         labels

@@ -1,6 +1,8 @@
+use std::str::FromStr;
+
 use diesel::prelude::*;
 
-use converter_cfg::OneStepFlow;
+use ::converter_cfg::*;
 
 use super::*;
 
@@ -66,6 +68,35 @@ impl OneStepFlowDaoImpl {
             Err(err) => Err(DbError::from(err)),
         }
     }
+
+    /// `version` will be set to 0
+    pub fn insert_by_biz(from: &str, to: &str, url: &str, protocol: &str) -> Result<RawOneStepFlow> {
+        let one = RawOneStepFlow::new(
+            &Thing::new(from)?,
+            &Thing::new(to)?,
+            &OneStepFlowSettings {
+                selector: None,
+                executor: vec![ExecutorWithOptionWeight {
+                    protocol: Protocol::from_str(protocol)?,
+                    url: url.to_string(),
+                    weight: None,
+                }],
+            },
+        )?;
+        let _ = OneStepFlowDaoImpl::insert(one.clone());
+        Ok(one)
+    }
+
+    pub fn delete_by_biz(from: &str, to: &str) -> Result<usize> {
+        let row = RawOneStepFlow {
+            from_thing: from.to_string(),
+            from_version: 1,
+            to_thing: to.to_string(),
+            to_version: 1,
+            settings: String::new(),
+        };
+        OneStepFlowDaoImpl::delete(row)
+    }
 }
 
 #[cfg(test)]
@@ -74,55 +105,32 @@ mod test {
 
     use std::env;
 
-    use nature_common::util::setup_logger;
+    use nature_common::*;
 
     use super::*;
 
     #[test]
     fn one_step_test_for_http() {
         let one = before_test("from_good", "http");
-        let thing = Thing {
-            key: "from_good".to_string(),
-            version: 123,
-            thing_type: ThingType::Business,
-        };
+        let thing = Thing::new("from_good").unwrap();
         let svc = OneStepFlowDaoImpl {};
         let rtn = svc.get_relations(&thing);
         assert_eq!(rtn.unwrap().unwrap().len(), 1);
-        let _ = OneStepFlowDaoImpl::delete(one);
+        let _ = OneStepFlowDaoImpl::delete(one.unwrap());
     }
 
     #[test]
     fn one_step_test_for_error_protocol() {
-        let one = before_test("from_bad", "bad");
-        let thing = Thing {
-            key: "from_bad".to_string(),
-            version: 123,
-            thing_type: ThingType::Business,
-        };
-        let svc = OneStepFlowDaoImpl {};
-        let rtn = svc.get_relations(&thing);
-        assert_eq!(rtn.unwrap().is_none(), true);
-        let _ = OneStepFlowDaoImpl::delete(one);
+        let rtn = before_test("from_bad", "bad");
+        assert_eq!(rtn.err().unwrap(), NatureError::VerifyError("unknown protocol : bad".to_string()));
     }
 
-    fn before_test(biz: &str, protocal: &str) -> RawOneStepFlow {
+    fn before_test(biz: &str, protocol: &str) -> Result<RawOneStepFlow> {
         env::set_var("DATABASE_URL", "nature.sqlite");
         let _ = setup_logger();
-        let one = RawOneStepFlow {
-            from_thing: biz.to_string(),
-            from_version: 123,
-            to_thing: "to".to_string(),
-            to_version: 0,
-            exe_protocol: protocal.to_string(),
-            exe_url: "url".to_string(),
-            selector: None,
-            group: None,
-            weight: None,
-        };
-// clear before insert
-        let _ = OneStepFlowDaoImpl::delete(one.clone());
-        let _ = OneStepFlowDaoImpl::insert(one.clone());
-        one
+        // clear before insert
+        let _ = OneStepFlowDaoImpl::delete_by_biz(biz, "to");
+        // insert
+        OneStepFlowDaoImpl::insert_by_biz(biz, "to", "url", protocol)
     }
 }
