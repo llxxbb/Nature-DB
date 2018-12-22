@@ -1,7 +1,8 @@
 use diesel::prelude::*;
-use nature_common::util::id_tool::u128_to_vec_u8;
-use super::*;
 
+use nature_common::util::id_tool::u128_to_vec_u8;
+
+use super::*;
 
 pub struct InstanceDaoImpl;
 
@@ -58,10 +59,11 @@ impl InstanceDaoTrait for InstanceDaoImpl {
     }
 
     fn get_by_key(&self, biz_key: &str, row_id: u128) -> Result<Option<Instance>> {
+        let tk = Thing::new(biz_key)?;
         use self::schema::instances::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let def = instances
-            .filter(thing.eq(biz_key))
+            .filter(thing.eq(tk.key))
             .filter(instance_id.eq(u128_to_vec_u8(row_id)))
             .order(status_version.desc())
             .limit(1)
@@ -98,10 +100,12 @@ impl InstanceDaoImpl {
 
 #[cfg(test)]
 mod test {
-    use ::sqlite::dao::instance::InstanceDaoImpl;
     use std::collections::HashMap;
     use std::collections::HashSet;
     use std::env;
+
+    use ::sqlite::dao::instance::InstanceDaoImpl;
+
     use super::*;
 
     #[test]

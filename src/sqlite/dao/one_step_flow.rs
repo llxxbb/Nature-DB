@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use diesel::prelude::*;
 
-use ::converter_cfg::*;
+use converter_cfg::*;
 
 use super::*;
 
@@ -15,9 +15,10 @@ impl OneStepFlowDaoTrait for OneStepFlowDaoImpl {
         let def = match one_step_flow
             .filter(from_thing.eq(&from.key))
             .filter(from_version.eq(from.version))
-            .load::<RawOneStepFlow>(conn) {
+            .load::<RawOneStepFlow>(conn)
+        {
             Ok(rows) => rows,
-            Err(e) => return Err(DbError::from(e))
+            Err(e) => return Err(DbError::from(e)),
         };
         match def.len() {
             0 => Ok(None),
@@ -37,7 +38,9 @@ impl OneStepFlowDaoTrait for OneStepFlowDaoImpl {
                     Ok(Some(rtn))
                 }
             }
-            _ => Err(NatureError::SystemError("unknown error occurred".to_string())),
+            _ => Err(NatureError::SystemError(
+                "unknown error occurred".to_string(),
+            )),
         }
     }
 }
@@ -51,18 +54,20 @@ impl OneStepFlowDaoImpl {
             .execute(conn);
         match rtn {
             Ok(x) => Ok(x),
-            Err(e) => Err(DbError::from(e))
+            Err(e) => Err(DbError::from(e)),
         }
     }
     pub fn delete(one: RawOneStepFlow) -> Result<usize> {
         use self::schema::one_step_flow::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
-        let rtn = diesel::delete(one_step_flow
-            .filter(from_thing.eq(one.from_thing))
-            .filter(from_version.eq(one.from_version))
-            .filter(to_thing.eq(one.to_thing))
-            .filter(to_version.eq(one.to_version))
-        ).execute(conn);
+        let rtn = diesel::delete(
+            one_step_flow
+                .filter(from_thing.eq(one.from_thing))
+                .filter(from_version.eq(one.from_version))
+                .filter(to_thing.eq(one.to_thing))
+                .filter(to_version.eq(one.to_version)),
+        )
+        .execute(conn);
         match rtn {
             Ok(num) => Ok(num),
             Err(err) => Err(DbError::from(err)),
@@ -70,7 +75,12 @@ impl OneStepFlowDaoImpl {
     }
 
     /// `version` will be set to 0
-    pub fn insert_by_biz(from: &str, to: &str, url: &str, protocol: &str) -> Result<RawOneStepFlow> {
+    pub fn insert_by_biz(
+        from: &str,
+        to: &str,
+        url: &str,
+        protocol: &str,
+    ) -> Result<RawOneStepFlow> {
         let one = RawOneStepFlow::new(
             &Thing::new(from)?,
             &Thing::new(to)?,
@@ -88,11 +98,13 @@ impl OneStepFlowDaoImpl {
     }
 
     pub fn delete_by_biz(from: &str, to: &str) -> Result<usize> {
+        let from = &Thing::new(from)?;
+        let to = &Thing::new(to)?;
         let row = RawOneStepFlow {
-            from_thing: from.to_string(),
-            from_version: 1,
-            to_thing: to.to_string(),
-            to_version: 1,
+            from_thing: from.key.clone(),
+            from_version: from.version,
+            to_thing: to.key.clone(),
+            to_version: to.version,
             settings: String::new(),
         };
         OneStepFlowDaoImpl::delete(row)
@@ -122,7 +134,10 @@ mod test {
     #[test]
     fn one_step_test_for_error_protocol() {
         let rtn = before_test("from_bad", "bad");
-        assert_eq!(rtn.err().unwrap(), NatureError::VerifyError("unknown protocol : bad".to_string()));
+        assert_eq!(
+            rtn.err().unwrap(),
+            NatureError::VerifyError("unknown protocol : bad".to_string())
+        );
     }
 
     fn before_test(biz: &str, protocol: &str) -> Result<RawOneStepFlow> {

@@ -1,6 +1,8 @@
 use diesel::prelude::*;
-use super::*;
+
 use ThingDefine;
+
+use super::*;
 
 pub struct ThingDefineDaoImpl;
 
@@ -45,17 +47,28 @@ impl ThingDefineDaoTrait for ThingDefineDaoImpl {
     }
 }
 
+impl ThingDefineDaoImpl {
+    pub fn new_by_key(key: &str) -> Result<usize> {
+        let thing = Thing::new(key)?;
+        let mut define = ThingDefine::default();
+        define.version = thing.version;
+        define.key = thing.key;
+        ThingDefineDaoImpl::insert(&define)
+    }
+}
+
 #[cfg(test)]
-mod test{
-    use ::*;
-    use chrono::prelude::*;
+mod test {
     use std::env;
 
+    use chrono::prelude::*;
+
+    use ::*;
 
     #[test]
     fn define_test() {
         // prepare data to insert
-        env::set_var("DATABASE_URL","nature.sqlite");
+        env::set_var("DATABASE_URL", "nature.sqlite");
         let define = ThingDefine {
             key: "/test".to_string(),
             description: Some("description".to_string()),
