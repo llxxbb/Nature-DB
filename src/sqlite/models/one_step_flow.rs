@@ -36,8 +36,25 @@ impl OneStepFlow {
         let version = val.from_version;
         let settings = serde_json::from_str::<OneStepFlowSettings>(&val.settings)?;
         let selector = settings.selector;
+        let mut group = String::new();
+        let id = uuid::Uuid::new_v4().to_string();
+        // check group: only one group is allowed.
+        let mut group_check = true;
+        settings.executor.iter().for_each(|e| {
+            if group.is_empty() {
+                group = e.group;
+                if group.is_empty() {
+                    group = id
+                }
+            } else if !(group == e.group) {
+                group_check = false;
+            }
+        });
+        if !group_check {
+            return Err(NatureError::VerifyError("in one setting all executor's grpup must be same.".to_string()));
+        }
         let rtn = settings.executor.into_iter().map(|e| {
-            let id = uuid::Uuid::new_v4().to_string();
+            e.group = group;
             OneStepFlow {
                 from: Thing {
                     key: val.from_thing.clone(),
@@ -50,7 +67,7 @@ impl OneStepFlow {
                     thing_type: ThingType::Business,
                 },
                 selector: selector.clone(),
-                executor: Executor::from((e, id)),
+                executor: e,
             }
         }).collect();
         Ok(rtn)

@@ -70,10 +70,99 @@ impl Iterator for OneStepFlow {
     }
 }
 
+impl OneStepFlow {
+    pub fn new_for_local_executor(from: &str, to: &str, local_executor: &str) -> Result<Self> {
+        Ok(OneStepFlow {
+            from: Thing::new(from)?,
+            to: Thing::new(to)?,
+            selector: None,
+            executor: Executor {
+                protocol: Protocol::LocalRust,
+                url: local_executor.to_string(),
+                group: "".to_string(),
+                proportion: 1,
+            },
+        })
+    }
+    pub fn new_for_local_executor_with_group_and_proportion(from: &str, to: &str, local_executor: &str, group: &str, proportion: u32) -> Result<Self> {
+        Ok(OneStepFlow {
+            from: Thing::new(from)?,
+            to: Thing::new(to)?,
+            selector: None,
+            executor: Executor {
+                protocol: Protocol::LocalRust,
+                url: local_executor.to_string(),
+                group: group.to_string(),
+                proportion,
+            },
+        })
+    }
+    pub fn new_for_source_status_needed(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
+        Ok(OneStepFlow {
+            from: Thing::new(from)?,
+            to: Thing::new(to)?,
+            selector: Some(Selector {
+                source_status_include: set.clone(),
+                source_status_exclude: HashSet::new(),
+                target_status_include: HashSet::new(),
+                target_status_exclude: HashSet::new(),
+                context_include: HashSet::new(),
+                context_exclude: HashSet::new(),
+            }),
+            executor: Executor::default(),
+        })
+    }
+    pub fn new_for_source_status_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
+        Ok(OneStepFlow {
+            from: Thing::new(from)?,
+            to: Thing::new(to)?,
+            selector: Some(Selector {
+                source_status_include: HashSet::new(),
+                source_status_exclude: set.clone(),
+                target_status_include: HashSet::new(),
+                target_status_exclude: HashSet::new(),
+                context_include: HashSet::new(),
+                context_exclude: HashSet::new(),
+            }),
+            executor: Executor::default(),
+        })
+    }
+    pub fn new_for_context_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
+        Ok(OneStepFlow {
+            from: Thing::new(from)?,
+            to: Thing::new(to)?,
+            selector: Some(Selector {
+                source_status_include: HashSet::new(),
+                source_status_exclude: HashSet::new(),
+                target_status_include: HashSet::new(),
+                target_status_exclude: HashSet::new(),
+                context_include: HashSet::new(),
+                context_exclude: set.clone(),
+            }),
+            executor: Executor::default(),
+        })
+    }
+    pub fn new_for_context_include(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
+        Ok(OneStepFlow {
+            from: Thing::new(from)?,
+            to: Thing::new(to)?,
+            selector: Some(Selector {
+                source_status_include: HashSet::new(),
+                source_status_exclude: HashSet::new(),
+                target_status_include: HashSet::new(),
+                target_status_exclude: HashSet::new(),
+                context_include: set.clone(),
+                context_exclude: HashSet::new(),
+            }),
+            executor: Executor::default(),
+        })
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct OneStepFlowSettings {
     pub selector: Option<Selector>,
-    pub executor: Vec<ExecutorWithOptionWeight>,
+    pub executor: Vec<Executor>,
 }
 
 #[cfg(test)]

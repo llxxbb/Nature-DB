@@ -16,6 +16,7 @@ pub trait ThingDefineCacheTrait {
     fn get(&self, thing: &Thing) -> Result<ThingDefine>;
 }
 
+#[cfg_attr(test, mocked)]
 pub trait OneStepFlowDaoTrait {
     fn get_relations(&self, from: &Thing) -> Result<Option<Vec<OneStepFlow>>>;
 }

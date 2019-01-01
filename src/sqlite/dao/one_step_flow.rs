@@ -16,10 +16,10 @@ impl OneStepFlowDaoTrait for OneStepFlowDaoImpl {
             .filter(from_thing.eq(&from.key))
             .filter(from_version.eq(from.version))
             .load::<RawOneStepFlow>(conn)
-        {
-            Ok(rows) => rows,
-            Err(e) => return Err(DbError::from(e)),
-        };
+            {
+                Ok(rows) => rows,
+                Err(e) => return Err(DbError::from(e)),
+            };
         match def.len() {
             0 => Ok(None),
             x if x > 0 => {
@@ -67,7 +67,7 @@ impl OneStepFlowDaoImpl {
                 .filter(to_thing.eq(one.to_thing))
                 .filter(to_version.eq(one.to_version)),
         )
-        .execute(conn);
+            .execute(conn);
         match rtn {
             Ok(num) => Ok(num),
             Err(err) => Err(DbError::from(err)),
@@ -86,10 +86,11 @@ impl OneStepFlowDaoImpl {
             &Thing::new(to)?,
             &OneStepFlowSettings {
                 selector: None,
-                executor: vec![ExecutorWithOptionWeight {
+                executor: vec![Executor {
                     protocol: Protocol::from_str(protocol)?,
                     url: url.to_string(),
-                    weight: None,
+                    group: "".to_string(),
+                    proportion: 1,
                 }],
             },
         )?;
