@@ -42,19 +42,20 @@ impl OneStepFlow {
         let mut group_check = true;
         settings.executor.iter().for_each(|e| {
             if group.is_empty() {
-                group = e.group;
+                group = e.group.clone();
                 if group.is_empty() {
-                    group = id
+                    group = id.clone()
                 }
-            } else if !(group == e.group) {
+            } else if group != e.group {
                 group_check = false;
             }
         });
         if !group_check {
             return Err(NatureError::VerifyError("in one setting all executor's grpup must be same.".to_string()));
         }
-        let rtn = settings.executor.into_iter().map(|e| {
-            e.group = group;
+        let rtn = settings.executor.iter().map(|e| {
+            let mut e2 = e.clone();
+            e2.group = group.clone();
             OneStepFlow {
                 from: Thing {
                     key: val.from_thing.clone(),
@@ -67,9 +68,17 @@ impl OneStepFlow {
                     thing_type: ThingType::Business,
                 },
                 selector: selector.clone(),
-                executor: e,
+                executor: e2,
             }
         }).collect();
         Ok(rtn)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn can_not_have_multiple_group() {
+        // TODO
     }
 }

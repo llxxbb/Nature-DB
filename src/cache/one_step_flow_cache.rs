@@ -88,7 +88,7 @@ impl OneStepFlowCacheImpl {
         for group in groups.values() {
             // summarize the weight for one group
             let sum = group.iter().fold(0u32, |sum, mapping| {
-                sum + mapping.executor.weight.proportion
+                sum + mapping.executor.proportion
             });
             if sum == 0 {
                 continue;
@@ -97,7 +97,7 @@ impl OneStepFlowCacheImpl {
             let mut begin = 0.0;
             let last = group.last().unwrap();
             for m in group {
-                let w = m.executor.weight.proportion as f32 / sum as f32;
+                let w = m.executor.proportion as f32 / sum as f32;
                 let end = begin + w;
                 if ptr::eq(m, last) {
                     // last must great 1
@@ -115,7 +115,7 @@ impl OneStepFlowCacheImpl {
     fn get_label_groups(maps: &[OneStepFlow]) -> HashMap<String, Vec<OneStepFlow>> {
         let mut labels: HashMap<String, Vec<OneStepFlow>> = HashMap::new();
         for mapping in maps {
-            let mappings = labels.entry(mapping.executor.weight.group.clone()).or_insert_with(Vec::new);
+            let mappings = labels.entry(mapping.executor.group.clone()).or_insert_with(Vec::new);
             mappings.push(mapping.clone());
         }
         labels
@@ -129,6 +129,7 @@ mod test_none_or_error {
 
     use super::*;
 
+    /// test cache also
     #[test]
     fn get_error() {
         let from = Thing::new("error").unwrap();
@@ -148,6 +149,7 @@ mod test_none_or_error {
         assert_eq!(result, Err(NatureError::DaoEnvironmentError("can't connect".to_string())));
     }
 
+    /// test cache also
     #[test]
     fn get_none() {
         let from = Thing::new("none").unwrap();
