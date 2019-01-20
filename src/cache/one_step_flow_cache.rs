@@ -69,6 +69,7 @@ impl OneStepFlowCacheImpl {
     }
 
     fn weight_filter(relations: &[OneStepFlow], balances: &HashMap<Executor, Range<f32>>) -> Vec<OneStepFlow> {
+        debug!("weight_filter relation's number{}", relations.len());
         let mut rtn: Vec<OneStepFlow> = Vec::new();
         let rnd = thread_rng().gen::<f32>();
         for m in relations {
@@ -175,8 +176,7 @@ mod test_none_or_error {
 }
 
 /// There is one case will ont be tested : same target, different group.
-/// This case will violate a principle: one source generate one target.
-/// it would generate many target data,
+/// This case will violate a principle: one source just has one executor only.
 #[cfg(test)]
 mod test_group_and_weight {
     use mockers::matchers::check;
@@ -264,5 +264,44 @@ mod test_group_and_weight {
         let result = mocker.get(&from);
         let result = result.unwrap().unwrap();
         assert_eq!(result.len(), 1);
+    }
+
+    #[test]
+    fn weight_test() {
+        let _ = setup_logger();
+        let from = Thing::new("weight_test").unwrap();
+
+        let relations = Ok(Some(vec![
+            OneStepFlow::new_for_local_executor_with_group_and_proportion("weight_from", "to_1", "exe_1", "grp", 2).unwrap(),
+            OneStepFlow::new_for_local_executor_with_group_and_proportion("weight_from", "to_2", "exe_2", "grp", 4).unwrap(),
+        ]));
+
+        let from_clone = from.clone();
+        let scenario = Scenario::new();
+        let cond = scenario.create_mock_for::<OneStepFlowDaoTrait>();
+        scenario.expect(cond.get_relations_call(check(move |t: &&Thing| t == &&from_clone)).and_return_clone(relations).times(1));
+        let mocker = OneStepFlowCacheImpl {
+            dao: Rc::new(cond)
+        };
+
+        let mut exe_1_cnt = 0;
+        let mut exe_2_cnt = 0;
+
+        for _i in 0..10 {
+            let result = mocker.get(&from);
+            let result = &result.unwrap().unwrap()[0];
+            match result.to.key.as_ref() {
+                "/B/to_1" => {
+                    exe_1_cnt = exe_1_cnt + 1;
+                }
+                "/B/to_2" => {
+                    exe_2_cnt = exe_2_cnt + 1;
+                }
+                _ => ()
+            }
+        }
+        let rate: f32 = exe_1_cnt as f32 / exe_2_cnt as f32;
+        println!("the rate is {}", rate);
+        assert_eq!(rate > 0.1 && rate < 0.4, true);
     }
 }

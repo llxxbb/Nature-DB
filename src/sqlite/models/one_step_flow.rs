@@ -77,8 +77,59 @@ impl OneStepFlow {
 
 #[cfg(test)]
 mod test {
+    use super::*;
+
     #[test]
-    fn can_not_have_multiple_group() {
-        // TODO
+    fn can_group_is_ok() {
+        let settings = OneStepFlowSettings {
+            selector: None,
+            executor: vec![
+                Executor {
+                    protocol: Protocol::LocalRust,
+                    url: "url_one".to_string(),
+                    group: "grp_one".to_string(),
+                    proportion: 100,
+                },
+            ],
+        };
+        let raw = RawOneStepFlow {
+            from_thing: "from".to_string(),
+            from_version: 0,
+            to_thing: "to".to_string(),
+            to_version: 0,
+            settings: serde_json::to_string(&settings).unwrap(),
+        };
+        let rtn = OneStepFlow::from_raw(raw);
+        assert_eq!(rtn.is_ok(), true);
+    }
+
+    #[test]
+    fn multiple_group_is_illegal() {
+        let settings = OneStepFlowSettings {
+            selector: None,
+            executor: vec![
+                Executor {
+                    protocol: Protocol::LocalRust,
+                    url: "url_one".to_string(),
+                    group: "grp_one".to_string(),
+                    proportion: 100,
+                },
+                Executor {
+                    protocol: Protocol::LocalRust,
+                    url: "url_two".to_string(),
+                    group: "url_two".to_string(),
+                    proportion: 200,
+                },
+            ],
+        };
+        let raw = RawOneStepFlow {
+            from_thing: "from".to_string(),
+            from_version: 0,
+            to_thing: "to".to_string(),
+            to_version: 0,
+            settings: serde_json::to_string(&settings).unwrap(),
+        };
+        let rtn = OneStepFlow::from_raw(raw);
+        assert_eq!(rtn, Err(NatureError::VerifyError("in one setting all executor's grpup must be same.".to_string())));
     }
 }

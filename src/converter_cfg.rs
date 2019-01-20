@@ -161,6 +161,8 @@ impl OneStepFlow {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct OneStepFlowSettings {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub selector: Option<Selector>,
     pub executor: Vec<Executor>,
 }
@@ -193,5 +195,18 @@ mod test {
         let de: Selector = serde_json::from_str(&rtn).unwrap();
         assert_eq!(de.context_exclude.is_empty(), true);
         assert_eq!(de.source_status_include.len(), 1);
+    }
+
+    #[test]
+    fn none_for_selector_one_step_flow_settings() {
+        let setting = OneStepFlowSettings {
+            selector: None,
+            executor: vec![],
+        };
+        let result = serde_json::to_string(&setting).unwrap();
+        let res_str = r#"{"executor":[]}"#;
+        assert_eq!(result, res_str);
+        let res_obj: OneStepFlowSettings = serde_json::from_str(res_str).unwrap();
+        assert_eq!(res_obj, setting);
     }
 }
