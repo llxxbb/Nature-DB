@@ -81,6 +81,7 @@ mod test {
             key: "/test".to_string(),
             version: 100,
             thing_type: ThingType::Business,
+            is_null: false
         };
         // delete if it exists
         if let Ok(Some(_)) = ThingDefineDaoImpl::get(&thing) {

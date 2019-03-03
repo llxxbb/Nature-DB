@@ -35,6 +35,7 @@ impl RawInstance {
                     key: k.to_string(),
                     version: self.from_version.unwrap(),
                     thing_type: ThingType::Business,
+                    is_null: false
                 },
                 status_version: self.from_status_version.unwrap(),
             })
@@ -55,6 +56,7 @@ impl RawInstance {
                     key: self.thing.clone(),
                     version: self.version,
                     thing_type: ThingType::Business,
+                    is_null: false
                 },
                 event_time: self.event_time.timestamp_millis(),
                 execute_time: self.execute_time.timestamp_millis(),

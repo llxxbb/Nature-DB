@@ -75,6 +75,7 @@ mod test {
                 key: "/local_converter/from".to_string(),
                 version: 0,
                 thing_type: ThingType::Business,
+                is_null: false
             },
             from_sn: 229195495639599414319914352480091205021,
             from_sta_ver: 0,
@@ -82,6 +83,7 @@ mod test {
                 key: "/local_converter/to".to_string(),
                 version: 0,
                 thing_type: ThingType::Business,
+                is_null: false
             },
             plan: vec![Instance {
                 id: 217789594388339757346716979317903552035,
@@ -90,6 +92,7 @@ mod test {
                         key: "/local_converter/to".to_string(),
                         version: 0,
                         thing_type: ThingType::Business,
+                        is_null: false
                     },
                     event_time: 0,
                     execute_time: 0,

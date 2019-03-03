@@ -120,6 +120,7 @@ mod test {
                     key: "/instance/common".to_string(),
                     version: 100,
                     thing_type: ThingType::Business,
+                    is_null: false
                 },
                 event_time: 0,
                 execute_time: 0,
@@ -157,6 +158,7 @@ mod test {
                     key: "/instance/getLast".to_string(),
                     version: 100,
                     thing_type: ThingType::Business,
+                    is_null: false
                 },
                 event_time: 0,
                 execute_time: 0,

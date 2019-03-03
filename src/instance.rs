@@ -1,5 +1,7 @@
-use nature_common::util::*;
 use std::rc::Rc;
+
+use nature_common::util::*;
+
 use super::*;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -22,6 +24,7 @@ impl Default for CallbackResult {
 
 pub trait InstanceServiceTrait {
     fn verify(&self, instance: &mut Instance) -> Result<u128>;
+    fn id_generate_if_not_set(&self, instance: &mut Instance) -> Result<u128>;
 }
 
 pub struct InstanceServiceImpl {
@@ -34,14 +37,9 @@ impl InstanceServiceTrait for InstanceServiceImpl {
     fn verify(&self, instance: &mut Instance) -> Result<u128> {
         // just see whether it was configured.
         self.define_cache.get(&instance.data.thing)?;
-        Self::id_generate_if_not_set(instance)
+        self.id_generate_if_not_set(instance)
     }
-}
-
-unsafe impl Sync for InstanceServiceImpl {}
-
-impl InstanceServiceImpl {
-    fn id_generate_if_not_set(instance: &mut Instance) -> Result<u128> {
+    fn id_generate_if_not_set(&self, instance: &mut Instance) -> Result<u128> {
         if instance.id == 0 {
             instance.id = generate_id(&instance.data)?;
         }
@@ -49,12 +47,16 @@ impl InstanceServiceImpl {
     }
 }
 
+unsafe impl Sync for InstanceServiceImpl {}
+
 #[cfg(test)]
 mod test {
-    use mockers::matchers::check;
-    use mockers::Scenario;
     use std::collections::HashMap;
     use std::collections::HashSet;
+
+    use mockers::matchers::check;
+    use mockers::Scenario;
+
     use super::*;
 
     #[test]
@@ -86,11 +88,15 @@ mod test {
 
     #[test]
     fn id_generate() {
-        println!("----------------- id_generate --------------------");
+        let scenario = Scenario::new();
+        let cond = scenario.create_mock_for::<ThingDefineCacheTrait>();
+        let service = InstanceServiceImpl {
+            define_cache: Rc::new(cond)
+        };
         let mut instance = Instance {
             id: 0,
             data: InstanceNoID {
-                thing: Thing { key: "hello".to_string(), version: 3, thing_type: ThingType::Business },
+                thing: Thing { key: "hello".to_string(), version: 3, thing_type: ThingType::Business, is_null: false },
                 event_time: 0,
                 execute_time: 0,
                 create_time: 0,
@@ -101,8 +107,8 @@ mod test {
                 from: None,
             },
         };
-        InstanceServiceImpl::id_generate_if_not_set(&mut instance).unwrap();
+        service.id_generate_if_not_set(&mut instance).unwrap();
         println!("{:?}", instance.id);
-        assert_eq!(instance.id, 192907889837664721617192668740216806963);
+        assert_eq!(instance.id, 336556392135652841283170827290494770821);
     }
 }
