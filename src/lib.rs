@@ -4,7 +4,6 @@
 #![feature(custom_attribute)]
 #![feature(rustc_private)]
 #![feature(range_contains)]
-#![feature(try_from)]
 
 extern crate chrono;
 #[macro_use]

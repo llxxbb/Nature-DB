@@ -175,7 +175,7 @@ mod test_none_or_error {
     }
 }
 
-/// There is one case will ont be tested : same target, different group.
+/// There is one case will not to be tested : same target, different group.
 /// This case will violate a principle: one source just has one executor only.
 #[cfg(test)]
 mod test_group_and_weight {
