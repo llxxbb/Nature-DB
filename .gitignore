@@ -12,3 +12,4 @@ Cargo.lock
 .idea/
 *.sqlite
 *.iml
+.vscode/

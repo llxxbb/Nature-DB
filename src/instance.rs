@@ -22,8 +22,10 @@ impl Default for CallbackResult {
     }
 }
 
+#[cfg_attr(test, mocked)]
 pub trait InstanceServiceTrait {
     fn verify(&self, instance: &mut Instance) -> Result<u128>;
+    /// gegerate by Hash.
     fn id_generate_if_not_set(&self, instance: &mut Instance) -> Result<u128>;
 }
 

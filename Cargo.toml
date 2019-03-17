@@ -27,5 +27,5 @@ cdrs = "1.2"
 log = "0.4"
 
 [dev-dependencies]
-mockers_derive = "0.12"
-mockers = "0.12"
+mockers_derive = "0.13"
+mockers = "0.13"

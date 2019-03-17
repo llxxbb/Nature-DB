@@ -21,6 +21,7 @@ pub trait OneStepFlowDaoTrait {
     fn get_relations(&self, from: &Thing) -> Result<Option<Vec<OneStepFlow>>>;
 }
 
+#[cfg_attr(test, mocked)]
 pub trait TaskDaoTrait {
     fn insert(&self, raw: &RawTask) -> Result<usize>;
     fn delete(&self, record_id: &[u8]) -> Result<usize>;
@@ -31,6 +32,7 @@ pub trait TaskDaoTrait {
     fn get_overdue(&self, seconds: &str) -> Result<Vec<RawTask>>;
 }
 
+#[cfg_attr(test, mocked)]
 pub trait InstanceDaoTrait {
     fn insert(&self, instance: &Instance) -> Result<usize>;
     /// check whether source stored earlier

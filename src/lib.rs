@@ -3,7 +3,6 @@
 #![allow(proc_macro_derive_resolution_fallback)]
 #![feature(custom_attribute)]
 #![feature(rustc_private)]
-#![feature(range_contains)]
 
 extern crate chrono;
 #[macro_use]
