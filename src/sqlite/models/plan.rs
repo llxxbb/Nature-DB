@@ -44,7 +44,6 @@ impl RawPlanInfo {
                 key: x[0].to_string(),
                 version: x[1].parse()?,
                 thing_type: ThingType::Business,
-                is_null: false
             },
             from_sn: x[2].parse()?,
             from_sta_ver: x[3].parse()?,
@@ -52,7 +51,6 @@ impl RawPlanInfo {
                 key: self.to_biz.clone(),
                 version: self.to_version,
                 thing_type: ThingType::Business,
-                is_null: false
             },
             plan: serde_json::from_str(&self.content)?,
         })

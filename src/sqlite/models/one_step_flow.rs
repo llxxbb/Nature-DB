@@ -61,13 +61,11 @@ impl OneStepFlow {
                     key: val.from_thing.clone(),
                     version,
                     thing_type: ThingType::Business,
-                    is_null: false
                 },
                 to: Thing {
                     key: val.to_thing.clone(),
                     version: val.to_version,
                     thing_type: ThingType::Business,
-                    is_null: false
                 },
                 selector: selector.clone(),
                 executor: e2,
