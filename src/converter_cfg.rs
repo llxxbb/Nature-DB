@@ -22,6 +22,16 @@ pub struct ConverterInfo {
     pub last_status: Option<Instance>,
 }
 
+impl Default for ConverterInfo {
+    fn default() -> Self {
+        ConverterInfo {
+            from: Instance::default(),
+            target: Mission::default(),
+            last_status: None,
+        }
+    }
+}
+
 /// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct Mission {

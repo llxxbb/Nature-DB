@@ -1,8 +1,5 @@
 use std::env;
 
-#[cfg(test)]
-use mockers_derive::mocked;
-
 use super::*;
 
 pub trait ThingDefineDaoTrait {
@@ -11,17 +8,14 @@ pub trait ThingDefineDaoTrait {
     fn delete(thing: &Thing) -> Result<usize>;
 }
 
-#[cfg_attr(test, mocked)]
 pub trait ThingDefineCacheTrait {
     fn get(&self, thing: &Thing) -> Result<ThingDefine>;
 }
 
-#[cfg_attr(test, mocked)]
 pub trait OneStepFlowDaoTrait {
     fn get_relations(&self, from: &Thing) -> Result<Option<Vec<OneStepFlow>>>;
 }
 
-#[cfg_attr(test, mocked)]
 pub trait TaskDaoTrait {
     fn insert(&self, raw: &RawTask) -> Result<usize>;
     fn delete(&self, record_id: &[u8]) -> Result<usize>;
