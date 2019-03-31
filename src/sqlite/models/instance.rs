@@ -67,9 +67,7 @@ impl RawInstance {
             },
         })
     }
-}
 
-impl RawInstance {
     pub fn new(instance: &Instance) -> Result<RawInstance> {
         let (from_thing, from_version, from_status_version) = match instance.from {
             None => (None, None, None),
