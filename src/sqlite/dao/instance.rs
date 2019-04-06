@@ -25,7 +25,7 @@ impl InstanceDaoTrait for InstanceDaoImpl {
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let def = instances
             .filter(instance_id.eq(ins.id.to_ne_bytes().to_vec()))
-            .filter(thing.eq(ins.thing.key.clone()))
+            .filter(thing.eq(ins.thing.get_full_key()))
             .filter(version.eq(ins.thing.version))
             .filter(status_version.eq(ins.status_version))
             .order(status_version.desc())
@@ -58,24 +58,29 @@ impl InstanceDaoTrait for InstanceDaoImpl {
         }
     }
 
-    fn get_by_key(&self, biz_key: &str, row_id: u128) -> Result<Option<Instance>> {
-        let tk = Thing::new(biz_key)?;
+    fn get_by_full_key(&self, full_key: &str, limit: i64) -> Result<Option<Vec<Instance>>> {
         use self::schema::instances::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let def = instances
-            .filter(thing.eq(tk.key))
-            .filter(instance_id.eq(u128_to_vec_u8(row_id)))
+            .filter(thing.eq(full_key))
             .order(status_version.desc())
-            .limit(1)
+            .limit(limit)
             .load::<RawInstance>(conn);
         match def {
-            Ok(rtn) => match rtn.len() {
-                0 => Ok(None),
-                1 => Ok(Some(rtn[0].to()?)),
-                _ => Err(NatureError::SystemError("should less than 2 record return".to_string())),
+            Ok(rtn) => if rtn.len() == 0 {
+                Ok(None)
+            } else {
+                let r = rtn.iter().map(|x| x.to().unwrap()).collect();
+                Ok(Some(r))
             }
             Err(e) => Err(DbError::from(e))
         }
+    }
+
+    /// default `ThingType` is `Business`
+    fn get_by_key(&self, biz_key: &str, limit: i64) -> Result<Option<Vec<Instance>>> {
+        let tk = Thing::new(biz_key)?;
+        self.get_by_full_key(&tk.get_full_key(), limit)
     }
 }
 
@@ -86,7 +91,7 @@ impl InstanceDaoImpl {
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let rows = instances
             .filter(instance_id.eq(ins.id.to_ne_bytes().to_vec()))
-            .filter(thing.eq(ins.thing.key.clone()))
+            .filter(thing.eq(ins.thing.get_full_key()))
             .filter(version.eq(ins.thing.version))
             .filter(status_version.eq(ins.status_version));
         //        debug!("rows filter : {:?}", rows);
@@ -104,7 +109,7 @@ mod test {
     use std::collections::HashSet;
     use std::env;
 
-    use ::sqlite::dao::instance::InstanceDaoImpl;
+    use crate::sqlite::dao::instance::InstanceDaoImpl;
 
     use super::*;
 
@@ -116,12 +121,7 @@ mod test {
         let instance = Instance {
             id: 0,
             data: InstanceNoID {
-                thing: Thing {
-                    key: "/instance/common".to_string(),
-                    version: 100,
-                    thing_type: ThingType::Business,
-                    is_null: false
-                },
+                thing: Thing::new_with_version_and_type("/instance/common", 100, ThingType::Business).unwrap(),
                 event_time: 0,
                 execute_time: 0,
                 create_time: 0,
@@ -154,12 +154,7 @@ mod test {
         let mut instance = Instance {
             id: 0,
             data: InstanceNoID {
-                thing: Thing {
-                    key: "/instance/getLast".to_string(),
-                    version: 100,
-                    thing_type: ThingType::Business,
-                    is_null: false
-                },
+                thing: Thing::new_with_version_and_type("/instance/getLast", 100, ThingType::Business).unwrap(),
                 event_time: 0,
                 execute_time: 0,
                 create_time: 0,

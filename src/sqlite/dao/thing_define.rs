@@ -1,6 +1,6 @@
 use diesel::prelude::*;
 
-use ThingDefine;
+use crate::ThingDefine;
 
 use super::*;
 
@@ -10,7 +10,7 @@ impl ThingDefineDaoTrait for ThingDefineDaoImpl {
     fn get(thing: &Thing) -> Result<Option<ThingDefine>> {
         use super::schema::thing_defines::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
-        let def = thing_defines.filter(key.eq(&thing.key))
+        let def = thing_defines.filter(key.eq(&thing.get_full_key()))
             .filter(version.eq(thing.version))
             .load::<ThingDefine>(conn);
         match def {
@@ -38,7 +38,7 @@ impl ThingDefineDaoTrait for ThingDefineDaoImpl {
     fn delete(thing: &Thing) -> Result<usize> {
         use self::schema::thing_defines::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
-        let rtn = diesel::delete(thing_defines.filter(key.eq(&thing.key)).filter(version.eq(thing.version)))
+        let rtn = diesel::delete(thing_defines.filter(key.eq(&thing.get_full_key())).filter(version.eq(thing.version)))
             .execute(conn);
         match rtn {
             Ok(x) => Ok(x),
@@ -52,7 +52,7 @@ impl ThingDefineDaoImpl {
         let thing = Thing::new(key)?;
         let mut define = ThingDefine::default();
         define.version = thing.version;
-        define.key = thing.key;
+        define.key = thing.get_full_key();
         ThingDefineDaoImpl::insert(&define)
     }
 }
@@ -63,7 +63,7 @@ mod test {
 
     use chrono::prelude::*;
 
-    use ::*;
+    use crate::*;
 
     #[test]
     fn define_test() {
@@ -77,12 +77,7 @@ mod test {
             fields: Some("fields".to_string()),
             create_time: Local::now().naive_local(),
         };
-        let thing = Thing {
-            key: "/test".to_string(),
-            version: 100,
-            thing_type: ThingType::Business,
-            is_null: false
-        };
+        let thing = Thing::new_with_version_and_type("/test", 100, ThingType::Business).unwrap();
         // delete if it exists
         if let Ok(Some(_)) = ThingDefineDaoImpl::get(&thing) {
             let _ = ThingDefineDaoImpl::delete(&thing);

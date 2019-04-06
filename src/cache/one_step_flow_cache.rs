@@ -9,9 +9,10 @@ use std::time::Duration;
 
 use lru_time_cache::LruCache;
 
-use converter_cfg::OneStepFlow;
-use define::OneStepFlowDaoTrait;
 use nature_common::*;
+
+use crate::converter_cfg::OneStepFlow;
+use crate::define::OneStepFlowDaoTrait;
 
 use self::rand::{Rng, thread_rng};
 
@@ -126,7 +127,8 @@ impl OneStepFlowCacheImpl {
 #[cfg(test)]
 mod test_none_or_error {
     use mockers::matchers::check;
-    use mockers::Scenario;
+
+    use crate::test_util::*;
 
     use super::*;
 
@@ -135,11 +137,10 @@ mod test_none_or_error {
     fn get_error() {
         let from = Thing::new("error").unwrap();
         let from_clone = from.clone();
-        let scenario = Scenario::new();
-        let cond = scenario.create_mock_for::<OneStepFlowDaoTrait>();
-        scenario.expect(cond.get_relations_call(check(move |t: &&Thing| t == &&from_clone)).and_return_clone(Err(NatureError::DaoEnvironmentError("can't connect".to_string()))).times(2));
+        let mocks = MyMocks::new();
+        mocks.s.expect(mocks.d_one_step.get_relations_call(check(move |t: &&Thing| t == &&from_clone)).and_return_clone(Err(NatureError::DaoEnvironmentError("can't connect".to_string()))).times(2));
         let mocker = OneStepFlowCacheImpl {
-            dao: Rc::new(cond)
+            dao: mocks.d_one_step.clone()
         };
 
         // this will call mocker
@@ -155,11 +156,10 @@ mod test_none_or_error {
     fn get_none() {
         let from = Thing::new("none").unwrap();
         let from_clone = from.clone();
-        let scenario = Scenario::new();
-        let cond = scenario.create_mock_for::<OneStepFlowDaoTrait>();
-        scenario.expect(cond.get_relations_call(check(move |t: &&Thing| t == &&from_clone)).and_return_clone(Ok(None)).times(1));
+        let mocks = MyMocks::new();
+        mocks.s.expect(mocks.d_one_step.get_relations_call(check(move |t: &&Thing| t == &&from_clone)).and_return_clone(Ok(None)).times(1));
         let mocker = OneStepFlowCacheImpl {
-            dao: Rc::new(cond)
+            dao: mocks.d_one_step.clone()
         };
 
         // this will call mocker
@@ -180,7 +180,8 @@ mod test_none_or_error {
 #[cfg(test)]
 mod test_group_and_weight {
     use mockers::matchers::check;
-    use mockers::Scenario;
+
+    use crate::test_util::*;
 
     use super::*;
 
@@ -194,11 +195,10 @@ mod test_group_and_weight {
         ]));
 
         let from_clone = from.clone();
-        let scenario = Scenario::new();
-        let cond = scenario.create_mock_for::<OneStepFlowDaoTrait>();
-        scenario.expect(cond.get_relations_call(check(move |t: &&Thing| t == &&from_clone)).and_return_clone(relations).times(1));
+        let mocks = MyMocks::new();
+        mocks.s.expect(mocks.d_one_step.get_relations_call(check(move |t: &&Thing| t == &&from_clone)).and_return_clone(relations).times(1));
         let mocker = OneStepFlowCacheImpl {
-            dao: Rc::new(cond)
+            dao: mocks.d_one_step.clone()
         };
 
         // this will call mocker
@@ -221,12 +221,12 @@ mod test_group_and_weight {
         ]));
 
         let from_clone = from.clone();
-        let scenario = Scenario::new();
-        let cond = scenario.create_mock_for::<OneStepFlowDaoTrait>();
-        scenario.expect(cond.get_relations_call(check(move |t: &&Thing| t == &&from_clone)).and_return_clone(relations).times(1));
+        let mocks = MyMocks::new();
+        mocks.s.expect(mocks.d_one_step.get_relations_call(check(move |t: &&Thing| t == &&from_clone)).and_return_clone(relations).times(1));
         let mocker = OneStepFlowCacheImpl {
-            dao: Rc::new(cond)
+            dao: mocks.d_one_step.clone()
         };
+
 
         // this will call mocker
         let result = mocker.get(&from);
@@ -249,11 +249,10 @@ mod test_group_and_weight {
         ]));
 
         let from_clone = from.clone();
-        let scenario = Scenario::new();
-        let cond = scenario.create_mock_for::<OneStepFlowDaoTrait>();
-        scenario.expect(cond.get_relations_call(check(move |t: &&Thing| t == &&from_clone)).and_return_clone(relations).times(1));
+        let mocks = MyMocks::new();
+        mocks.s.expect(mocks.d_one_step.get_relations_call(check(move |t: &&Thing| t == &&from_clone)).and_return_clone(relations).times(1));
         let mocker = OneStepFlowCacheImpl {
-            dao: Rc::new(cond)
+            dao: mocks.d_one_step.clone()
         };
 
         // this will call mocker
@@ -277,11 +276,10 @@ mod test_group_and_weight {
         ]));
 
         let from_clone = from.clone();
-        let scenario = Scenario::new();
-        let cond = scenario.create_mock_for::<OneStepFlowDaoTrait>();
-        scenario.expect(cond.get_relations_call(check(move |t: &&Thing| t == &&from_clone)).and_return_clone(relations).times(1));
+        let mocks = MyMocks::new();
+        mocks.s.expect(mocks.d_one_step.get_relations_call(check(move |t: &&Thing| t == &&from_clone)).and_return_clone(relations).times(1));
         let mocker = OneStepFlowCacheImpl {
-            dao: Rc::new(cond)
+            dao: mocks.d_one_step.clone()
         };
 
         let mut exe_1_cnt = 0;
@@ -290,7 +288,7 @@ mod test_group_and_weight {
         for _i in 0..10 {
             let result = mocker.get(&from);
             let result = &result.unwrap().unwrap()[0];
-            match result.to.key.as_ref() {
+            match result.to.get_full_key().as_ref() {
                 "/B/to_1" => {
                     exe_1_cnt = exe_1_cnt + 1;
                 }

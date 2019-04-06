@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use diesel::prelude::*;
 
-use converter_cfg::*;
+use crate::converter_cfg::*;
 
 use super::*;
 
@@ -13,7 +13,7 @@ impl OneStepFlowDaoTrait for OneStepFlowDaoImpl {
         use self::schema::one_step_flow::dsl::*;
         let conn: &SqliteConnection = &CONN.lock().unwrap();
         let def = match one_step_flow
-            .filter(from_thing.eq(&from.key))
+            .filter(from_thing.eq(&from.get_full_key()))
             .filter(from_version.eq(from.version))
             .load::<RawOneStepFlow>(conn)
             {
@@ -102,9 +102,9 @@ impl OneStepFlowDaoImpl {
         let from = &Thing::new(from)?;
         let to = &Thing::new(to)?;
         let row = RawOneStepFlow {
-            from_thing: from.key.clone(),
+            from_thing: from.get_full_key(),
             from_version: from.version,
-            to_thing: to.key.clone(),
+            to_thing: to.get_full_key(),
             to_version: to.version,
             settings: String::new(),
         };

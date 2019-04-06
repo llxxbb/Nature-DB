@@ -1,11 +1,15 @@
-use chrono::prelude::*;
-use define::*;
-use lazy_static::__Deref;
-use nature_common::*;
-use nature_common::util::vec_to_u128;
-use serde_json;
 use std::collections::HashMap;
 use std::collections::HashSet;
+
+use chrono::prelude::*;
+use lazy_static::__Deref;
+use serde_json;
+
+use nature_common::*;
+use nature_common::util::vec_to_u128;
+
+use crate::define::*;
+
 use super::super::schema::instances;
 
 #[derive(Insertable, Queryable, Debug, Clone)]
@@ -30,14 +34,13 @@ impl RawInstance {
     pub fn to(&self) -> Result<Instance> {
         let from = match &self.from_thing {
             None => None,
-            Some(k) => Some(FromInstance {
-                thing: Thing {
-                    key: k.to_string(),
-                    version: self.from_version.unwrap(),
-                    thing_type: ThingType::Business,
-                },
-                status_version: self.from_status_version.unwrap(),
-            })
+            Some(k) => {
+                let thing = Thing::from_full_key(k, self.from_version.unwrap())?;
+                Some(FromInstance {
+                    thing,
+                    status_version: self.from_status_version.unwrap(),
+                })
+            }
         };
         let id = vec_to_u128(&self.instance_id);
         let context = match self.context {
@@ -51,11 +54,7 @@ impl RawInstance {
         Ok(Instance {
             id,
             data: InstanceNoID {
-                thing: Thing {
-                    key: self.thing.clone(),
-                    version: self.version,
-                    thing_type: ThingType::Business,
-                },
+                thing: Thing::from_full_key(&self.thing, self.version)?,
                 event_time: self.event_time.timestamp_millis(),
                 execute_time: self.execute_time.timestamp_millis(),
                 create_time: self.create_time.timestamp_millis(),
@@ -71,11 +70,11 @@ impl RawInstance {
     pub fn new(instance: &Instance) -> Result<RawInstance> {
         let (from_thing, from_version, from_status_version) = match instance.from {
             None => (None, None, None),
-            Some(ref from) => (Some(from.thing.key.clone()), Some(from.thing.version), Some(from.status_version))
+            Some(ref from) => (Some(from.thing.get_full_key()), Some(from.thing.version), Some(from.status_version))
         };
         Ok(RawInstance {
             instance_id: instance.id.to_ne_bytes().to_vec(),
-            thing: instance.thing.key.clone(),
+            thing: instance.thing.get_full_key(),
             version: instance.thing.version,
             content: {
                 if instance.content.len() > *INSTANCE_CONTENT_MAX_LENGTH.deref() {

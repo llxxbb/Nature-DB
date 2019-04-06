@@ -4,6 +4,7 @@ use chrono::prelude::*;
 /// `DateTime` is not implement `Default` trait
 #[derive(Serialize, Deserialize, Debug, Queryable, Clone, PartialOrd, PartialEq)]
 pub struct ThingDefine {
+    /// corresponding to `Thing`'s full_key
     pub key: String,
 
     /// For human readable what the `Thing` is.

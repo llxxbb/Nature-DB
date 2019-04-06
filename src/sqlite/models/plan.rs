@@ -1,9 +1,12 @@
-use ::PlanInfo;
 use chrono::prelude::*;
-use define::*;
 use lazy_static::__Deref;
-use nature_common::*;
 use serde_json;
+
+use nature_common::*;
+
+use crate::define::*;
+use crate::PlanInfo;
+
 use super::super::schema::plan;
 
 #[derive(Debug)]
@@ -19,10 +22,10 @@ pub struct RawPlanInfo {
 
 impl RawPlanInfo {
     pub fn new(plan: &PlanInfo) -> Result<RawPlanInfo> {
-        let upstream = format!("{}:{}:{}:{}", plan.from_thing.key, plan.from_thing.version, plan.from_sn, plan.from_sta_ver);
+        let upstream = format!("{}:{}:{}:{}", plan.from_thing.get_full_key(), plan.from_thing.version, plan.from_sn, plan.from_sta_ver);
         Ok(RawPlanInfo {
             upstream,
-            to_biz: plan.to.key.clone(),
+            to_biz: plan.to.get_full_key(),
             to_version: plan.to.version,
             content: {
                 let json = serde_json::to_string(&plan.plan)?;
@@ -40,18 +43,10 @@ impl RawPlanInfo {
             return Err(NatureError::VerifyError("format error : ".to_owned() + &self.upstream));
         }
         Ok(PlanInfo {
-            from_thing: Thing {
-                key: x[0].to_string(),
-                version: x[1].parse()?,
-                thing_type: ThingType::Business,
-            },
+            from_thing: Thing::from_full_key(x[0], x[1].parse()?)?,
             from_sn: x[2].parse()?,
             from_sta_ver: x[3].parse()?,
-            to: Thing {
-                key: self.to_biz.clone(),
-                version: self.to_version,
-                thing_type: ThingType::Business,
-            },
+            to: Thing::from_full_key(&self.to_biz,self.to_version)?,
             plan: serde_json::from_str(&self.content)?,
         })
     }

@@ -26,13 +26,13 @@ pub trait TaskDaoTrait {
     fn get_overdue(&self, seconds: &str) -> Result<Vec<RawTask>>;
 }
 
-#[cfg_attr(test, mocked)]
 pub trait InstanceDaoTrait {
     fn insert(&self, instance: &Instance) -> Result<usize>;
     /// check whether source stored earlier
     fn is_exists(&self, instance: &Instance) -> Result<bool>;
     fn get_by_id(&self, id: u128) -> Result<Option<Instance>>;
-    fn get_by_key(&self, key: &str, id: u128) -> Result<Option<Instance>>;
+    fn get_by_key(&self, key: &str, limit: i64) -> Result<Option<Vec<Instance>>>;
+    fn get_by_full_key(&self, key: &str, limit: i64) -> Result<Option<Vec<Instance>>>;
 }
 
 pub trait StorePlanDaoTrait {

@@ -1,4 +1,4 @@
-use define::*;
+use crate::define::*;
 use diesel::prelude::*;
 use nature_common::*;
 pub use self::task::*;

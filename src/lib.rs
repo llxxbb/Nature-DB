@@ -44,5 +44,7 @@ mod define;
 mod orm;
 mod instance;
 mod plan;
+#[cfg(test)]
+mod test_util;
 
 pub mod service;

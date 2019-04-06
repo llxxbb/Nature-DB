@@ -1,6 +1,5 @@
 use diesel::result::*;
 
-use *;
 use nature_common::util::id_tool::vec_to_hex_string;
 
 use super::*;

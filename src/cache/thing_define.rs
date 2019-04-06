@@ -1,9 +1,11 @@
 extern crate r2d2;
 
-use ::*;
-use lru_time_cache::LruCache;
 use std::sync::Mutex;
 use std::time::Duration;
+
+use lru_time_cache::LruCache;
+
+use crate::*;
 
 lazy_static! {
     static ref CACHE: Mutex<LruCache<Thing, ThingDefine>> = Mutex::new(LruCache::<Thing, ThingDefine>::with_expiry_duration(Duration::from_secs(3600)));
@@ -14,7 +16,7 @@ pub struct ThingDefineCacheImpl;
 impl ThingDefineCacheTrait for ThingDefineCacheImpl {
     fn get(&self, thing: &Thing) -> Result<ThingDefine> {
 //        debug!("get `ThingDefine` from cache for thing : {:?}", thing);
-        if thing.key.is_empty() {
+        if thing.get_full_key().is_empty() {
             return Err(NatureError::VerifyError("[biz] must not be empty!".to_string()));
         }
         let mut cache = CACHE.lock().unwrap();
@@ -24,7 +26,7 @@ impl ThingDefineCacheTrait for ThingDefineCacheImpl {
             };
         };
         match ThingDefineDaoImpl::get(&thing)? {
-            None => Err(NatureError::ThingNotDefined(format!("{} not defined", thing.key))),
+            None => Err(NatureError::ThingNotDefined(format!("{} not defined", thing.get_full_key()))),
             Some(def) => {
                 cache.insert(thing.clone(), def.clone());
                 Ok(def)

@@ -1,4 +1,4 @@
-use PlanInfo;
+use crate::PlanInfo;
 
 use super::*;
 
@@ -66,34 +66,18 @@ mod test {
 
     #[test]
     fn save_and_get() {
-
         env::set_var("DATABASE_URL", "nature.sqlite");
         // save it
         let tester = StorePlanDaoImpl {};
         let info = PlanInfo {
-            from_thing: Thing {
-                key: "/local_converter/from".to_string(),
-                version: 0,
-                thing_type: ThingType::Business,
-                is_null: false
-            },
+            from_thing: Thing::new_with_version_and_type("/local_converter/from", 0, ThingType::Business).unwrap(),
             from_sn: 229195495639599414319914352480091205021,
             from_sta_ver: 0,
-            to: Thing {
-                key: "/local_converter/to".to_string(),
-                version: 0,
-                thing_type: ThingType::Business,
-                is_null: false
-            },
+            to: Thing::new_with_version_and_type("/local_converter/to", 0, ThingType::Business).unwrap(),
             plan: vec![Instance {
                 id: 217789594388339757346716979317903552035,
                 data: InstanceNoID {
-                    thing: Thing {
-                        key: "/local_converter/to".to_string(),
-                        version: 0,
-                        thing_type: ThingType::Business,
-                        is_null: false
-                    },
+                    thing: Thing::new_with_version_and_type("/local_converter/to", 0, ThingType::Business).unwrap(),
                     event_time: 0,
                     execute_time: 0,
                     create_time: 0,
@@ -119,7 +103,7 @@ mod test {
         let rtn = tester.get(
             "/local_converter/from:0:229195495639599414319914352480091205021:0",
         ).unwrap().unwrap();
-        assert_eq!(rtn.to.key, "/local_converter/to");
+        assert_eq!(rtn.to.get_full_key(), "/B/local_converter/to");
 
         // delete it
         assert_eq!(

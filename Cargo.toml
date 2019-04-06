@@ -2,6 +2,8 @@
 name = "nature_db"
 version = "0.0.1"
 authors = ["XueBin Li"]
+edition = "2018"
+workspace = "../Nature"
 
 [dependencies]
 

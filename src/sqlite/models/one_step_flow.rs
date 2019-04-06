@@ -1,7 +1,8 @@
 use serde_json;
 
-use converter_cfg::*;
 use nature_common::*;
+
+use crate::converter_cfg::*;
 
 use super::super::schema::one_step_flow;
 
@@ -21,9 +22,9 @@ impl RawOneStepFlow {
     pub fn new(from: &Thing, to: &Thing, settings: &OneStepFlowSettings) -> Result<Self> {
         let st = serde_json::to_string(settings)?;
         let rtn = RawOneStepFlow {
-            from_thing: from.key.clone(),
+            from_thing: from.get_full_key(),
             from_version: from.version,
-            to_thing: to.key.clone(),
+            to_thing: to.get_full_key(),
             to_version: to.version,
             settings: st,
         };
@@ -57,16 +58,8 @@ impl OneStepFlow {
             let mut e2 = e.clone();
             e2.group = group.clone();
             OneStepFlow {
-                from: Thing {
-                    key: val.from_thing.clone(),
-                    version,
-                    thing_type: ThingType::Business,
-                },
-                to: Thing {
-                    key: val.to_thing.clone(),
-                    version: val.to_version,
-                    thing_type: ThingType::Business,
-                },
+                from: Thing::from_full_key(&val.from_thing, version).unwrap(),
+                to: Thing::from_full_key(&val.to_thing, val.to_version).unwrap(),
                 selector: selector.clone(),
                 executor: e2,
             }

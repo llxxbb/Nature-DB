@@ -1,6 +1,7 @@
-use *;
-use instance::InstanceServiceImpl;
+use crate::instance::InstanceServiceImpl;
 use std::rc::Rc;
+use crate::cache::ThingDefineCacheImpl;
+use crate::service;
 
 pub struct DBService {
     pub thing_define: Rc<ThingDefineCacheImpl>,
