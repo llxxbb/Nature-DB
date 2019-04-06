@@ -42,13 +42,20 @@ impl TaskDaoTrait for TaskDaoImpl {
 
     fn raw_to_error(&self, err: &NatureError, raw: &RawTask) -> Result<usize> {
         use self::schema::task_error;
-        let conn: &SqliteConnection = &CONN.lock().unwrap();
-        let rd = RawTaskError::from_raw(err, raw);
-        let rtn = diesel::insert_into(task_error::table).values(rd).execute(conn);
+        let rtn = {
+            let conn: &SqliteConnection = &CONN.lock().unwrap();
+            let rd = RawTaskError::from_raw(err, raw);
+            diesel::insert_into(task_error::table).values(rd).execute(conn)
+        };
         match rtn {
             Ok(num) => Ok(num),
             Err(Error::DatabaseError(kind, info)) => match kind {
-                DatabaseErrorKind::UniqueViolation => Ok(1),
+                DatabaseErrorKind::UniqueViolation => {
+                    debug!("delete task already in task_error table");
+                    let _ = self.delete(&raw.task_id);
+                    debug!("delete succeed!");
+                    Ok(1)
+                }
                 DatabaseErrorKind::__Unknown => Err(NatureError::DaoEnvironmentError(format!("{:?}", info))),
                 _ => Err(NatureError::DaoLogicalError(format!("{:?}", info))),
             },
