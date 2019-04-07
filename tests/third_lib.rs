@@ -1,5 +1,3 @@
-#![feature(range_contains)]
-
 extern crate rand;
 
 use rand::Rng;

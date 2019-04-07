@@ -61,7 +61,7 @@ mod test {
     #[test]
     fn can_not_get_from_cache() {
         let mocks = MyMocks::new();
-        let mut instance = Instance::new("/err");
+        let mut instance = Instance::new("/err").unwrap();
         let expected_instance = instance.clone();
         mocks.s.expect(mocks.c_thing_define.get_call(check(move |t: &&Thing| **t == expected_instance.thing)).and_return(Err(NatureError::VerifyError("test error".to_string()))));
         let testee = InstanceServiceImpl { define_cache: mocks.c_thing_define.clone() };
@@ -72,7 +72,7 @@ mod test {
     #[test]
     fn can_get_from_cache() {
         let mocks = MyMocks::new();
-        let mut instance = Instance::new("/ok");
+        let mut instance = Instance::new("/ok").unwrap();
         let expected_instance = instance.clone();
         let define = ThingDefine::default();
         mocks.s.expect(mocks.c_thing_define.get_call(check(move |t: &&Thing| **t == expected_instance.thing)).and_return(Ok(define)));
@@ -87,7 +87,7 @@ mod test {
         let service = InstanceServiceImpl {
             define_cache: mocks.c_thing_define.clone()
         };
-        let mut instance = Instance::new("hello");
+        let mut instance = Instance::new("hello").unwrap();
         service.id_generate_if_not_set(&mut instance).unwrap();
         println!("{:?}", instance.id);
         assert_eq!(instance.id, 336556392135652841283170827290494770821);
