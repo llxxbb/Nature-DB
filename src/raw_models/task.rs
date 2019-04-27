@@ -1,10 +1,15 @@
+use std::fmt::Debug;
+
 use chrono::prelude::*;
 use lazy_static::__Deref;
+use serde::Serialize;
+
 use nature_common::*;
 use nature_common::util::id_tool::generate_id;
 use nature_common::util::u128_to_vec_u8;
-use serde::Serialize;
-use std::fmt::Debug;
+
+use crate::models::define::*;
+
 use super::super::schema::task;
 
 #[derive(Debug, Clone, PartialEq)]

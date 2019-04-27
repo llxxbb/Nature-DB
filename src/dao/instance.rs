@@ -2,9 +2,11 @@ use diesel::prelude::*;
 
 use nature_common::util::id_tool::u128_to_vec_u8;
 
-use super::*;
+use crate::CONN;
 use crate::models::define::InstanceDaoTrait;
 use crate::raw_models::RawInstance;
+
+use super::*;
 
 pub struct InstanceDaoImpl;
 
@@ -12,7 +14,7 @@ impl InstanceDaoTrait for InstanceDaoImpl {
     fn insert(&self, instance: &Instance) -> Result<usize> {
         use self::schema::instances;
         let new = RawInstance::new(instance)?;
-        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let conn = &CONN.lock().unwrap();
         match diesel::insert_into(instances::table)
             .values(new)
             .execute(conn) {
@@ -24,7 +26,7 @@ impl InstanceDaoTrait for InstanceDaoImpl {
     /// check whether source stored earlier
     fn is_exists(&self, ins: &Instance) -> Result<bool> {
         use self::schema::instances::dsl::*;
-        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let conn = &CONN.lock().unwrap();
         let def = instances
             .filter(instance_id.eq(ins.id.to_ne_bytes().to_vec()))
             .filter(thing.eq(ins.thing.get_full_key()))

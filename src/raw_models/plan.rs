@@ -4,6 +4,8 @@ use serde_json;
 
 use nature_common::*;
 
+use crate::models::define::*;
+use crate::models::plan::PlanInfo;
 use crate::schema::plan;
 
 #[derive(Debug)]
@@ -43,7 +45,7 @@ impl RawPlanInfo {
             from_thing: Thing::from_full_key(x[0], x[1].parse()?)?,
             from_sn: x[2].parse()?,
             from_sta_ver: x[3].parse()?,
-            to: Thing::from_full_key(&self.to_biz,self.to_version)?,
+            to: Thing::from_full_key(&self.to_biz, self.to_version)?,
             plan: serde_json::from_str(&self.content)?,
         })
     }

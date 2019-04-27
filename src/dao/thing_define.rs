@@ -1,16 +1,21 @@
 use diesel::prelude::*;
 
-use super::*;
-use crate::raw_models::RawThingDefine;
-use crate::models::thing_define::ThingDefine;
+use crate::CONN;
 use crate::models::define::ThingDefineDaoTrait;
+use crate::models::thing_define::ThingDefine;
+use crate::raw_models::RawThingDefine;
+
+use super::*;
 
 pub struct ThingDefineDaoImpl;
 
 impl ThingDefineDaoTrait for ThingDefineDaoImpl {
     fn get(thing: &Thing) -> Result<Option<ThingDefine>> {
         use super::schema::thing_defines::dsl::*;
-        let conn = &CONN.lock().unwrap();
+        #[cfg(feature = "sqlite")]
+            let conn: &SqliteConnection = &CONN.lock().unwrap();
+        #[cfg(feature = "mysql")]
+            let conn: &MysqlConnection = &CONN.lock().unwrap();
         let def = thing_defines.filter(key.eq(&thing.get_full_key()))
             .filter(version.eq(thing.version))
             .load::<ThingDefine>(conn);
@@ -26,7 +31,7 @@ impl ThingDefineDaoTrait for ThingDefineDaoImpl {
 
     fn insert(define: &ThingDefine) -> Result<usize> {
         use self::schema::thing_defines;
-        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let conn = &CONN.lock().unwrap();
         let rtn = diesel::insert_into(thing_defines::table)
             .values(RawThingDefine::new(define))
             .execute(conn);

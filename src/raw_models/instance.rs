@@ -7,6 +7,7 @@ use serde_json;
 
 use nature_common::*;
 use nature_common::util::vec_to_u128;
+use crate::models::define::*;
 
 use super::super::schema::instances;
 

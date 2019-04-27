@@ -2,18 +2,19 @@ use diesel::result::*;
 
 use nature_common::util::id_tool::vec_to_hex_string;
 
+use crate::models::define::TaskDaoTrait;
+use crate::raw_models::{RawTask, RawTaskError};
+use crate::CONN;
 use super::*;
 
 use self::schema::task::dsl::*;
-use crate::raw_models::{RawTaskError, RawTask};
-use crate::models::define::TaskDaoTrait;
 
 pub struct TaskDaoImpl;
 
 impl TaskDaoTrait for TaskDaoImpl {
     fn insert(&self, raw: &RawTask) -> Result<usize> {
         use self::schema::task;
-        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let conn = &CONN.lock().unwrap();
         let rtn = diesel::insert_into(task::table).values(raw).execute(conn);
         match rtn {
             Ok(num) => {

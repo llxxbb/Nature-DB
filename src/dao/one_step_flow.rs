@@ -2,17 +2,18 @@ use std::str::FromStr;
 
 use diesel::prelude::*;
 
-use super::*;
 use crate::models::converter_cfg::{OneStepFlow, OneStepFlowSettings};
 use crate::models::define::OneStepFlowDaoTrait;
 use crate::raw_models::RawOneStepFlow;
+use crate::CONN;
+use super::*;
 
 pub struct OneStepFlowDaoImpl;
 
 impl OneStepFlowDaoTrait for OneStepFlowDaoImpl {
     fn get_relations(&self, from: &Thing) -> Result<Option<Vec<OneStepFlow>>> {
         use self::schema::one_step_flow::dsl::*;
-        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let conn = &CONN.lock().unwrap();
         let def = match one_step_flow
             .filter(from_thing.eq(&from.get_full_key()))
             .filter(from_version.eq(from.version))

@@ -1,6 +1,7 @@
 use crate::*;
 use chrono::prelude::*;
 use super::super::schema::thing_defines;
+use crate::models::thing_define::ThingDefine;
 
 #[derive(Debug)]
 #[derive(Insertable)]

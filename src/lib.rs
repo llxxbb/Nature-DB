@@ -25,14 +25,10 @@ extern crate serde_json;
 use nature_common::*;
 
 pub use self::cache::*;
-#[cfg(feature = "mysql")]
-pub use self::mysql::*;
+pub use self::conn::*;
 pub use self::orm::*;
-#[cfg(feature = "sqlite")]
-pub use self::sqlite::*;
 
 pub mod schema;
-
 
 #[cfg(feature = "sqlite")]
 mod sqlite;
@@ -47,3 +43,10 @@ mod mysql;
 mod test_util;
 
 pub mod service;
+
+mod conn {
+    #[cfg(feature = "mysql")]
+    pub use crate::mysql::CONN;
+    #[cfg(feature = "sqlite")]
+    pub use crate::sqlite::CONN;
+}

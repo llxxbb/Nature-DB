@@ -1,6 +1,7 @@
 use std::rc::Rc;
 use crate::cache::ThingDefineCacheImpl;
 use crate::service;
+use crate::models::instance::InstanceServiceImpl;
 
 pub struct DBService {
     pub thing_define: Rc<ThingDefineCacheImpl>,

@@ -1,14 +1,16 @@
-use super::*;
+use crate::CONN;
 use crate::models::define::StorePlanDaoTrait;
-use crate::raw_models::RawPlanInfo;
 use crate::models::plan::PlanInfo;
+use crate::raw_models::RawPlanInfo;
+
+use super::*;
 
 pub struct StorePlanDaoImpl;
 
 impl StorePlanDaoTrait for StorePlanDaoImpl {
     fn save(&self, plan: &RawPlanInfo) -> Result<()> {
         use self::schema::plan;
-        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let conn = &CONN.lock().unwrap();
         let rtn = diesel::insert_into(plan::table)
             .values(plan)
             .execute(conn);
@@ -63,9 +65,10 @@ mod test {
     use std::collections::HashSet;
     use std::env;
 
-    use super::*;
-    use crate::raw_models::RawPlanInfo;
     use crate::models::plan::PlanInfo;
+    use crate::raw_models::RawPlanInfo;
+
+    use super::*;
 
     #[test]
     fn save_and_get() {

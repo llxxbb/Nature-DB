@@ -1,5 +1,7 @@
 use chrono::prelude::*;
 use crate::schema::task_error;
+use nature_common::NatureError;
+use crate::raw_models::RawTask;
 
 #[derive(Debug)]
 #[derive(Insertable)]
