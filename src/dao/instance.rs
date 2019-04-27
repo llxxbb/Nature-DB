@@ -3,6 +3,8 @@ use diesel::prelude::*;
 use nature_common::util::id_tool::u128_to_vec_u8;
 
 use super::*;
+use crate::models::define::InstanceDaoTrait;
+use crate::raw_models::RawInstance;
 
 pub struct InstanceDaoImpl;
 
@@ -109,14 +111,14 @@ mod test {
     use std::collections::HashSet;
     use std::env;
 
-    use crate::sqlite::dao::instance::InstanceDaoImpl;
+    use crate::dao::instance::InstanceDaoImpl;
 
     use super::*;
 
     #[test]
     fn instance_insert_exists_delete_test() {
         let tester = InstanceDaoImpl {};
-        env::set_var("DATABASE_URL", "nature.sqlite");
+        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
         // prepare data to insert
         let instance = Instance {
             id: 0,
@@ -149,7 +151,7 @@ mod test {
     #[test]
     fn get_last_status() {
         let tester = InstanceDaoImpl {};
-        env::set_var("DATABASE_URL", "nature.sqlite");
+        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
         // prepare data to insert
         let mut instance = Instance {
             id: 0,

@@ -1,7 +1,5 @@
 use chrono::prelude::*;
-use nature_common::*;
-use crate::sqlite::models::task::RawTask;
-use super::super::schema::task_error;
+use crate::schema::task_error;
 
 #[derive(Debug)]
 #[derive(Insertable)]

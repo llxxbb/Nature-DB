@@ -8,8 +8,6 @@ use serde_json;
 use nature_common::*;
 use nature_common::util::vec_to_u128;
 
-use crate::define::*;
-
 use super::super::schema::instances;
 
 #[derive(Insertable, Queryable, Debug, Clone)]

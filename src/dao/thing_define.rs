@@ -1,15 +1,16 @@
 use diesel::prelude::*;
 
-use crate::ThingDefine;
-
 use super::*;
+use crate::raw_models::RawThingDefine;
+use crate::models::thing_define::ThingDefine;
+use crate::models::define::ThingDefineDaoTrait;
 
 pub struct ThingDefineDaoImpl;
 
 impl ThingDefineDaoTrait for ThingDefineDaoImpl {
     fn get(thing: &Thing) -> Result<Option<ThingDefine>> {
         use super::schema::thing_defines::dsl::*;
-        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let conn = &CONN.lock().unwrap();
         let def = thing_defines.filter(key.eq(&thing.get_full_key()))
             .filter(version.eq(thing.version))
             .load::<ThingDefine>(conn);
@@ -64,11 +65,13 @@ mod test {
     use chrono::prelude::*;
 
     use crate::*;
+    use crate::dao::ThingDefineDaoImpl;
+    use crate::models::thing_define::ThingDefine;
 
     #[test]
     fn define_test() {
         // prepare data to insert
-        env::set_var("DATABASE_URL", "nature.sqlite");
+        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
         let define = ThingDefine {
             key: "/test".to_string(),
             description: Some("description".to_string()),

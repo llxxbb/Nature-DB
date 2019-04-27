@@ -7,6 +7,10 @@ workspace = "../Nature"
 
 [dependencies]
 
+[features]
+mysql = []
+sqlite = []
+
 nature_common = {path = "../Nature-Common"}
 
 rand = "0.6"
@@ -21,10 +25,9 @@ serde = "1.0"
 serde_derive = "1.0"
 
 # db
-diesel = { version = "1.4", default-features = false, features = ["sqlite","chrono"] }
+diesel = { version = "1.4", default-features = false, features = ["sqlite","chrono","mysql"] }
 r2d2 = "0.8"
 r2d2-diesel = "1.0"
-cdrs = "1.2"
 
 log = "0.4"
 

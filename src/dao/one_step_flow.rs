@@ -2,9 +2,10 @@ use std::str::FromStr;
 
 use diesel::prelude::*;
 
-use crate::converter_cfg::*;
-
 use super::*;
+use crate::models::converter_cfg::{OneStepFlow, OneStepFlowSettings};
+use crate::models::define::OneStepFlowDaoTrait;
+use crate::raw_models::RawOneStepFlow;
 
 pub struct OneStepFlowDaoImpl;
 
@@ -142,7 +143,7 @@ mod test {
     }
 
     fn before_test(biz: &str, protocol: &str) -> Result<RawOneStepFlow> {
-        env::set_var("DATABASE_URL", "nature.sqlite");
+        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
         let _ = setup_logger();
         // clear before insert
         let _ = OneStepFlowDaoImpl::delete_by_biz(biz, "to");

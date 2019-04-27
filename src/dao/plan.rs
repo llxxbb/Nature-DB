@@ -1,6 +1,7 @@
-use crate::PlanInfo;
-
 use super::*;
+use crate::models::define::StorePlanDaoTrait;
+use crate::raw_models::RawPlanInfo;
+use crate::models::plan::PlanInfo;
 
 pub struct StorePlanDaoImpl;
 
@@ -63,10 +64,12 @@ mod test {
     use std::env;
 
     use super::*;
+    use crate::raw_models::RawPlanInfo;
+    use crate::models::plan::PlanInfo;
 
     #[test]
     fn save_and_get() {
-        env::set_var("DATABASE_URL", "nature.sqlite");
+        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
         // save it
         let tester = StorePlanDaoImpl {};
         let info = PlanInfo {

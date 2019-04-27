@@ -2,9 +2,8 @@ use serde_json;
 
 use nature_common::*;
 
-use crate::converter_cfg::*;
-
-use super::super::schema::one_step_flow;
+use crate::schema::one_step_flow;
+use crate::models::converter_cfg::{OneStepFlowSettings, OneStepFlow};
 
 #[derive(Debug)]
 #[derive(Insertable, Queryable)]
@@ -71,6 +70,7 @@ impl OneStepFlow {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::models::converter_cfg::OneStepFlowSettings;
 
     #[test]
     fn can_group_is_ok() {

@@ -6,6 +6,9 @@ use std::time::Duration;
 use lru_time_cache::LruCache;
 
 use crate::*;
+use crate::dao::ThingDefineDaoImpl;
+use crate::models::define::ThingDefineCacheTrait;
+use crate::models::thing_define::ThingDefine;
 
 lazy_static! {
     static ref CACHE: Mutex<LruCache<Thing, ThingDefine>> = Mutex::new(LruCache::<Thing, ThingDefine>::with_expiry_duration(Duration::from_secs(3600)));

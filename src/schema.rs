@@ -1,72 +1,72 @@
 table! {
     instances (instance_id, thing, version, status_version) {
         instance_id -> Binary,
-        thing -> Text,
+        thing -> Varchar,
         version -> Integer,
-        content -> Text,
+        content -> Varchar,
         context -> Nullable<Text>,
         status -> Nullable<Text>,
         status_version -> Integer,
-        from_thing -> Nullable<Text>,
+        from_thing -> Nullable<Varchar>,
         from_version -> Nullable<Integer>,
         from_status_version -> Nullable<Integer>,
-        event_time -> Timestamp,
-        execute_time -> Timestamp,
-        create_time -> Timestamp,
+        event_time -> Datetime,
+        execute_time -> Datetime,
+        create_time -> Datetime,
     }
 }
 
 table! {
     one_step_flow (from_thing, from_version, to_thing, to_version) {
-        from_thing -> Text,
+        from_thing -> Varchar,
         from_version -> Integer,
-        to_thing -> Text,
+        to_thing -> Varchar,
         to_version -> Integer,
-        settings -> Text,
+        settings -> Nullable<Varchar>,
     }
 }
 
 table! {
     plan (upstream, to_biz, to_version) {
-        upstream -> Text,
-        to_biz -> Text,
+        upstream -> Varchar,
+        to_biz -> Varchar,
         to_version -> Integer,
         content -> Text,
-        create_time -> Timestamp,
+        create_time -> Datetime,
     }
 }
 
 table! {
     task (task_id) {
         task_id -> Binary,
-        thing -> Text,
-        data_type -> SmallInt,
+        thing -> Varchar,
+        data_type -> Smallint,
         data -> Text,
-        create_time -> Timestamp,
-        execute_time -> Timestamp,
-        retried_times -> SmallInt,
+        create_time -> Datetime,
+        execute_time -> Datetime,
+        retried_times -> Smallint,
     }
 }
 
 table! {
     task_error (task_id) {
         task_id -> Binary,
-        thing -> Text,
-        data_type -> SmallInt,
+        thing -> Varchar,
+        data_type -> Smallint,
         data -> Text,
-        create_time -> Timestamp,
-        msg -> Text,
+        create_time -> Datetime,
+        msg -> Varchar,
     }
 }
 
 table! {
     thing_defines (key, version) {
-        key -> Text,
-        description -> Nullable<Text>,
+        key -> Varchar,
+        description -> Nullable<Varchar>,
         version -> Integer,
-        states -> Nullable<Text>,
-        fields -> Nullable<Text>,
-        create_time -> Timestamp,
+        states -> Nullable<Varchar>,
+        fields -> Nullable<Varchar>,
+        create_time -> Datetime,
     }
 }
 

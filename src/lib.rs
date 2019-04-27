@@ -25,25 +25,24 @@ extern crate serde_json;
 use nature_common::*;
 
 pub use self::cache::*;
-pub use self::converter_cfg::*;
-pub use self::define::*;
-pub use self::instance::*;
+#[cfg(feature = "mysql")]
+pub use self::mysql::*;
 pub use self::orm::*;
-pub use self::plan::*;
+#[cfg(feature = "sqlite")]
 pub use self::sqlite::*;
-pub use self::task_type::*;
-pub use self::thing_define::*;
 
-mod thing_define;
-mod task_type;
-mod converter_cfg;
+pub mod schema;
 
+
+#[cfg(feature = "sqlite")]
 mod sqlite;
 mod cache;
-mod define;
 mod orm;
-mod instance;
-mod plan;
+mod dao;
+mod raw_models;
+mod models;
+#[cfg(feature = "mysql")]
+mod mysql;
 #[cfg(test)]
 mod test_util;
 

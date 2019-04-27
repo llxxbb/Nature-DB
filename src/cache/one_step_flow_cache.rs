@@ -11,8 +11,8 @@ use lru_time_cache::LruCache;
 
 use nature_common::*;
 
-use crate::converter_cfg::OneStepFlow;
-use crate::define::OneStepFlowDaoTrait;
+use crate::models::converter_cfg::OneStepFlow;
+use crate::models::define::OneStepFlowDaoTrait;
 
 use self::rand::{Rng, thread_rng};
 
@@ -181,6 +181,7 @@ mod test_none_or_error {
 mod test_group_and_weight {
     use mockers::matchers::check;
 
+    use crate::models::converter_cfg::OneStepFlow;
     use crate::test_util::*;
 
     use super::*;

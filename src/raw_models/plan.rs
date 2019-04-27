@@ -4,10 +4,7 @@ use serde_json;
 
 use nature_common::*;
 
-use crate::define::*;
-use crate::PlanInfo;
-
-use super::super::schema::plan;
+use crate::schema::plan;
 
 #[derive(Debug)]
 #[derive(Insertable, Queryable)]

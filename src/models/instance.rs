@@ -1,8 +1,11 @@
 use std::rc::Rc;
 
 use nature_common::util::*;
+use nature_common::Result;
 
 use super::*;
+use nature_common::Instance;
+use crate::models::define::ThingDefineCacheTrait;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct DelayedInstances {
@@ -57,6 +60,8 @@ mod test {
     use crate::test_util::*;
 
     use super::*;
+    use crate::models::thing_define::ThingDefine;
+    use nature_common::{Thing, NatureError};
 
     #[test]
     fn can_not_get_from_cache() {
