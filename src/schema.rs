@@ -22,7 +22,7 @@ table! {
         from_version -> Integer,
         to_thing -> Varchar,
         to_version -> Integer,
-        settings -> Nullable<Varchar>,
+        settings -> Varchar,
     }
 }
 

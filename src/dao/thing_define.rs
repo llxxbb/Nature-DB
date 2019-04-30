@@ -1,6 +1,6 @@
 use diesel::prelude::*;
 
-use crate::CONN;
+use crate::{CONN, CONNNECTION};
 use crate::models::define::ThingDefineDaoTrait;
 use crate::models::thing_define::ThingDefine;
 use crate::raw_models::RawThingDefine;
@@ -12,10 +12,7 @@ pub struct ThingDefineDaoImpl;
 impl ThingDefineDaoTrait for ThingDefineDaoImpl {
     fn get(thing: &Thing) -> Result<Option<ThingDefine>> {
         use super::schema::thing_defines::dsl::*;
-        #[cfg(feature = "sqlite")]
-            let conn: &SqliteConnection = &CONN.lock().unwrap();
-        #[cfg(feature = "mysql")]
-            let conn: &MysqlConnection = &CONN.lock().unwrap();
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = thing_defines.filter(key.eq(&thing.get_full_key()))
             .filter(version.eq(thing.version))
             .load::<ThingDefine>(conn);
@@ -31,7 +28,7 @@ impl ThingDefineDaoTrait for ThingDefineDaoImpl {
 
     fn insert(define: &ThingDefine) -> Result<usize> {
         use self::schema::thing_defines;
-        let conn = &CONN.lock().unwrap();
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::insert_into(thing_defines::table)
             .values(RawThingDefine::new(define))
             .execute(conn);
@@ -43,7 +40,7 @@ impl ThingDefineDaoTrait for ThingDefineDaoImpl {
 
     fn delete(thing: &Thing) -> Result<usize> {
         use self::schema::thing_defines::dsl::*;
-        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::delete(thing_defines.filter(key.eq(&thing.get_full_key())).filter(version.eq(thing.version)))
             .execute(conn);
         match rtn {
@@ -71,6 +68,7 @@ mod test {
 
     use crate::*;
     use crate::dao::ThingDefineDaoImpl;
+    use crate::models::define::ThingDefineDaoTrait;
     use crate::models::thing_define::ThingDefine;
 
     #[test]

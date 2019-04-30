@@ -2,7 +2,7 @@ use diesel::prelude::*;
 
 use nature_common::util::id_tool::u128_to_vec_u8;
 
-use crate::CONN;
+use crate::{CONN, CONNNECTION};
 use crate::models::define::InstanceDaoTrait;
 use crate::raw_models::RawInstance;
 
@@ -14,7 +14,7 @@ impl InstanceDaoTrait for InstanceDaoImpl {
     fn insert(&self, instance: &Instance) -> Result<usize> {
         use self::schema::instances;
         let new = RawInstance::new(instance)?;
-        let conn = &CONN.lock().unwrap();
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
         match diesel::insert_into(instances::table)
             .values(new)
             .execute(conn) {
@@ -26,7 +26,7 @@ impl InstanceDaoTrait for InstanceDaoImpl {
     /// check whether source stored earlier
     fn is_exists(&self, ins: &Instance) -> Result<bool> {
         use self::schema::instances::dsl::*;
-        let conn = &CONN.lock().unwrap();
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = instances
             .filter(instance_id.eq(ins.id.to_ne_bytes().to_vec()))
             .filter(thing.eq(ins.thing.get_full_key()))
@@ -46,7 +46,7 @@ impl InstanceDaoTrait for InstanceDaoImpl {
     }
     fn get_by_id(&self, record_id: u128) -> Result<Option<Instance>> {
         use self::schema::instances::dsl::*;
-        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = instances
             .filter(instance_id.eq(u128_to_vec_u8(record_id)))
             .order(status_version.desc())
@@ -64,7 +64,7 @@ impl InstanceDaoTrait for InstanceDaoImpl {
 
     fn get_by_full_key(&self, full_key: &str, limit: i64) -> Result<Option<Vec<Instance>>> {
         use self::schema::instances::dsl::*;
-        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = instances
             .filter(thing.eq(full_key))
             .order(status_version.desc())
@@ -92,7 +92,7 @@ impl InstanceDaoImpl {
     pub fn delete(ins: &Instance) -> Result<usize> {
         debug!("delete instance, id is : {:?}", ins.id);
         use self::schema::instances::dsl::*;
-        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rows = instances
             .filter(instance_id.eq(ins.id.to_ne_bytes().to_vec()))
             .filter(thing.eq(ins.thing.get_full_key()))

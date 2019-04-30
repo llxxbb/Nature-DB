@@ -5,7 +5,7 @@ use diesel::prelude::*;
 use crate::models::converter_cfg::{OneStepFlow, OneStepFlowSettings};
 use crate::models::define::OneStepFlowDaoTrait;
 use crate::raw_models::RawOneStepFlow;
-use crate::CONN;
+use crate::{CONN, CONNNECTION};
 use super::*;
 
 pub struct OneStepFlowDaoImpl;
@@ -13,7 +13,7 @@ pub struct OneStepFlowDaoImpl;
 impl OneStepFlowDaoTrait for OneStepFlowDaoImpl {
     fn get_relations(&self, from: &Thing) -> Result<Option<Vec<OneStepFlow>>> {
         use self::schema::one_step_flow::dsl::*;
-        let conn = &CONN.lock().unwrap();
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = match one_step_flow
             .filter(from_thing.eq(&from.get_full_key()))
             .filter(from_version.eq(from.version))
@@ -50,7 +50,7 @@ impl OneStepFlowDaoTrait for OneStepFlowDaoImpl {
 impl OneStepFlowDaoImpl {
     pub fn insert(one: RawOneStepFlow) -> Result<usize> {
         use self::schema::one_step_flow;
-        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::insert_into(one_step_flow::table)
             .values(one)
             .execute(conn);
@@ -61,7 +61,7 @@ impl OneStepFlowDaoImpl {
     }
     pub fn delete(one: RawOneStepFlow) -> Result<usize> {
         use self::schema::one_step_flow::dsl::*;
-        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::delete(
             one_step_flow
                 .filter(from_thing.eq(one.from_thing))

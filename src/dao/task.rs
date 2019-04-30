@@ -4,7 +4,7 @@ use nature_common::util::id_tool::vec_to_hex_string;
 
 use crate::models::define::TaskDaoTrait;
 use crate::raw_models::{RawTask, RawTaskError};
-use crate::CONN;
+use crate::{CONN, CONNNECTION};
 use super::*;
 
 use self::schema::task::dsl::*;
@@ -14,7 +14,7 @@ pub struct TaskDaoImpl;
 impl TaskDaoTrait for TaskDaoImpl {
     fn insert(&self, raw: &RawTask) -> Result<usize> {
         use self::schema::task;
-        let conn = &CONN.lock().unwrap();
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::insert_into(task::table).values(raw).execute(conn);
         match rtn {
             Ok(num) => {
@@ -35,7 +35,7 @@ impl TaskDaoTrait for TaskDaoImpl {
     }
 
     fn delete(&self, record_id: &[u8]) -> Result<usize> {
-        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::delete(task.filter(task_id.eq(record_id))).execute(conn);
         match rtn {
             Ok(num) => Ok(num),
@@ -46,7 +46,7 @@ impl TaskDaoTrait for TaskDaoImpl {
     fn raw_to_error(&self, err: &NatureError, raw: &RawTask) -> Result<usize> {
         use self::schema::task_error;
         let rtn = {
-            let conn: &SqliteConnection = &CONN.lock().unwrap();
+            let conn: &CONNNECTION = &CONN.lock().unwrap();
             let rd = RawTaskError::from_raw(err, raw);
             diesel::insert_into(task_error::table).values(rd).execute(conn)
         };
@@ -75,7 +75,7 @@ impl TaskDaoTrait for TaskDaoImpl {
 
     /// increase one times and delay `delay` seconds
     fn increase_times_and_delay(&self, record_id: &[u8], delay: i32) -> Result<usize> {
-        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let sql = format!("update task set retried_times = retried_times + 1, execute_time = datetime('now', '+{} seconds') where task_id = x'{}'", delay, vec_to_hex_string(&record_id));
         println!("{}", &sql);
         match diesel::sql_query(sql)
@@ -86,7 +86,7 @@ impl TaskDaoTrait for TaskDaoImpl {
     }
 
     fn get(&self, record_id: &[u8]) -> Result<Option<RawTask>> {
-        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = task.filter(task_id.eq(record_id))
             .limit(1)
             .load::<RawTask>(conn);
@@ -101,7 +101,7 @@ impl TaskDaoTrait for TaskDaoImpl {
     }
 
     fn get_overdue(&self, seconds: &str) -> Result<Vec<RawTask>> {
-        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::sql_query(format!("select * from task where execute_time < datetime('now','localtime','-{} seconds') limit 100", seconds))
             .load::<RawTask>(conn);
         match rtn {

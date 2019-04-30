@@ -1,5 +1,4 @@
 //! Define the data used all over the project, not only by `fg-service`
-
 #![allow(proc_macro_derive_resolution_fallback)]
 #![feature(custom_attribute)]
 #![feature(rustc_private)]
@@ -26,7 +25,11 @@ use nature_common::*;
 
 pub use self::cache::*;
 pub use self::conn::*;
+pub use self::dao::*;
+pub use self::define::*;
+pub use self::models::*;
 pub use self::orm::*;
+pub use self::raw_models::*;
 
 pub mod schema;
 
@@ -44,9 +47,4 @@ mod test_util;
 
 pub mod service;
 
-mod conn {
-    #[cfg(feature = "mysql")]
-    pub use crate::mysql::CONN;
-    #[cfg(feature = "sqlite")]
-    pub use crate::sqlite::CONN;
-}
+mod conn;

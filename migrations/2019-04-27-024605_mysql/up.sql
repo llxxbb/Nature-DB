@@ -1,5 +1,5 @@
 -- Your SQL goes here
-CREATE TABLE `thing_defines` (
+create TABLE `thing_defines` (
 	`key`	VARCHAR ( 255 ) NOT NULL,
 	`description`	VARCHAR ( 1023 ),
 	`version`	INTEGER NOT NULL,
@@ -9,16 +9,16 @@ CREATE TABLE `thing_defines` (
 	PRIMARY KEY(`key`,`version`)
 );
 
-CREATE TABLE `one_step_flow` (
+create TABLE `one_step_flow` (
 	`from_thing`	VARCHAR ( 255 ) NOT NULL,
 	`from_version`	INTEGER NOT NULL,
 	`to_thing`	VARCHAR ( 255 ) NOT NULL,
 	`to_version`	INTEGER NOT NULL,
-	`settings` VARCHAR ( 1023 ),
+	`settings` VARCHAR ( 1023 ) NOT NULL,
 	PRIMARY KEY(`from_thing`,`from_version`,`to_thing`,`to_version`)
 );
 
-CREATE TABLE `instances` (
+create TABLE `instances` (
 	`instance_id`	BINARY(16) NOT NULL,
 	`thing`	VARCHAR ( 255 ) NOT NULL,
 	`version`	INTEGER NOT NULL,
@@ -35,7 +35,7 @@ CREATE TABLE `instances` (
 	PRIMARY KEY(`instance_id`,`thing`,`version`,`status_version`)
 );
 
-CREATE TABLE `task` (
+create TABLE `task` (
 	`task_id`	BINARY(16) NOT NULL,
 	`thing`	VARCHAR ( 255 ) NOT NULL,
 	`data_type`	SMALLINT NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE `task` (
 	PRIMARY KEY(`task_id`)
 );
 
-CREATE TABLE `task_error` (
+create TABLE `task_error` (
 	`task_id`	BINARY(16) NOT NULL,
 	`thing`	VARCHAR ( 255 ) NOT NULL,
 	`data_type`	SMALLINT NOT NULL,
@@ -56,7 +56,7 @@ CREATE TABLE `task_error` (
 	PRIMARY KEY(`task_id`)
 );
 
-CREATE TABLE `plan` (
+create TABLE `plan` (
 	`upstream`	VARCHAR ( 511 ) NOT NULL,
 	`to_biz`	VARCHAR ( 255 ) NOT NULL,
 	`to_version`	INTEGER NOT NULL,

@@ -5,17 +5,17 @@ mod conn {
     use std::sync::Mutex;
 
     use diesel::Connection;
-    use diesel::sqlite::SqliteConnection;
+    use diesel::mysql::MysqlConnection;
 
     lazy_static! {
-    pub static ref CONN :Mutex<SqliteConnection>  = Mutex::new(establish_connection());
+    pub static ref CONN :Mutex<MysqlConnection>  = Mutex::new(establish_connection());
 }
 
-    fn establish_connection() -> SqliteConnection {
+    fn establish_connection() -> MysqlConnection {
         let database_url = env::var("DATABASE_URL")
             .expect("DATABASE_URL must be set");
 
-        SqliteConnection::establish(&database_url)
+        MysqlConnection::establish(&database_url)
             .unwrap_or_else(|_| panic!("Error connectinstance_key_undefineding to {}", database_url))
     }
 

@@ -1,4 +1,4 @@
-use crate::CONN;
+use crate::{CONN, CONNNECTION};
 use crate::models::define::StorePlanDaoTrait;
 use crate::models::plan::PlanInfo;
 use crate::raw_models::RawPlanInfo;
@@ -10,7 +10,7 @@ pub struct StorePlanDaoImpl;
 impl StorePlanDaoTrait for StorePlanDaoImpl {
     fn save(&self, plan: &RawPlanInfo) -> Result<()> {
         use self::schema::plan;
-        let conn = &CONN.lock().unwrap();
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::insert_into(plan::table)
             .values(plan)
             .execute(conn);
@@ -28,7 +28,7 @@ impl StorePlanDaoTrait for StorePlanDaoImpl {
 
     fn get(&self, key: &str) -> Result<Option<PlanInfo>> {
         use super::schema::plan::dsl::*;
-        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = match plan.filter(upstream.eq(&key)).load::<RawPlanInfo>(conn) {
             Ok(rows) => rows,
             Err(e) => return Err(DbError::from(e)),
@@ -48,7 +48,7 @@ impl StorePlanDaoImpl {
     #[allow(dead_code)]
     fn delete(from_full_pall: &str) -> Result<usize> {
         use self::schema::plan::dsl::*;
-        let conn: &SqliteConnection = &CONN.lock().unwrap();
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::delete(plan.filter(upstream.eq(from_full_pall))).execute(conn);
         match rtn {
             Ok(num) => Ok(num),
