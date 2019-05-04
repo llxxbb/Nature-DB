@@ -1,9 +1,9 @@
 use std::rc::Rc;
 
-use nature_common::util::*;
-use nature_common::Result;
-
 use nature_common::Instance;
+use nature_common::Result;
+use nature_common::util::*;
+
 use crate::models::define::ThingDefineCacheTrait;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -56,11 +56,12 @@ unsafe impl Sync for InstanceServiceImpl {}
 mod test {
     use mockers::matchers::check;
 
+    use nature_common::{NatureError, Thing};
+
+    use crate::RawThingDefine;
     use crate::test_util::*;
 
     use super::*;
-    use crate::models::thing_define::ThingDefine;
-    use nature_common::{Thing, NatureError};
 
     #[test]
     fn can_not_get_from_cache() {
@@ -78,7 +79,7 @@ mod test {
         let mocks = MyMocks::new();
         let mut instance = Instance::new("/ok").unwrap();
         let expected_instance = instance.clone();
-        let define = ThingDefine::default();
+        let define = RawThingDefine::default();
         mocks.s.expect(mocks.c_thing_define.get_call(check(move |t: &&Thing| **t == expected_instance.thing)).and_return(Ok(define)));
         let testee = InstanceServiceImpl { define_cache: mocks.c_thing_define.clone() };
         let result = testee.verify(&mut instance);

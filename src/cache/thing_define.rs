@@ -9,16 +9,15 @@ use crate::*;
 use crate::dao::ThingDefineDaoImpl;
 use crate::models::define::ThingDefineCacheTrait;
 use crate::models::define::ThingDefineDaoTrait;
-use crate::models::thing_define::ThingDefine;
 
 lazy_static! {
-    static ref CACHE: Mutex<LruCache<Thing, ThingDefine>> = Mutex::new(LruCache::<Thing, ThingDefine>::with_expiry_duration(Duration::from_secs(3600)));
+    static ref CACHE: Mutex<LruCache<Thing, RawThingDefine>> = Mutex::new(LruCache::<Thing, RawThingDefine>::with_expiry_duration(Duration::from_secs(3600)));
 }
 
 pub struct ThingDefineCacheImpl;
 
 impl ThingDefineCacheTrait for ThingDefineCacheImpl {
-    fn get(&self, thing: &Thing) -> Result<ThingDefine> {
+    fn get(&self, thing: &Thing) -> Result<RawThingDefine> {
 //        debug!("get `ThingDefine` from cache for thing : {:?}", thing);
         if thing.get_full_key().is_empty() {
             return Err(NatureError::VerifyError("[biz] must not be empty!".to_string()));

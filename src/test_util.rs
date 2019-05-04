@@ -4,7 +4,6 @@ use mockers::Scenario;
 use mockers_derive::mock;
 use crate::models::converter_cfg::OneStepFlow;
 use crate::models::define::OneStepFlowDaoTrait;
-use crate::models::thing_define::ThingDefine;
 use crate::models::define::ThingDefineCacheTrait;
 use crate::*;
 
@@ -20,7 +19,7 @@ mock! {
     ThingDefineCacheTraitMock,
     self,
     trait ThingDefineCacheTrait{
-        fn get(&self, thing: &Thing) -> Result<ThingDefine>;
+        fn get(&self, thing: &Thing) -> Result<RawThingDefine>;
     }
 }
 

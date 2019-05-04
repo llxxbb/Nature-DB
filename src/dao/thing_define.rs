@@ -2,7 +2,6 @@ use diesel::prelude::*;
 
 use crate::{CONN, CONNNECTION};
 use crate::models::define::ThingDefineDaoTrait;
-use crate::models::thing_define::ThingDefine;
 use crate::raw_models::RawThingDefine;
 
 use super::*;
@@ -10,12 +9,12 @@ use super::*;
 pub struct ThingDefineDaoImpl;
 
 impl ThingDefineDaoTrait for ThingDefineDaoImpl {
-    fn get(thing: &Thing) -> Result<Option<ThingDefine>> {
+    fn get(thing: &Thing) -> Result<Option<RawThingDefine>> {
         use super::schema::thing_defines::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = thing_defines.filter(full_key.eq(&thing.get_full_key()))
             .filter(version.eq(thing.version))
-            .load::<ThingDefine>(conn);
+            .load::<RawThingDefine>(conn);
         match def {
             Ok(rtn) => match rtn.len() {
                 0 => Ok(None),
@@ -26,11 +25,11 @@ impl ThingDefineDaoTrait for ThingDefineDaoImpl {
         }
     }
 
-    fn insert(define: &ThingDefine) -> Result<usize> {
+    fn insert(define: &RawThingDefine) -> Result<usize> {
         use self::schema::thing_defines;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::insert_into(thing_defines::table)
-            .values(RawThingDefine::new(define))
+            .values(define)
             .execute(conn);
         match rtn {
             Ok(x) => Ok(x),
@@ -53,7 +52,7 @@ impl ThingDefineDaoTrait for ThingDefineDaoImpl {
 impl ThingDefineDaoImpl {
     pub fn new_by_key(key: &str) -> Result<usize> {
         let thing = Thing::new(key)?;
-        let mut define = ThingDefine::default();
+        let mut define = RawThingDefine::default();
         define.version = thing.version;
         define.full_key = thing.get_full_key();
         ThingDefineDaoImpl::insert(&define)
@@ -69,13 +68,12 @@ mod test {
     use crate::*;
     use crate::dao::ThingDefineDaoImpl;
     use crate::models::define::ThingDefineDaoTrait;
-    use crate::models::thing_define::ThingDefine;
 
     #[test]
     fn define_test() {
         // prepare data to insert
         env::set_var("DATABASE_URL", CONN_STR);
-        let define = ThingDefine {
+        let define = RawThingDefine {
             full_key: "/test".to_string(),
             description: Some("description".to_string()),
             version: 100,

@@ -1,13 +1,16 @@
-use crate::*;
 use chrono::prelude::*;
-use super::super::schema::thing_defines;
-use crate::models::thing_define::ThingDefine;
 
-#[derive(Debug)]
+use crate::*;
+
+use super::super::schema::thing_defines;
+
+#[derive(Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize)]
+#[derive(Queryable)]
 #[derive(Insertable)]
 #[table_name = "thing_defines"]
-pub struct RawThingDefine<'a> {
-    pub full_key: &'a str,
+pub struct RawThingDefine {
+    pub full_key: String,
 
     /// For human readable what the `Thing` is.
     pub description: Option<String>,
@@ -20,18 +23,25 @@ pub struct RawThingDefine<'a> {
     /// Define whats the `Thing` should include
     pub fields: Option<String>,
 
-    pub create_time: &'a NaiveDateTime,
+    pub create_time: NaiveDateTime,
 }
 
-impl<'a> RawThingDefine<'a> {
-    pub fn new(define: &'a ThingDefine) -> RawThingDefine {
+impl Default for RawThingDefine {
+    fn default() -> Self {
         RawThingDefine {
-            full_key: &define.full_key,
-            description: define.description.clone(),
-            version: define.version,
-            states: define.states.clone(),
-            fields: define.fields.clone(),
-            create_time: &define.create_time,
+            full_key: String::new(),
+            description: None,
+            version: 1,
+            states: None,
+            fields: None,
+            create_time: Local::now().naive_local(),
         }
     }
 }
+
+impl RawThingDefine {
+    pub fn is_status(&self) -> bool {
+        self.states.is_some()
+    }
+}
+

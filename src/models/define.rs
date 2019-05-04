@@ -1,19 +1,19 @@
 use std::env;
 
-use crate::models::thing_define::ThingDefine;
 use nature_common::{Thing, NatureError, Result, Instance};
 use crate::raw_models::{RawTask, RawPlanInfo};
 use crate::models::plan::PlanInfo;
 use crate::models::converter_cfg::OneStepFlow;
+use crate::RawThingDefine;
 
 pub trait ThingDefineDaoTrait {
-    fn get(thing: &Thing) -> Result<Option<ThingDefine>>;
-    fn insert(define: &ThingDefine) -> Result<usize>;
+    fn get(thing: &Thing) -> Result<Option<RawThingDefine>>;
+    fn insert(define: &RawThingDefine) -> Result<usize>;
     fn delete(thing: &Thing) -> Result<usize>;
 }
 
 pub trait ThingDefineCacheTrait {
-    fn get(&self, thing: &Thing) -> Result<ThingDefine>;
+    fn get(&self, thing: &Thing) -> Result<RawThingDefine>;
 }
 
 pub trait OneStepFlowDaoTrait {
