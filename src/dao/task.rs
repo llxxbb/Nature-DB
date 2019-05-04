@@ -1,4 +1,5 @@
 use diesel::result::*;
+use diesel::prelude::*;
 
 use nature_common::util::id_tool::vec_to_hex_string;
 
@@ -119,10 +120,11 @@ mod test {
     use chrono::prelude::*;
 
     use super::*;
+    use crate::CONN_STR;
 
     #[test]
     fn task_dao_test() {
-        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
+        env::set_var("DATABASE_URL", CONN_STR);
         let dao = TaskDaoImpl {};
         let record_id = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
 

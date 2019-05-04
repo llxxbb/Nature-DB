@@ -1,3 +1,5 @@
+use diesel::prelude::*;
+
 use crate::{CONN, CONNNECTION};
 use crate::models::define::StorePlanDaoTrait;
 use crate::models::plan::PlanInfo;
@@ -65,6 +67,7 @@ mod test {
     use std::collections::HashSet;
     use std::env;
 
+    use crate::CONN_STR;
     use crate::models::plan::PlanInfo;
     use crate::raw_models::RawPlanInfo;
 
@@ -72,7 +75,7 @@ mod test {
 
     #[test]
     fn save_and_get() {
-        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
+        env::set_var("DATABASE_URL", CONN_STR);
         // save it
         let tester = StorePlanDaoImpl {};
         let info = PlanInfo {

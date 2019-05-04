@@ -1,5 +1,4 @@
 pub use self::conn::*;
-pub use self::models::*;
 
 mod conn{
     use std::env;

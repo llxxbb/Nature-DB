@@ -74,7 +74,7 @@ mod test {
     #[test]
     fn define_test() {
         // prepare data to insert
-        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
+        env::set_var("DATABASE_URL", CONN_STR);
         let define = ThingDefine {
             key: "/test".to_string(),
             description: Some("description".to_string()),

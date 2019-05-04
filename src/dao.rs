@@ -1,5 +1,3 @@
-use diesel::prelude::*;
-
 use nature_common::*;
 
 use super::schema;

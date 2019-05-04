@@ -2,10 +2,11 @@ use std::str::FromStr;
 
 use diesel::prelude::*;
 
+use crate::{CONN, CONNNECTION};
 use crate::models::converter_cfg::{OneStepFlow, OneStepFlowSettings};
 use crate::models::define::OneStepFlowDaoTrait;
 use crate::raw_models::RawOneStepFlow;
-use crate::{CONN, CONNNECTION};
+
 use super::*;
 
 pub struct OneStepFlowDaoImpl;
@@ -122,6 +123,8 @@ mod test {
 
     use nature_common::*;
 
+    use crate::CONN_STR;
+
     use super::*;
 
     #[test]
@@ -144,7 +147,7 @@ mod test {
     }
 
     fn before_test(biz: &str, protocol: &str) -> Result<RawOneStepFlow> {
-        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
+        env::set_var("DATABASE_URL", CONN_STR);
         let _ = setup_logger();
         // clear before insert
         let _ = OneStepFlowDaoImpl::delete_by_biz(biz, "to");

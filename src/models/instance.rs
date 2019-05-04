@@ -3,7 +3,6 @@ use std::rc::Rc;
 use nature_common::util::*;
 use nature_common::Result;
 
-use super::*;
 use nature_common::Instance;
 use crate::models::define::ThingDefineCacheTrait;
 

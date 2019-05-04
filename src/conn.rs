@@ -20,3 +20,8 @@ mod sqlite {
 
     pub type CONNNECTION = SqliteConnection;
 }
+
+#[cfg(feature = "mysql")]
+pub static CONN_STR : &str = "mysql://root@localhost/nature";
+#[cfg(feature = "sqlite")]
+pub static CONN_STR : &str = "nature.sqlite";

@@ -116,11 +116,12 @@ mod test {
     use crate::dao::instance::InstanceDaoImpl;
 
     use super::*;
+    use crate::CONN_STR;
 
     #[test]
     fn instance_insert_exists_delete_test() {
         let tester = InstanceDaoImpl {};
-        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
+        env::set_var("DATABASE_URL", CONN_STR);
         // prepare data to insert
         let instance = Instance {
             id: 0,
@@ -153,7 +154,7 @@ mod test {
     #[test]
     fn get_last_status() {
         let tester = InstanceDaoImpl {};
-        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
+        env::set_var("DATABASE_URL", CONN_STR);
         // prepare data to insert
         let mut instance = Instance {
             id: 0,
