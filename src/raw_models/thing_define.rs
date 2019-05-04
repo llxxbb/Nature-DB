@@ -7,7 +7,7 @@ use crate::models::thing_define::ThingDefine;
 #[derive(Insertable)]
 #[table_name = "thing_defines"]
 pub struct RawThingDefine<'a> {
-    pub key: &'a str,
+    pub full_key: &'a str,
 
     /// For human readable what the `Thing` is.
     pub description: Option<String>,
@@ -26,7 +26,7 @@ pub struct RawThingDefine<'a> {
 impl<'a> RawThingDefine<'a> {
     pub fn new(define: &'a ThingDefine) -> RawThingDefine {
         RawThingDefine {
-            key: &define.key,
+            full_key: &define.full_key,
             description: define.description.clone(),
             version: define.version,
             states: define.states.clone(),

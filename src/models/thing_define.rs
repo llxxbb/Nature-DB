@@ -5,7 +5,7 @@ use chrono::prelude::*;
 #[derive(Serialize, Deserialize, Debug, Queryable, Clone, PartialOrd, PartialEq)]
 pub struct ThingDefine {
     /// corresponding to `Thing`'s full_key
-    pub key: String,
+    pub full_key: String,
 
     /// For human readable what the `Thing` is.
     pub description: Option<String>,
@@ -25,7 +25,7 @@ pub struct ThingDefine {
 impl Default for ThingDefine {
     fn default() -> Self {
         ThingDefine {
-            key: String::new(),
+            full_key: String::new(),
             description: None,
             version: 1,
             states: None,

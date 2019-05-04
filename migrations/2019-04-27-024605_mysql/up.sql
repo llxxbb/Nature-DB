@@ -1,12 +1,12 @@
 -- Your SQL goes here
 create TABLE `thing_defines` (
-	`key`	VARCHAR ( 255 ) NOT NULL,
+	`full_key`	VARCHAR ( 255 ) NOT NULL,
 	`description`	VARCHAR ( 1023 ),
 	`version`	INTEGER NOT NULL,
 	`states`	VARCHAR ( 1023 ),
 	`fields`	VARCHAR ( 1023 ),
 	`create_time`	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	PRIMARY KEY(`key`,`version`)
+	PRIMARY KEY(`full_key`,`version`)
 );
 
 create TABLE `one_step_flow` (

@@ -13,7 +13,7 @@ impl ThingDefineDaoTrait for ThingDefineDaoImpl {
     fn get(thing: &Thing) -> Result<Option<ThingDefine>> {
         use super::schema::thing_defines::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
-        let def = thing_defines.filter(key.eq(&thing.get_full_key()))
+        let def = thing_defines.filter(full_key.eq(&thing.get_full_key()))
             .filter(version.eq(thing.version))
             .load::<ThingDefine>(conn);
         match def {
@@ -41,7 +41,7 @@ impl ThingDefineDaoTrait for ThingDefineDaoImpl {
     fn delete(thing: &Thing) -> Result<usize> {
         use self::schema::thing_defines::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
-        let rtn = diesel::delete(thing_defines.filter(key.eq(&thing.get_full_key())).filter(version.eq(thing.version)))
+        let rtn = diesel::delete(thing_defines.filter(full_key.eq(&thing.get_full_key())).filter(version.eq(thing.version)))
             .execute(conn);
         match rtn {
             Ok(x) => Ok(x),
@@ -55,7 +55,7 @@ impl ThingDefineDaoImpl {
         let thing = Thing::new(key)?;
         let mut define = ThingDefine::default();
         define.version = thing.version;
-        define.key = thing.get_full_key();
+        define.full_key = thing.get_full_key();
         ThingDefineDaoImpl::insert(&define)
     }
 }
@@ -76,7 +76,7 @@ mod test {
         // prepare data to insert
         env::set_var("DATABASE_URL", CONN_STR);
         let define = ThingDefine {
-            key: "/test".to_string(),
+            full_key: "/test".to_string(),
             description: Some("description".to_string()),
             version: 100,
             states: Some("status".to_string()),

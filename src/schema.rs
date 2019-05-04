@@ -60,8 +60,8 @@ table! {
 }
 
 table! {
-    thing_defines (key, version) {
-        key -> Text,
+    thing_defines (full_key, version) {
+        full_key -> Text,
         description -> Nullable<Text>,
         version -> Integer,
         states -> Nullable<Text>,
