@@ -1,10 +1,12 @@
-use nature_common::{Thing, Executor, Instance};
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap, HashSet};
+
+use nature_common::{Executor, Instance, Thing};
+
 use crate::{OneStepFlow, Selector};
 
 /// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct  Mission {
+pub struct Mission {
     pub to: Thing,
     pub executor: Executor,
     pub last_status_demand: Option<LastStatusDemand>,
@@ -17,7 +19,8 @@ pub struct LastStatusDemand {
 }
 
 impl Mission {
-    pub fn filter_relations(instance: &Instance, maps: Vec<OneStepFlow>) -> Option<Vec<Mission>> {
+    pub fn filter_relations(para: (&Instance, Vec<OneStepFlow>)) -> Option<Vec<Mission>> {
+        let (instance, maps) = para;
         debug!("------------------filter_relations------------------------");
         let mut rtn: Vec<Mission> = Vec::new();
         for m in maps {

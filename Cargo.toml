@@ -32,6 +32,3 @@ log = "0.4"
 mysql = []
 sqlite = []
 
-[dev-dependencies]
-mockers_derive = "0.13"
-mockers = "0.13"

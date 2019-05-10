@@ -11,10 +11,6 @@ extern crate lazy_static;
 #[macro_use]
 extern crate log;
 extern crate lru_time_cache;
-#[cfg(test)]
-extern crate mockers;
-#[cfg(test)]
-extern crate mockers_derive;
 extern crate nature_common;
 extern crate serde;
 #[macro_use]
@@ -42,8 +38,6 @@ mod raw_models;
 mod models;
 #[cfg(feature = "mysql")]
 mod mysql;
-#[cfg(test)]
-mod test_util;
 
 pub mod service;
 

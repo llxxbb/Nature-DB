@@ -43,6 +43,14 @@ impl RawTask {
             retried_times: 0,
         })
     }
+
+    pub fn save<T: Serialize + Debug, F>(task: &T, thing: &str, data_type: i16, dao: F) -> Result<RawTask>
+        where F: Fn(&RawTask) -> Result<usize>
+    {
+        let result = Self::new(task, thing, data_type)?;
+        dao(&result)?;
+        Ok(result)
+    }
 }
 
 
