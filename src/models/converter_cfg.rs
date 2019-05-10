@@ -2,17 +2,12 @@ use std::collections::HashSet;
 use std::iter::Iterator;
 
 use nature_common::*;
+use crate::Mission;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RouteInfo {
     pub instance: Instance,
     pub maps: Vec<OneStepFlow>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct LastStatusDemand {
-    pub target_status_include: HashSet<String>,
-    pub target_status_exclude: HashSet<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -30,14 +25,6 @@ impl Default for ConverterInfo {
             last_status: None,
         }
     }
-}
-
-/// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct Mission {
-    pub to: Thing,
-    pub executor: Executor,
-    pub last_status_demand: Option<LastStatusDemand>,
 }
 
 
