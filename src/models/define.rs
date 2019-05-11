@@ -11,10 +11,6 @@ pub trait ThingDefineDaoTrait {
     fn delete(thing: &Thing) -> Result<usize>;
 }
 
-pub trait ThingDefineCacheTrait {
-    fn get(&self, thing: &Thing) -> Result<RawThingDefine>;
-}
-
 pub trait StorePlanDaoTrait {
     /// replace the plan if plan exists.
     fn save(&self, plan: &RawPlanInfo) -> Result<()>;

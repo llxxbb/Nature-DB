@@ -2,31 +2,12 @@ use std::collections::HashSet;
 use std::iter::Iterator;
 
 use nature_common::*;
-use crate::Mission;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RouteInfo {
     pub instance: Instance,
     pub maps: Vec<OneStepFlow>,
 }
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ConverterInfo {
-    pub from: Instance,
-    pub target: Mission,
-    pub last_status: Option<Instance>,
-}
-
-impl Default for ConverterInfo {
-    fn default() -> Self {
-        ConverterInfo {
-            from: Instance::default(),
-            target: Mission::default(),
-            last_status: None,
-        }
-    }
-}
-
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct Selector {

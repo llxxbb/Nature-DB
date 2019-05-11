@@ -51,6 +51,17 @@ impl RawTask {
         dao(&result)?;
         Ok(result)
     }
+
+    pub fn save_batch<FI, FD>(news: &[RawTask], old_id: &[u8], dao_insert: FI, dao_delete: FD) -> Result<()>
+        where FI: Fn(&RawTask) -> Result<usize>,
+              FD: Fn(&[u8]) -> Result<usize>
+    {
+        for v in news {
+            dao_insert(v)?;
+        }
+        dao_delete(old_id)?;
+        Ok(())
+    }
 }
 
 

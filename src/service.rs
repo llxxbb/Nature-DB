@@ -13,9 +13,7 @@ impl DBService {
         let define = Rc::new(ThingDefineCacheImpl {});
         DBService {
             thing_define: define.clone(),
-            instance: Rc::new(InstanceServiceImpl {
-                define_cache: define.clone(),
-            }),
+            instance: Rc::new(InstanceServiceImpl {}),
         }
     }
 }

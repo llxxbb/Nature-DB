@@ -7,7 +7,6 @@ use lru_time_cache::LruCache;
 
 use crate::*;
 use crate::dao::ThingDefineDaoImpl;
-use crate::models::define::ThingDefineCacheTrait;
 use crate::models::define::ThingDefineDaoTrait;
 
 lazy_static! {
@@ -16,8 +15,8 @@ lazy_static! {
 
 pub struct ThingDefineCacheImpl;
 
-impl ThingDefineCacheTrait for ThingDefineCacheImpl {
-    fn get(&self, thing: &Thing) -> Result<RawThingDefine> {
+impl ThingDefineCacheImpl {
+    pub fn get(thing: &Thing) -> Result<RawThingDefine> {
 //        debug!("get `ThingDefine` from cache for thing : {:?}", thing);
         if thing.get_full_key().is_empty() {
             return Err(NatureError::VerifyError("[biz] must not be empty!".to_string()));

@@ -1,8 +1,4 @@
-use std::rc::Rc;
-
 use nature_common::Instance;
-
-use crate::models::define::ThingDefineCacheTrait;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct DelayedInstances {
@@ -22,8 +18,6 @@ impl Default for CallbackResult {
     }
 }
 
-pub struct InstanceServiceImpl {
-    pub define_cache: Rc<ThingDefineCacheTrait>,
-}
+pub struct InstanceServiceImpl;
 
 unsafe impl Sync for InstanceServiceImpl {}
