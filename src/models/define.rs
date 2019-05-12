@@ -1,20 +1,12 @@
 use std::env;
 
 use nature_common::{Thing, Result};
-use crate::raw_models::{RawPlanInfo};
-use crate::models::plan::PlanInfo;
 use crate::RawThingDefine;
 
 pub trait ThingDefineDaoTrait {
     fn get(thing: &Thing) -> Result<Option<RawThingDefine>>;
     fn insert(define: &RawThingDefine) -> Result<usize>;
     fn delete(thing: &Thing) -> Result<usize>;
-}
-
-pub trait StorePlanDaoTrait {
-    /// replace the plan if plan exists.
-    fn save(&self, plan: &RawPlanInfo) -> Result<()>;
-    fn get(&self, key: &str) -> Result<Option<PlanInfo>>;
 }
 
 lazy_static! {

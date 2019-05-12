@@ -5,7 +5,7 @@ use serde_json;
 use nature_common::*;
 
 use crate::models::define::*;
-use crate::models::plan::PlanInfo;
+use crate::PlanInfo;
 use crate::schema::plan;
 
 #[derive(Debug)]
