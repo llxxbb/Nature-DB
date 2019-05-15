@@ -1,7 +1,6 @@
 use diesel::prelude::*;
 
 use crate::{CONN, CONNNECTION};
-use crate::models::plan::PlanInfo;
 use crate::raw_models::RawPlanInfo;
 
 use super::*;
@@ -27,7 +26,7 @@ impl StorePlanDaoImpl {
         }
     }
 
-    pub fn get(key: &str) -> Result<Option<PlanInfo>> {
+    pub fn get(key: &str) -> Result<Option<RawPlanInfo>> {
         use super::schema::plan::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = match plan.filter(upstream.eq(&key)).load::<RawPlanInfo>(conn) {
@@ -36,7 +35,7 @@ impl StorePlanDaoImpl {
         };
         match def.len() {
             0 => Ok(None),
-            1 => Ok(Some(def[0].to_plan_info()?)),
+            1 => Ok(Some(def[0].clone())),
             x => Err(NatureError::DaoLogicalError(format!(
                 "not 1 and 0 but get {}",
                 x
