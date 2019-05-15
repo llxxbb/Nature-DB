@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use nature_common::{Executor, Instance, Thing};
+use nature_common::{DynamicConverter, Executor, Instance, Result, Thing, ThingType};
 
 use crate::{OneStepFlow, Selector};
 
@@ -19,6 +19,25 @@ pub struct LastStatusDemand {
 }
 
 impl Mission {
+    pub fn for_dynamic(dynamic: Vec<DynamicConverter>) -> Result<Vec<Mission>> {
+        debug!("------------------get_dynamic_route------------------------");
+        let mut missions: Vec<Mission> = Vec::new();
+        for d in dynamic {
+            let t = match d.to {
+                None => Thing::new_null(),
+                Some(s) => Thing::new_with_type(&s, ThingType::Dynamic)?,
+            };
+            let mission = Mission {
+                to: t,
+                executor: d.fun.clone(),
+                last_status_demand: None,
+            };
+            missions.push(mission)
+        }
+        debug!("missions : {:?}", missions);
+        Ok(missions)
+    }
+
     pub fn filter_relations(para: (&Instance, Vec<OneStepFlow>)) -> Option<Vec<Mission>> {
         let (instance, maps) = para;
         debug!("------------------filter_relations------------------------");
