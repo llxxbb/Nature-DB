@@ -44,13 +44,27 @@ impl RawTask {
         })
     }
 
-    pub fn save<T: Serialize + Debug, F>(task: &T, thing: &str, data_type: i16, dao: F) -> Result<RawTask>
+    pub fn save<T: Serialize + Debug, F>(task: &T, thing: &str, data_type: i16, saver: F) -> Result<RawTask>
         where F: Fn(&RawTask) -> Result<usize>
     {
         let result = Self::new(task, thing, data_type)?;
-        dao(&result)?;
+        saver(&result)?;
         Ok(result)
     }
+
+    /// by performance reason, for one-to-one carry we can reuse the beginning carry to finish all flows.
+    /// That way we need not to communicate with DB for create new and delete old carrier.
+    /// But for failure we must redo from beginning. but I think it has small chance.
+    /// Another disadvantage is the failure information will be attached to the beginning.
+    pub fn finish_old<FI, FD>(&mut self, old: &RawTask, _dao_insert: FI, _dao_delete: FD) -> Result<usize>
+        where FI: Fn(&RawTask) -> Result<usize>,
+              FD: Fn(&[u8]) -> Result<usize>
+    {
+        // TODO  当遇到错误时如果要结束的 delivery ID 和新的delivery 不一样 需要结束之前的 delivery 并创建新的 delivery
+        self.task_id = old.task_id.clone(); // the id is used for final finished
+        Ok(1)
+    }
+
 
     pub fn save_batch<FI, FD>(news: &[RawTask], old_id: &[u8], dao_insert: FI, dao_delete: FD) -> Result<()>
         where FI: Fn(&RawTask) -> Result<usize>,
