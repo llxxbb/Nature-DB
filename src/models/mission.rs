@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use nature_common::{DynamicConverter, Executor, Instance, Result, Thing, ThingType};
+use nature_common::{DynamicConverter, Executor, Instance, NatureError, Result, Thing, ThingType};
 
 use crate::{OneStepFlow, Selector};
 
@@ -16,6 +16,22 @@ pub struct Mission {
 pub struct LastStatusDemand {
     pub target_status_include: HashSet<String>,
     pub target_status_exclude: HashSet<String>,
+}
+
+impl LastStatusDemand {
+    pub fn check(&self, last: &HashSet<String>) -> Result<()> {
+        for s in &self.target_status_include {
+            if !last.contains(s) {
+                return Err(NatureError::TargetInstanceNotIncludeStatus(s.clone()));
+            }
+        }
+        for s in &self.target_status_include {
+            if last.contains(s) {
+                return Err(NatureError::TargetInstanceContainsExcludeStatus(s.clone()));
+            }
+        }
+        Ok(())
+    }
 }
 
 impl Mission {
