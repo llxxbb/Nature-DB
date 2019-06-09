@@ -5,8 +5,11 @@ authors = ["XueBin Li"]
 edition = "2018"
 workspace = "../Nature"
 
-[dependencies]
+description = "The persistent layer which used by Nature"
+repository = "https://github.com/llxxbb/Nature-DB"
+license = "MIT"
 
+[dependencies]
 
 nature_common = {path = "../Nature-Common"}
 
