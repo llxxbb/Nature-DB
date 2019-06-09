@@ -32,6 +32,7 @@ r2d2-diesel = "1.0"
 log = "0.4"
 
 [features]
+default = ["sqlite"]
 mysql = []
 sqlite = []
 
