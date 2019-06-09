@@ -13,3 +13,4 @@ Cargo.lock
 *.sqlite
 *.iml
 .vscode/
+*.log
