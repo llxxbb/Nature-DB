@@ -11,7 +11,7 @@ license = "MIT"
 
 [dependencies]
 
-nature_common = {path = "../Nature-Common"}
+nature_common = {path = "../Nature-Common", version = "0.0.1"}
 
 rand = "0.6"
 chrono = { version = "0.4", features = ["serde"] }
