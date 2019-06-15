@@ -1,6 +1,6 @@
 [package]
 name = "nature_db"
-version = "0.0.1"
+version = "0.0.2"
 authors = ["XueBin Li"]
 edition = "2018"
 workspace = "../Nature"
@@ -11,7 +11,7 @@ license = "MIT"
 
 [dependencies]
 
-nature_common = {path = "../Nature-Common", version = "0.0.1"}
+nature_common = {path = "../Nature-Common", version = "0.0.2"}
 
 rand = "0.6"
 chrono = { version = "0.4", features = ["serde"] }

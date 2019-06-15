@@ -1,12 +1,12 @@
 use std::env;
 
-use nature_common::{Thing, Result};
+use nature_common::{BizMeta, Result};
 use crate::RawThingDefine;
 
 pub trait ThingDefineDaoTrait {
-    fn get(thing: &Thing) -> Result<Option<RawThingDefine>>;
+    fn get(thing: &BizMeta) -> Result<Option<RawThingDefine>>;
     fn insert(define: &RawThingDefine) -> Result<usize>;
-    fn delete(thing: &Thing) -> Result<usize>;
+    fn delete(thing: &BizMeta) -> Result<usize>;
 }
 
 lazy_static! {

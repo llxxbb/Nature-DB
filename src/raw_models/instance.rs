@@ -7,6 +7,7 @@ use serde_json;
 
 use nature_common::*;
 use nature_common::util::vec_to_u128;
+
 use crate::models::define::*;
 
 use super::super::schema::instances;
@@ -34,7 +35,7 @@ impl RawInstance {
         let from = match &self.from_thing {
             None => None,
             Some(k) => {
-                let thing = Thing::from_full_key(k, self.from_version.unwrap())?;
+                let thing = BizMeta::from_full_key(k, self.from_version.unwrap())?;
                 Some(FromInstance {
                     thing,
                     status_version: self.from_status_version.unwrap(),
@@ -53,7 +54,7 @@ impl RawInstance {
         Ok(Instance {
             id,
             data: InstanceNoID {
-                thing: Thing::from_full_key(&self.thing, self.version)?,
+                thing: BizMeta::from_full_key(&self.thing, self.version)?,
                 event_time: self.event_time.timestamp_millis(),
                 execute_time: self.execute_time.timestamp_millis(),
                 create_time: self.create_time.timestamp_millis(),

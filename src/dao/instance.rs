@@ -82,7 +82,7 @@ impl InstanceDaoImpl {
 
     /// default `ThingType` is `Business`
     pub fn get_by_key(biz_key: &str, limit: i64) -> Result<Option<Vec<Instance>>> {
-        let tk = Thing::new(biz_key)?;
+        let tk = BizMeta::new(biz_key)?;
         Self::get_by_full_key(&tk.get_full_key(), limit)
     }
 }

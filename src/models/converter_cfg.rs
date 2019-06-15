@@ -35,8 +35,8 @@ pub struct Selector {
 /// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct OneStepFlow {
-    pub from: Thing,
-    pub to: Thing,
+    pub from: BizMeta,
+    pub to: BizMeta,
     pub selector: Option<Selector>,
     pub executor: Executor,
 }
@@ -51,8 +51,8 @@ impl Iterator for OneStepFlow {
 impl OneStepFlow {
     pub fn new_for_local_executor(from: &str, to: &str, local_executor: &str) -> Result<Self> {
         Ok(OneStepFlow {
-            from: Thing::new(from)?,
-            to: Thing::new(to)?,
+            from: BizMeta::new(from)?,
+            to: BizMeta::new(to)?,
             selector: None,
             executor: Executor {
                 protocol: Protocol::LocalRust,
@@ -64,8 +64,8 @@ impl OneStepFlow {
     }
     pub fn new_for_local_executor_with_group_and_proportion(from: &str, to: &str, local_executor: &str, group: &str, proportion: u32) -> Result<Self> {
         Ok(OneStepFlow {
-            from: Thing::new(from)?,
-            to: Thing::new(to)?,
+            from: BizMeta::new(from)?,
+            to: BizMeta::new(to)?,
             selector: None,
             executor: Executor {
                 protocol: Protocol::LocalRust,
@@ -77,8 +77,8 @@ impl OneStepFlow {
     }
     pub fn new_for_source_status_needed(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
         Ok(OneStepFlow {
-            from: Thing::new(from)?,
-            to: Thing::new(to)?,
+            from: BizMeta::new(from)?,
+            to: BizMeta::new(to)?,
             selector: Some(Selector {
                 source_status_include: set.clone(),
                 source_status_exclude: HashSet::new(),
@@ -92,8 +92,8 @@ impl OneStepFlow {
     }
     pub fn new_for_source_status_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
         Ok(OneStepFlow {
-            from: Thing::new(from)?,
-            to: Thing::new(to)?,
+            from: BizMeta::new(from)?,
+            to: BizMeta::new(to)?,
             selector: Some(Selector {
                 source_status_include: HashSet::new(),
                 source_status_exclude: set.clone(),
@@ -107,8 +107,8 @@ impl OneStepFlow {
     }
     pub fn new_for_context_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
         Ok(OneStepFlow {
-            from: Thing::new(from)?,
-            to: Thing::new(to)?,
+            from: BizMeta::new(from)?,
+            to: BizMeta::new(to)?,
             selector: Some(Selector {
                 source_status_include: HashSet::new(),
                 source_status_exclude: HashSet::new(),
@@ -122,8 +122,8 @@ impl OneStepFlow {
     }
     pub fn new_for_context_include(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
         Ok(OneStepFlow {
-            from: Thing::new(from)?,
-            to: Thing::new(to)?,
+            from: BizMeta::new(from)?,
+            to: BizMeta::new(to)?,
             selector: Some(Selector {
                 source_status_include: HashSet::new(),
                 source_status_exclude: HashSet::new(),

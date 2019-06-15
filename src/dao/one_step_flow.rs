@@ -11,7 +11,7 @@ use super::*;
 pub struct OneStepFlowDaoImpl;
 
 impl OneStepFlowDaoImpl {
-    pub fn get_relations(from: &Thing) -> Result<Option<Vec<OneStepFlow>>> {
+    pub fn get_relations(from: &BizMeta) -> Result<Option<Vec<OneStepFlow>>> {
         use self::schema::one_step_flow::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = match one_step_flow
@@ -81,8 +81,8 @@ impl OneStepFlowDaoImpl {
         protocol: &str,
     ) -> Result<RawOneStepFlow> {
         let one = RawOneStepFlow::new(
-            &Thing::new(from)?,
-            &Thing::new(to)?,
+            &BizMeta::new(from)?,
+            &BizMeta::new(to)?,
             &OneStepFlowSettings {
                 selector: None,
                 executor: vec![Executor {
@@ -98,8 +98,8 @@ impl OneStepFlowDaoImpl {
     }
 
     pub fn delete_by_biz(from: &str, to: &str) -> Result<usize> {
-        let from = &Thing::new(from)?;
-        let to = &Thing::new(to)?;
+        let from = &BizMeta::new(from)?;
+        let to = &BizMeta::new(to)?;
         let row = RawOneStepFlow {
             from_thing: from.get_full_key(),
             from_version: from.version,
