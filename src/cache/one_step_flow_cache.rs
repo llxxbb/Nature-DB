@@ -17,10 +17,10 @@ use self::rand::{Rng, thread_rng};
 
 /// all flows for one upper `Thing` and what a chance to lower `group`
 type ITEM = (Option<Vec<OneStepFlow>>, Option<HashMap<Executor, Range<f32>>>);
-type CACHE = Mutex<LruCache<BizMeta, ITEM>>;
+type CACHE = Mutex<LruCache<Meta, ITEM>>;
 
 lazy_static! {
-    static ref CACHE_MAPPING: CACHE = Mutex::new(LruCache::<BizMeta, ITEM>::with_expiry_duration(Duration::from_secs(3600)));
+    static ref CACHE_MAPPING: CACHE = Mutex::new(LruCache::<Meta, ITEM>::with_expiry_duration(Duration::from_secs(3600)));
 }
 
 
@@ -29,7 +29,7 @@ pub struct OneStepFlowCacheImpl;
 type Dao = OneStepFlowDaoImpl;
 
 impl OneStepFlowCacheImpl {
-    pub fn get(from: &BizMeta) -> Result<Option<Vec<OneStepFlow>>> {
+    pub fn get(from: &Meta) -> Result<Option<Vec<OneStepFlow>>> {
         let (relations, balances) = Self::get_balanced(from)?;
         if relations.is_none() {
             debug!("no route info for : {:?}", from);
@@ -38,7 +38,7 @@ impl OneStepFlowCacheImpl {
             Ok(Some(Self::weight_filter(&relations.unwrap(), &balances.unwrap())))
         }
     }
-    fn get_balanced(from: &BizMeta) -> Result<ITEM> {
+    fn get_balanced(from: &Meta) -> Result<ITEM> {
         let mut cache = CACHE_MAPPING.lock().unwrap();
         if let Some(balances) = cache.get(from) {
             debug!("get balances from cache for thing : {:?}", from);

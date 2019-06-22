@@ -9,7 +9,7 @@ use super::*;
 pub struct ThingDefineDaoImpl;
 
 impl ThingDefineDaoTrait for ThingDefineDaoImpl {
-    fn get(thing: &BizMeta) -> Result<Option<RawThingDefine>> {
+    fn get(thing: &Meta) -> Result<Option<RawThingDefine>> {
         use super::schema::thing_defines::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = thing_defines.filter(full_key.eq(&thing.get_full_key()))
@@ -37,7 +37,7 @@ impl ThingDefineDaoTrait for ThingDefineDaoImpl {
         }
     }
 
-    fn delete(thing: &BizMeta) -> Result<usize> {
+    fn delete(thing: &Meta) -> Result<usize> {
         use self::schema::thing_defines::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::delete(thing_defines.filter(full_key.eq(&thing.get_full_key())).filter(version.eq(thing.version)))
@@ -51,7 +51,7 @@ impl ThingDefineDaoTrait for ThingDefineDaoImpl {
 
 impl ThingDefineDaoImpl {
     pub fn new_by_key(key: &str) -> Result<usize> {
-        let thing = BizMeta::new(key)?;
+        let thing = Meta::new(key)?;
         let mut define = RawThingDefine::default();
         define.version = thing.version;
         define.full_key = thing.get_full_key();
@@ -81,7 +81,7 @@ mod test {
             fields: Some("fields".to_string()),
             create_time: Local::now().naive_local(),
         };
-        let thing = BizMeta::new_with_version_and_type("/test", 100, ThingType::Business).unwrap();
+        let thing = Meta::new_with_version_and_type("/test", 100, ThingType::Business).unwrap();
         // delete if it exists
         if let Ok(Some(_)) = ThingDefineDaoImpl::get(&thing) {
             let _ = ThingDefineDaoImpl::delete(&thing);

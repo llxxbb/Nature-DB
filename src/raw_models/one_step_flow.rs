@@ -18,7 +18,7 @@ pub struct RawOneStepFlow {
 }
 
 impl RawOneStepFlow {
-    pub fn new(from: &BizMeta, to: &BizMeta, settings: &OneStepFlowSettings) -> Result<Self> {
+    pub fn new(from: &Meta, to: &Meta, settings: &OneStepFlowSettings) -> Result<Self> {
         let st = serde_json::to_string(settings)?;
         let rtn = RawOneStepFlow {
             from_thing: from.get_full_key(),
@@ -57,8 +57,8 @@ impl OneStepFlow {
             let mut e2 = e.clone();
             e2.group = group.clone();
             OneStepFlow {
-                from: BizMeta::from_full_key(&val.from_thing, version).unwrap(),
-                to: BizMeta::from_full_key(&val.to_thing, val.to_version).unwrap(),
+                from: Meta::from_full_key(&val.from_thing, version).unwrap(),
+                to: Meta::from_full_key(&val.to_thing, val.to_version).unwrap(),
                 selector: selector.clone(),
                 executor: e2,
             }

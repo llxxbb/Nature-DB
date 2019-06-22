@@ -1,13 +1,13 @@
 use std::collections::{HashMap, HashSet};
 
-use nature_common::{BizMeta, DynamicConverter, Executor, Instance, NatureError, Result, ThingType};
+use nature_common::{DynamicConverter, Executor, Instance, Meta, NatureError, Result, ThingType};
 
 use crate::{OneStepFlow, Selector};
 
 /// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct Mission {
-    pub to: BizMeta,
+    pub to: Meta,
     pub executor: Executor,
     pub last_status_demand: Option<LastStatusDemand>,
 }
@@ -40,8 +40,8 @@ impl Mission {
         let mut missions: Vec<Mission> = Vec::new();
         for d in dynamic {
             let t = match d.to {
-                None => BizMeta::new_null(),
-                Some(s) => BizMeta::new_with_type(&s, ThingType::Dynamic)?,
+                None => Meta::new_null(),
+                Some(s) => Meta::new_with_type(&s, ThingType::Dynamic)?,
             };
             let mission = Mission {
                 to: t,
