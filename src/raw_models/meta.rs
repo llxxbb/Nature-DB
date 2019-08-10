@@ -2,13 +2,13 @@ use chrono::prelude::*;
 
 use crate::*;
 
-use super::super::schema::thing_defines;
+use super::super::schema::meta;
 
 #[derive(Debug, Clone, PartialEq)]
 #[derive(Serialize, Deserialize)]
 #[derive(Queryable)]
 #[derive(Insertable)]
-#[table_name = "thing_defines"]
+#[table_name = "meta"]
 pub struct RawThingDefine {
     pub full_key: String,
 

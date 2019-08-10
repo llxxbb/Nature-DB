@@ -28,8 +28,8 @@ impl InstanceDaoImpl {
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = instances
             .filter(instance_id.eq(ins.id.to_ne_bytes().to_vec()))
-            .filter(thing.eq(ins.thing.get_full_key()))
-            .filter(version.eq(ins.thing.version))
+            .filter(meta.eq(ins.meta.get_full_key()))
+            .filter(version.eq(ins.meta.version))
             .filter(status_version.eq(ins.status_version))
             .order(status_version.desc())
             .limit(1)
@@ -65,7 +65,7 @@ impl InstanceDaoImpl {
         use self::schema::instances::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = instances
-            .filter(thing.eq(full_key))
+            .filter(meta.eq(full_key))
             .order(status_version.desc())
             .limit(limit)
             .load::<RawInstance>(conn);
@@ -94,8 +94,8 @@ impl InstanceDaoImpl {
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rows = instances
             .filter(instance_id.eq(ins.id.to_ne_bytes().to_vec()))
-            .filter(thing.eq(ins.thing.get_full_key()))
-            .filter(version.eq(ins.thing.version))
+            .filter(meta.eq(ins.meta.get_full_key()))
+            .filter(version.eq(ins.meta.version))
             .filter(status_version.eq(ins.status_version));
         //        debug!("rows filter : {:?}", rows);
         match diesel::delete(rows).execute(conn) {
@@ -105,7 +105,7 @@ impl InstanceDaoImpl {
     }
 
     pub fn save(instance: &Instance) -> Result<usize> {
-        debug!("save instance for `Thing` {:?}, id : {:?}", instance.thing.get_full_key(), instance.id);
+        debug!("save instance for `Thing` {:?}, id : {:?}", instance.meta.get_full_key(), instance.id);
         let result = Self::insert(instance);
         match result {
             Ok(num) => Ok(num),
@@ -138,7 +138,7 @@ mod test {
 //        let instance = Instance {
 //            id: 0,
 //            data: InstanceNoID {
-//                thing: Thing::new_with_version_and_type("/instance/common", 100, ThingType::Business).unwrap(),
+//                meta: Thing::new_with_version_and_type("/instance/common", 100, ThingType::Business).unwrap(),
 //                event_time: 0,
 //                execute_time: 0,
 //                create_time: 0,
@@ -171,7 +171,7 @@ mod test {
 //        let mut instance = Instance {
 //            id: 0,
 //            data: InstanceNoID {
-//                thing: Thing::new_with_version_and_type("/instance/getLast", 100, ThingType::Business).unwrap(),
+//                meta: Thing::new_with_version_and_type("/instance/getLast", 100, ThingType::Business).unwrap(),
 //                event_time: 0,
 //                execute_time: 0,
 //                create_time: 0,

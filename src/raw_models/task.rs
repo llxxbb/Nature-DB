@@ -18,7 +18,7 @@ use super::super::schema::task;
 #[table_name = "task"]
 pub struct RawTask {
     pub task_id: Vec<u8>,
-    pub thing: String,
+    pub meta: String,
     pub data_type: i16,
     pub data: String,
     pub create_time: NaiveDateTime,
@@ -27,7 +27,7 @@ pub struct RawTask {
 }
 
 impl RawTask {
-    pub fn new<T: Serialize + Debug>(task: &T, thing: &str, data_type: i16) -> Result<RawTask> {
+    pub fn new<T: Serialize + Debug>(task: &T, meta: &str, data_type: i16) -> Result<RawTask> {
         let json = serde_json::to_string(task)?;
         if json.len() > *TASK_CONTENT_MAX_LENGTH.deref() {
             return Err(NatureError::DaoLogicalError("data's length can' be over : ".to_owned() + &TASK_CONTENT_MAX_LENGTH.to_string()));
@@ -35,7 +35,7 @@ impl RawTask {
         let time = Local::now().naive_local();
         Ok(RawTask {
             task_id: u128_to_vec_u8(generate_id(&task)?),
-            thing: thing.to_string(),
+            meta: meta.to_string(),
             data_type,
             data: json,
             create_time: time,
@@ -44,10 +44,10 @@ impl RawTask {
         })
     }
 
-    pub fn save<T: Serialize + Debug, F>(task: &T, thing: &str, data_type: i16, saver: F) -> Result<RawTask>
+    pub fn save<T: Serialize + Debug, F>(task: &T, meta: &str, data_type: i16, saver: F) -> Result<RawTask>
         where F: Fn(&RawTask) -> Result<usize>
     {
-        let result = Self::new(task, thing, data_type)?;
+        let result = Self::new(task, meta, data_type)?;
         saver(&result)?;
         Ok(result)
     }

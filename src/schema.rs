@@ -1,14 +1,13 @@
 table! {
-    instances (instance_id, thing, version, status_version) {
+    instances (instance_id, meta, para, status_version) {
         instance_id -> Binary,
-        thing -> Text,
-        version -> Integer,
+        meta -> Text,
+        para -> Text,
         content -> Text,
         context -> Nullable<Text>,
         status -> Nullable<Text>,
         status_version -> Integer,
-        from_thing -> Nullable<Text>,
-        from_version -> Nullable<Integer>,
+        from_meta -> Nullable<Text>,
         from_status_version -> Nullable<Integer>,
         event_time -> Timestamp,
         execute_time -> Timestamp,
@@ -17,11 +16,20 @@ table! {
 }
 
 table! {
-    one_step_flow (from_thing, from_version, to_thing, to_version) {
-        from_thing -> Text,
-        from_version -> Integer,
-        to_thing -> Text,
-        to_version -> Integer,
+    meta (full_key, version) {
+        full_key -> Text,
+        description -> Nullable<Text>,
+        version -> Integer,
+        states -> Nullable<Text>,
+        fields -> Nullable<Text>,
+        create_time -> Timestamp,
+    }
+}
+
+table! {
+    one_step_flow (from_meta, to_meta) {
+        from_meta -> Text,
+        to_meta -> Text,
         settings -> Text,
     }
 }
@@ -39,7 +47,7 @@ table! {
 table! {
     task (task_id) {
         task_id -> Binary,
-        thing -> Text,
+        meta -> Text,
         data_type -> SmallInt,
         data -> Text,
         create_time -> Timestamp,
@@ -51,7 +59,7 @@ table! {
 table! {
     task_error (task_id) {
         task_id -> Binary,
-        thing -> Text,
+        meta -> Text,
         data_type -> SmallInt,
         data -> Text,
         create_time -> Timestamp,
@@ -59,22 +67,11 @@ table! {
     }
 }
 
-table! {
-    thing_defines (full_key, version) {
-        full_key -> Text,
-        description -> Nullable<Text>,
-        version -> Integer,
-        states -> Nullable<Text>,
-        fields -> Nullable<Text>,
-        create_time -> Timestamp,
-    }
-}
-
 allow_tables_to_appear_in_same_query!(
     instances,
+    meta,
     one_step_flow,
     plan,
     task,
     task_error,
-    thing_defines,
 );

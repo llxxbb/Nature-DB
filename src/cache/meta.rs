@@ -13,24 +13,24 @@ lazy_static! {
     static ref CACHE: Mutex<LruCache<Meta, RawThingDefine>> = Mutex::new(LruCache::<Meta, RawThingDefine>::with_expiry_duration(Duration::from_secs(3600)));
 }
 
-pub struct ThingDefineCacheImpl;
+pub struct MetaCacheImpl;
 
-impl ThingDefineCacheImpl {
-    pub fn get(thing: &Meta) -> Result<RawThingDefine> {
-//        debug!("get `ThingDefine` from cache for thing : {:?}", thing);
-        if thing.get_full_key().is_empty() {
+impl MetaCacheImpl {
+    pub fn get(meta: &Meta) -> Result<RawThingDefine> {
+//        debug!("get `ThingDefine` from cache for meta : {:?}", meta);
+        if meta.get_full_key().is_empty() {
             return Err(NatureError::VerifyError("[biz] must not be empty!".to_string()));
         }
         let mut cache = CACHE.lock().unwrap();
         {   // An explicit scope to avoid cache.insert error
-            if let Some(x) = cache.get(thing) {
+            if let Some(x) = cache.get(meta) {
                 return Ok(x.clone());
             };
         };
-        match ThingDefineDaoImpl::get(&thing)? {
-            None => Err(NatureError::ThingNotDefined(format!("{} not defined", thing.get_full_key()))),
+        match ThingDefineDaoImpl::get(&meta)? {
+            None => Err(NatureError::ThingNotDefined(format!("{} not defined", meta.get_full_key()))),
             Some(def) => {
-                cache.insert(thing.clone(), def.clone());
+                cache.insert(meta.clone(), def.clone());
                 Ok(def)
             }
         }
@@ -46,8 +46,8 @@ mod test {
 //        let mocks = MyMocks::new();
 //        let mut instance = Instance::new("/err").unwrap();
 //        let expected_instance = instance.clone();
-//        mocks.s.expect(mocks.c_thing_define.get_call(check(move |t: &&Thing| **t == expected_instance.thing)).and_return(Err(NatureError::VerifyError("test error".to_string()))));
-//        let testee = InstanceServiceImpl { define_cache: mocks.c_thing_define.clone() };
+//        mocks.s.expect(mocks.c_meta.get_call(check(move |t: &&Thing| **t == expected_instance.meta)).and_return(Err(NatureError::VerifyError("test error".to_string()))));
+//        let testee = InstanceServiceImpl { define_cache: mocks.c_meta.clone() };
 //        let result = testee.verify(&mut instance);
 //        assert!(result.is_err());
 
@@ -60,8 +60,8 @@ mod test {
 //        let mut instance = Instance::new("/ok").unwrap();
 //        let expected_instance = instance.clone();
 //        let define = RawThingDefine::default();
-//        mocks.s.expect(mocks.c_thing_define.get_call(check(move |t: &&Thing| **t == expected_instance.thing)).and_return(Ok(define)));
-//        let testee = InstanceServiceImpl { define_cache: mocks.c_thing_define.clone() };
+//        mocks.s.expect(mocks.c_meta.get_call(check(move |t: &&Thing| **t == expected_instance.meta)).and_return(Ok(define)));
+//        let testee = InstanceServiceImpl { define_cache: mocks.c_meta.clone() };
 //        let result = testee.verify(&mut instance);
 //        assert!(result.is_ok());
 

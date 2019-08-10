@@ -1,5 +1,5 @@
 -- Your SQL goes here
-create TABLE `thing_defines` (
+create TABLE `meta` (
 	`full_key`	VARCHAR ( 255 ) NOT NULL,
 	`description`	VARCHAR ( 1023 ),
 	`version`	INTEGER NOT NULL,
@@ -10,34 +10,31 @@ create TABLE `thing_defines` (
 );
 
 create TABLE `one_step_flow` (
-	`from_thing`	VARCHAR ( 255 ) NOT NULL,
-	`from_version`	INTEGER NOT NULL,
-	`to_thing`	VARCHAR ( 255 ) NOT NULL,
-	`to_version`	INTEGER NOT NULL,
+	`from_meta`	VARCHAR ( 255 ) NOT NULL,
+	`to_meta`	VARCHAR ( 255 ) NOT NULL,
 	`settings` VARCHAR ( 1023 ) NOT NULL,
-	PRIMARY KEY(`from_thing`,`from_version`,`to_thing`,`to_version`)
+	PRIMARY KEY(`from_meta`,`to_meta`)
 );
 
 create TABLE `instances` (
 	`instance_id`	BINARY(16) NOT NULL,
-	`thing`	VARCHAR ( 255 ) NOT NULL,
-	`version`	INTEGER NOT NULL,
+	`meta`	VARCHAR ( 255 ) NOT NULL,
+	`para`	VARCHAR ( 255 ) NOT NULL,
 	`content`	VARCHAR ( 1023 ) NOT NULL,
 	`context`	TEXT,
 	`status`	TEXT,
 	`status_version`	INTEGER NOT NULL,
-	`from_thing`	VARCHAR ( 255 ),
-	`from_version`	INTEGER,
+	`from_meta`	VARCHAR ( 255 ),
 	`from_status_version`	INTEGER,
 	`event_time`	DATETIME NOT NULL,
 	`execute_time`	DATETIME NOT NULL,
 	`create_time`	DATETIME NOT NULL,
-	PRIMARY KEY(`instance_id`,`thing`,`version`,`status_version`)
+	PRIMARY KEY(`meta`,`para`,`instance_id`,`status_version`)
 );
 
 create TABLE `task` (
 	`task_id`	BINARY(16) NOT NULL,
-	`thing`	VARCHAR ( 255 ) NOT NULL,
+	`meta`	VARCHAR ( 255 ) NOT NULL,
 	`data_type`	SMALLINT NOT NULL,
 	`data`	TEXT NOT NULL,
 	`create_time`	DATETIME NOT NULL,
@@ -48,7 +45,7 @@ create TABLE `task` (
 
 create TABLE `task_error` (
 	`task_id`	BINARY(16) NOT NULL,
-	`thing`	VARCHAR ( 255 ) NOT NULL,
+	`meta`	VARCHAR ( 255 ) NOT NULL,
 	`data_type`	SMALLINT NOT NULL,
 	`data`	TEXT NOT NULL,
 	`create_time`	DATETIME NOT NULL,

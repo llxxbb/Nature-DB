@@ -4,9 +4,9 @@ use nature_common::{Meta, Result};
 use crate::RawThingDefine;
 
 pub trait ThingDefineDaoTrait {
-    fn get(thing: &Meta) -> Result<Option<RawThingDefine>>;
+    fn get(meta: &Meta) -> Result<Option<RawThingDefine>>;
     fn insert(define: &RawThingDefine) -> Result<usize>;
-    fn delete(thing: &Meta) -> Result<usize>;
+    fn delete(meta: &Meta) -> Result<usize>;
 }
 
 lazy_static! {

@@ -3,9 +3,9 @@ pub use self::task_error::*;
 pub use self::instance::*;
 pub use self::one_step_flow::*;
 pub use self::plan::*;
-pub use self::thing_define::*;
+pub use self::meta::*;
 
-mod thing_define;
+mod meta;
 mod instance;
 mod task;
 mod one_step_flow;

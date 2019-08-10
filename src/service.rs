@@ -1,18 +1,18 @@
 use std::rc::Rc;
-use crate::cache::ThingDefineCacheImpl;
+use crate::cache::MetaCacheImpl;
 use crate::service;
 use crate::models::instance::InstanceServiceImpl;
 
 pub struct DBService {
-    pub thing_define: Rc<ThingDefineCacheImpl>,
+    pub meta: Rc<MetaCacheImpl>,
     pub instance: Rc<InstanceServiceImpl>,
 }
 
 impl DBService {
     pub fn new() -> Self {
-        let define = Rc::new(ThingDefineCacheImpl {});
+        let define = Rc::new(MetaCacheImpl {});
         DBService {
-            thing_define: define.clone(),
+            meta: define.clone(),
             instance: Rc::new(InstanceServiceImpl {}),
         }
     }

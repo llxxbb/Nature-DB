@@ -41,12 +41,12 @@ impl OneStepFlowCacheImpl {
     fn get_balanced(from: &Meta) -> Result<ITEM> {
         let mut cache = CACHE_MAPPING.lock().unwrap();
         if let Some(balances) = cache.get(from) {
-            debug!("get balances from cache for thing : {:?}", from);
+            debug!("get balances from cache for meta : {:?}", from);
             return Ok(balances.clone());
         }
         let rtn = match Dao::get_relations(from) {
             Ok(None) => {
-                debug!("get none balances from db for thing : {:?}", from);
+                debug!("get none balances from db for meta : {:?}", from);
                 (None, None)
             }
             Ok(Some(relations)) => {

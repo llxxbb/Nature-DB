@@ -145,7 +145,7 @@ mod test {
 //        let time2 = Local::now() - Duration::seconds(10);
 //        let raw = RawTask {
 //            task_id: record_id.clone(),
-//            thing: "lxb".to_string(),
+//            meta: "lxb".to_string(),
 //            data_type: 1,
 //            data: "hello".to_string(),
 //            create_time: time.naive_local(),

@@ -7,9 +7,9 @@ pub use self::instance::*;
 pub use self::one_step_flow::*;
 pub use self::plan::*;
 pub use self::task::*;
-pub use self::thing_define::*;
+pub use self::meta::*;
 
-mod thing_define;
+mod meta;
 mod instance;
 mod error;
 mod task;

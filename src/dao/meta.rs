@@ -9,11 +9,11 @@ use super::*;
 pub struct ThingDefineDaoImpl;
 
 impl ThingDefineDaoTrait for ThingDefineDaoImpl {
-    fn get(thing: &Meta) -> Result<Option<RawThingDefine>> {
-        use super::schema::thing_defines::dsl::*;
+    fn get(meta: &Meta) -> Result<Option<RawThingDefine>> {
+        use super::schema::meta::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
-        let def = thing_defines.filter(full_key.eq(&thing.get_full_key()))
-            .filter(version.eq(thing.version))
+        let def = meta.filter(full_key.eq(&meta.get_full_key()))
+            .filter(version.eq(meta.version))
             .load::<RawThingDefine>(conn);
         match def {
             Ok(rtn) => match rtn.len() {
@@ -26,9 +26,9 @@ impl ThingDefineDaoTrait for ThingDefineDaoImpl {
     }
 
     fn insert(define: &RawThingDefine) -> Result<usize> {
-        use self::schema::thing_defines;
+        use self::schema::meta;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
-        let rtn = diesel::insert_into(thing_defines::table)
+        let rtn = diesel::insert_into(meta::table)
             .values(define)
             .execute(conn);
         match rtn {
@@ -37,10 +37,10 @@ impl ThingDefineDaoTrait for ThingDefineDaoImpl {
         }
     }
 
-    fn delete(thing: &Meta) -> Result<usize> {
-        use self::schema::thing_defines::dsl::*;
+    fn delete(meta: &Meta) -> Result<usize> {
+        use self::schema::meta::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
-        let rtn = diesel::delete(thing_defines.filter(full_key.eq(&thing.get_full_key())).filter(version.eq(thing.version)))
+        let rtn = diesel::delete(meta.filter(full_key.eq(&meta.get_full_key())).filter(version.eq(meta.version)))
             .execute(conn);
         match rtn {
             Ok(x) => Ok(x),
@@ -51,10 +51,10 @@ impl ThingDefineDaoTrait for ThingDefineDaoImpl {
 
 impl ThingDefineDaoImpl {
     pub fn new_by_key(key: &str) -> Result<usize> {
-        let thing = Meta::new(key)?;
+        let meta = Meta::new(key)?;
         let mut define = RawThingDefine::default();
-        define.version = thing.version;
-        define.full_key = thing.get_full_key();
+        define.version = meta.version;
+        define.full_key = meta.get_full_key();
         ThingDefineDaoImpl::insert(&define)
     }
 }
@@ -81,10 +81,10 @@ mod test {
             fields: Some("fields".to_string()),
             create_time: Local::now().naive_local(),
         };
-        let thing = Meta::new_with_version_and_type("/test", 100, ThingType::Business).unwrap();
+        let meta = Meta::new_with_version_and_type("/test", 100, ThingType::Business).unwrap();
         // delete if it exists
-        if let Ok(Some(_)) = ThingDefineDaoImpl::get(&thing) {
-            let _ = ThingDefineDaoImpl::delete(&thing);
+        if let Ok(Some(_)) = ThingDefineDaoImpl::get(&meta) {
+            let _ = ThingDefineDaoImpl::delete(&meta);
         }
         // insert
         let rtn = ThingDefineDaoImpl::insert(&define);
@@ -99,9 +99,9 @@ mod test {
             _ => panic!("match error")
         };
         // find inserted
-        let row = ThingDefineDaoImpl::get(&thing).unwrap().unwrap();
+        let row = ThingDefineDaoImpl::get(&meta).unwrap().unwrap();
         assert_eq!(row, define);
         // delete it
-        ThingDefineDaoImpl::delete(&thing).unwrap();
+        ThingDefineDaoImpl::delete(&meta).unwrap();
     }
 }
