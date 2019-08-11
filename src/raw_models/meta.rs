@@ -9,26 +9,26 @@ use super::super::schema::meta;
 #[derive(Queryable)]
 #[derive(Insertable)]
 #[table_name = "meta"]
-pub struct RawThingDefine {
+pub struct RawMeta {
     pub full_key: String,
 
-    /// For human readable what the `Thing` is.
+    /// For human readable what the `Meta` is.
     pub description: Option<String>,
 
-    /// version of the `Thing`
+    /// version of the `Meta`
     pub version: i32,
 
     pub states: Option<String>,
 
-    /// Define whats the `Thing` should include
+    /// Define whats the `Meta` should include
     pub fields: Option<String>,
 
     pub create_time: NaiveDateTime,
 }
 
-impl Default for RawThingDefine {
+impl Default for RawMeta {
     fn default() -> Self {
-        RawThingDefine {
+        RawMeta {
             full_key: String::new(),
             description: None,
             version: 1,
@@ -39,7 +39,7 @@ impl Default for RawThingDefine {
     }
 }
 
-impl RawThingDefine {
+impl RawMeta {
     pub fn is_status(&self) -> bool {
         self.states.is_some()
     }

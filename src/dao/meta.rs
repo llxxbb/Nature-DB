@@ -1,20 +1,20 @@
 use diesel::prelude::*;
 
 use crate::{CONN, CONNNECTION};
-use crate::models::define::ThingDefineDaoTrait;
-use crate::raw_models::RawThingDefine;
+use crate::models::define::MetaDaoTrait;
+use crate::raw_models::RawMeta;
 
 use super::*;
 
-pub struct ThingDefineDaoImpl;
+pub struct MetaDaoImpl;
 
-impl ThingDefineDaoTrait for ThingDefineDaoImpl {
-    fn get(meta: &Meta) -> Result<Option<RawThingDefine>> {
+impl MetaDaoTrait for MetaDaoImpl {
+    fn get(meta_def: &Meta) -> Result<Option<RawMeta>> {
         use super::schema::meta::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
-        let def = meta.filter(full_key.eq(&meta.get_full_key()))
-            .filter(version.eq(meta.version))
-            .load::<RawThingDefine>(conn);
+        let def = meta.filter(full_key.eq(&meta_def.get_full_key()))
+            .filter(version.eq(meta_def.version))
+            .load::<RawMeta>(conn);
         match def {
             Ok(rtn) => match rtn.len() {
                 0 => Ok(None),
@@ -25,7 +25,7 @@ impl ThingDefineDaoTrait for ThingDefineDaoImpl {
         }
     }
 
-    fn insert(define: &RawThingDefine) -> Result<usize> {
+    fn insert(define: &RawMeta) -> Result<usize> {
         use self::schema::meta;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::insert_into(meta::table)
@@ -37,10 +37,10 @@ impl ThingDefineDaoTrait for ThingDefineDaoImpl {
         }
     }
 
-    fn delete(meta: &Meta) -> Result<usize> {
+    fn delete(meta_def: &Meta) -> Result<usize> {
         use self::schema::meta::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
-        let rtn = diesel::delete(meta.filter(full_key.eq(&meta.get_full_key())).filter(version.eq(meta.version)))
+        let rtn = diesel::delete(meta.filter(full_key.eq(&meta_def.get_full_key())).filter(version.eq(meta_def.version)))
             .execute(conn);
         match rtn {
             Ok(x) => Ok(x),
@@ -49,13 +49,13 @@ impl ThingDefineDaoTrait for ThingDefineDaoImpl {
     }
 }
 
-impl ThingDefineDaoImpl {
+impl MetaDaoImpl {
     pub fn new_by_key(key: &str) -> Result<usize> {
         let meta = Meta::new(key)?;
-        let mut define = RawThingDefine::default();
+        let mut define = RawMeta::default();
         define.version = meta.version;
         define.full_key = meta.get_full_key();
-        ThingDefineDaoImpl::insert(&define)
+        MetaDaoImpl::insert(&define)
     }
 }
 
@@ -66,14 +66,14 @@ mod test {
     use chrono::prelude::*;
 
     use crate::*;
-    use crate::dao::ThingDefineDaoImpl;
-    use crate::models::define::ThingDefineDaoTrait;
+    use crate::dao::MetaDaoImpl;
+    use crate::models::define::MetaDaoTrait;
 
     #[test]
     fn define_test() {
         // prepare data to insert
         env::set_var("DATABASE_URL", CONN_STR);
-        let define = RawThingDefine {
+        let define = RawMeta {
             full_key: "/test".to_string(),
             description: Some("description".to_string()),
             version: 100,
@@ -81,16 +81,16 @@ mod test {
             fields: Some("fields".to_string()),
             create_time: Local::now().naive_local(),
         };
-        let meta = Meta::new_with_version_and_type("/test", 100, ThingType::Business).unwrap();
+        let meta = Meta::new_with_version_and_type("/test", 100, MetaType::Business).unwrap();
         // delete if it exists
-        if let Ok(Some(_)) = ThingDefineDaoImpl::get(&meta) {
-            let _ = ThingDefineDaoImpl::delete(&meta);
+        if let Ok(Some(_)) = MetaDaoImpl::get(&meta) {
+            let _ = MetaDaoImpl::delete(&meta);
         }
         // insert
-        let rtn = ThingDefineDaoImpl::insert(&define);
+        let rtn = MetaDaoImpl::insert(&define);
         assert_eq!(rtn.unwrap(), 1);
         // repeat insert
-        let rtn = ThingDefineDaoImpl::insert(&define);
+        let rtn = MetaDaoImpl::insert(&define);
         let _ = match rtn {
             Err(err) => match err {
                 NatureError::DaoDuplicated(_) => (),
@@ -99,9 +99,9 @@ mod test {
             _ => panic!("match error")
         };
         // find inserted
-        let row = ThingDefineDaoImpl::get(&meta).unwrap().unwrap();
+        let row = MetaDaoImpl::get(&meta).unwrap().unwrap();
         assert_eq!(row, define);
         // delete it
-        ThingDefineDaoImpl::delete(&meta).unwrap();
+        MetaDaoImpl::delete(&meta).unwrap();
     }
 }

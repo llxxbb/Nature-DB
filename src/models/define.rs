@@ -1,11 +1,11 @@
 use std::env;
 
 use nature_common::{Meta, Result};
-use crate::RawThingDefine;
+use crate::RawMeta;
 
-pub trait ThingDefineDaoTrait {
-    fn get(meta: &Meta) -> Result<Option<RawThingDefine>>;
-    fn insert(define: &RawThingDefine) -> Result<usize>;
+pub trait MetaDaoTrait {
+    fn get(meta: &Meta) -> Result<Option<RawMeta>>;
+    fn insert(define: &RawMeta) -> Result<usize>;
     fn delete(meta: &Meta) -> Result<usize>;
 }
 

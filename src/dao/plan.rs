@@ -78,14 +78,14 @@ mod test {
 //        // save it
 //        let tester = StorePlanDaoImpl {};
 //        let info = PlanInfo {
-//            from_meta: Thing::new_with_version_and_type("/local_converter/from", 0, ThingType::Business).unwrap(),
+//            from_meta: Meta::new_with_version_and_type("/local_converter/from", 0, MetaType::Business).unwrap(),
 //            from_sn: 229195495639599414319914352480091205021,
 //            from_sta_ver: 0,
-//            to: Thing::new_with_version_and_type("/local_converter/to", 0, ThingType::Business).unwrap(),
+//            to: Meta::new_with_version_and_type("/local_converter/to", 0, MetaType::Business).unwrap(),
 //            plan: vec![Instance {
 //                id: 217789594388339757346716979317903552035,
 //                data: InstanceNoID {
-//                    meta: Thing::new_with_version_and_type("/local_converter/to", 0, ThingType::Business).unwrap(),
+//                    meta: Meta::new_with_version_and_type("/local_converter/to", 0, MetaType::Business).unwrap(),
 //                    event_time: 0,
 //                    execute_time: 0,
 //                    create_time: 0,

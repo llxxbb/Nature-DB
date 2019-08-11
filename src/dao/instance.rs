@@ -1,5 +1,4 @@
 use diesel::prelude::*;
-
 use nature_common::util::id_tool::u128_to_vec_u8;
 
 use crate::{CONN, CONNNECTION};
@@ -28,8 +27,7 @@ impl InstanceDaoImpl {
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = instances
             .filter(instance_id.eq(ins.id.to_ne_bytes().to_vec()))
-            .filter(meta.eq(ins.meta.get_full_key()))
-            .filter(version.eq(ins.meta.version))
+            .filter(meta.eq(ins.meta.get_string()))
             .filter(status_version.eq(ins.status_version))
             .order(status_version.desc())
             .limit(1)
@@ -80,7 +78,7 @@ impl InstanceDaoImpl {
         }
     }
 
-    /// default `ThingType` is `Business`
+    /// default `MetaType` is `Business`
     pub fn get_by_key(biz_key: &str, limit: i64) -> Result<Option<Vec<Instance>>> {
         let tk = Meta::new(biz_key)?;
         Self::get_by_full_key(&tk.get_full_key(), limit)
@@ -94,8 +92,7 @@ impl InstanceDaoImpl {
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rows = instances
             .filter(instance_id.eq(ins.id.to_ne_bytes().to_vec()))
-            .filter(meta.eq(ins.meta.get_full_key()))
-            .filter(version.eq(ins.meta.version))
+            .filter(meta.eq(ins.meta.get_string()))
             .filter(status_version.eq(ins.status_version));
         //        debug!("rows filter : {:?}", rows);
         match diesel::delete(rows).execute(conn) {
@@ -105,7 +102,7 @@ impl InstanceDaoImpl {
     }
 
     pub fn save(instance: &Instance) -> Result<usize> {
-        debug!("save instance for `Thing` {:?}, id : {:?}", instance.meta.get_full_key(), instance.id);
+        debug!("save instance for `Meta` {:?}, id : {:?}", instance.meta.get_full_key(), instance.id);
         let result = Self::insert(instance);
         match result {
             Ok(num) => Ok(num),
@@ -138,7 +135,7 @@ mod test {
 //        let instance = Instance {
 //            id: 0,
 //            data: InstanceNoID {
-//                meta: Thing::new_with_version_and_type("/instance/common", 100, ThingType::Business).unwrap(),
+//                meta: Meta::new_with_version_and_type("/instance/common", 100, MetaType::Business).unwrap(),
 //                event_time: 0,
 //                execute_time: 0,
 //                create_time: 0,
@@ -171,7 +168,7 @@ mod test {
 //        let mut instance = Instance {
 //            id: 0,
 //            data: InstanceNoID {
-//                meta: Thing::new_with_version_and_type("/instance/getLast", 100, ThingType::Business).unwrap(),
+//                meta: Meta::new_with_version_and_type("/instance/getLast", 100, MetaType::Business).unwrap(),
 //                event_time: 0,
 //                execute_time: 0,
 //                create_time: 0,

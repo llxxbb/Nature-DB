@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use nature_common::{DynamicConverter, Executor, Instance, Meta, NatureError, Result, ThingType};
+use nature_common::{DynamicConverter, Executor, Instance, Meta, NatureError, Result, MetaType};
 
 use crate::{OneStepFlow, Selector};
 
@@ -41,7 +41,7 @@ impl Mission {
         for d in dynamic {
             let t = match d.to {
                 None => Meta::new_null(),
-                Some(s) => Meta::new_with_type(&s, ThingType::Dynamic)?,
+                Some(s) => Meta::new_with_type(&s, MetaType::Dynamic)?,
             };
             let mission = Mission {
                 to: t,

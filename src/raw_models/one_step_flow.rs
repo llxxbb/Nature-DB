@@ -2,8 +2,8 @@ use serde_json;
 
 use nature_common::*;
 
+use crate::models::converter_cfg::{OneStepFlow, OneStepFlowSettings};
 use crate::schema::one_step_flow;
-use crate::models::converter_cfg::{OneStepFlowSettings, OneStepFlow};
 
 #[derive(Debug)]
 #[derive(Insertable, Queryable)]
@@ -11,9 +11,7 @@ use crate::models::converter_cfg::{OneStepFlowSettings, OneStepFlow};
 #[table_name = "one_step_flow"]
 pub struct RawOneStepFlow {
     pub from_meta: String,
-    pub from_version: i32,
     pub to_meta: String,
-    pub to_version: i32,
     pub settings: String,
 }
 
@@ -21,10 +19,8 @@ impl RawOneStepFlow {
     pub fn new(from: &Meta, to: &Meta, settings: &OneStepFlowSettings) -> Result<Self> {
         let st = serde_json::to_string(settings)?;
         let rtn = RawOneStepFlow {
-            from_meta: from.get_full_key(),
-            from_version: from.version,
-            to_meta: to.get_full_key(),
-            to_version: to.version,
+            from_meta: from.get_string(),
+            to_meta: to.get_string(),
             settings: st,
         };
         Ok(rtn)
@@ -33,7 +29,6 @@ impl RawOneStepFlow {
 
 impl OneStepFlow {
     pub fn from_raw(val: RawOneStepFlow) -> Result<Vec<OneStepFlow>> {
-        let version = val.from_version;
         let settings = serde_json::from_str::<OneStepFlowSettings>(&val.settings)?;
         let selector = settings.selector;
         let mut group = String::new();
@@ -57,8 +52,8 @@ impl OneStepFlow {
             let mut e2 = e.clone();
             e2.group = group.clone();
             OneStepFlow {
-                from: Meta::from_full_key(&val.from_meta, version).unwrap(),
-                to: Meta::from_full_key(&val.to_meta, val.to_version).unwrap(),
+                from: Meta::from_string(&val.from_meta).unwrap(),
+                to: Meta::from_string(&val.to_meta).unwrap(),
                 selector: selector.clone(),
                 executor: e2,
             }
@@ -69,8 +64,9 @@ impl OneStepFlow {
 
 #[cfg(test)]
 mod test {
-    use super::*;
     use crate::models::converter_cfg::OneStepFlowSettings;
+
+    use super::*;
 
     #[test]
     fn can_group_is_ok() {
@@ -87,9 +83,7 @@ mod test {
         };
         let raw = RawOneStepFlow {
             from_meta: "from".to_string(),
-            from_version: 0,
             to_meta: "to".to_string(),
-            to_version: 0,
             settings: serde_json::to_string(&settings).unwrap(),
         };
         let rtn = OneStepFlow::from_raw(raw);
@@ -117,9 +111,7 @@ mod test {
         };
         let raw = RawOneStepFlow {
             from_meta: "from".to_string(),
-            from_version: 0,
             to_meta: "to".to_string(),
-            to_version: 0,
             settings: serde_json::to_string(&settings).unwrap(),
         };
         let rtn = OneStepFlow::from_raw(raw);

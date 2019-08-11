@@ -15,8 +15,7 @@ impl OneStepFlowDaoImpl {
         use self::schema::one_step_flow::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = match one_step_flow
-            .filter(from_meta.eq(&from.get_full_key()))
-            .filter(from_version.eq(from.version))
+            .filter(from_meta.eq(&from.get_string()))
             .load::<RawOneStepFlow>(conn)
             {
                 Ok(rows) => rows,
@@ -62,9 +61,7 @@ impl OneStepFlowDaoImpl {
         let rtn = diesel::delete(
             one_step_flow
                 .filter(from_meta.eq(one.from_meta))
-                .filter(from_version.eq(one.from_version))
-                .filter(to_meta.eq(one.to_meta))
-                .filter(to_version.eq(one.to_version)),
+                .filter(to_meta.eq(one.to_meta)),
         )
             .execute(conn);
         match rtn {
@@ -101,10 +98,8 @@ impl OneStepFlowDaoImpl {
         let from = &Meta::new(from)?;
         let to = &Meta::new(to)?;
         let row = RawOneStepFlow {
-            from_meta: from.get_full_key(),
-            from_version: from.version,
-            to_meta: to.get_full_key(),
-            to_version: to.version,
+            from_meta: from.get_string(),
+            to_meta: to.get_string(),
             settings: String::new(),
         };
         OneStepFlowDaoImpl::delete(row)
@@ -127,7 +122,7 @@ mod test {
 //    #[test]
 //    fn one_step_test_for_http() {
 //        let one = before_test("from_good", "http");
-//        let meta = Thing::new("from_good").unwrap();
+//        let meta = Meta::new("from_good").unwrap();
 //        let svc = OneStepFlowDaoImpl {};
 //        let rtn = svc.get_relations(&meta);
 //        assert_eq!(rtn.unwrap().unwrap().len(), 1);

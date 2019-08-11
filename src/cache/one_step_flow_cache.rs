@@ -15,7 +15,7 @@ use crate::OneStepFlowDaoImpl;
 
 use self::rand::{Rng, thread_rng};
 
-/// all flows for one upper `Thing` and what a chance to lower `group`
+/// all flows for one upper `Meta` and what a chance to lower `group`
 type ITEM = (Option<Vec<OneStepFlow>>, Option<HashMap<Executor, Range<f32>>>);
 type CACHE = Mutex<LruCache<Meta, ITEM>>;
 
@@ -129,10 +129,10 @@ mod test_none_or_error {
 //    /// test cache also
 //    #[test]
 //    fn get_error() {
-//        let from = Thing::new("error").unwrap();
+//        let from = Meta::new("error").unwrap();
 //        let from_clone = from.clone();
 //        let mocks = MyMocks::new();
-//        mocks.s.expect(mocks.d_one_step.get_relations_call(check(move |t: &&Thing| t == &&from_clone)).and_return_clone(Err(NatureError::DaoEnvironmentError("can't connect".to_string()))).times(2));
+//        mocks.s.expect(mocks.d_one_step.get_relations_call(check(move |t: &&Meta| t == &&from_clone)).and_return_clone(Err(NatureError::DaoEnvironmentError("can't connect".to_string()))).times(2));
 //        let mocker = OneStepFlowCacheImpl {
 //            dao: mocks.d_one_step.clone()
 //        };
@@ -148,10 +148,10 @@ mod test_none_or_error {
 //    /// test cache also
 //    #[test]
 //    fn get_none() {
-//        let from = Thing::new("none").unwrap();
+//        let from = Meta::new("none").unwrap();
 //        let from_clone = from.clone();
 //        let mocks = MyMocks::new();
-//        mocks.s.expect(mocks.d_one_step.get_relations_call(check(move |t: &&Thing| t == &&from_clone)).and_return_clone(Ok(None)).times(1));
+//        mocks.s.expect(mocks.d_one_step.get_relations_call(check(move |t: &&Meta| t == &&from_clone)).and_return_clone(Ok(None)).times(1));
 //        let mocker = OneStepFlowCacheImpl {
 //            dao: mocks.d_one_step.clone()
 //        };
@@ -184,7 +184,7 @@ mod test_group_and_weight {
 //    #[test]
 //    fn only_one_group_for_a_given_target() {
 //        let _ = setup_logger();
-//        let from = Thing::new("only_one_group_for_a_given_target").unwrap();
+//        let from = Meta::new("only_one_group_for_a_given_target").unwrap();
 //
 //        let relations = Ok(Some(vec![
 //            OneStepFlow::new_for_local_executor_with_group_and_proportion("oneFrom", "oneTo", "exe_0", "one", 10).unwrap(),
@@ -192,7 +192,7 @@ mod test_group_and_weight {
 //
 //        let from_clone = from.clone();
 //        let mocks = MyMocks::new();
-//        mocks.s.expect(mocks.d_one_step.get_relations_call(check(move |t: &&Thing| t == &&from_clone)).and_return_clone(relations).times(1));
+//        mocks.s.expect(mocks.d_one_step.get_relations_call(check(move |t: &&Meta| t == &&from_clone)).and_return_clone(relations).times(1));
 //        let mocker = OneStepFlowCacheImpl {
 //            dao: mocks.d_one_step.clone()
 //        };
@@ -209,7 +209,7 @@ mod test_group_and_weight {
 //
 //    #[test]
 //    fn same_group_different_target() {
-//        let from = Thing::new("same_group_different_target").unwrap();
+//        let from = Meta::new("same_group_different_target").unwrap();
 //
 //        let relations = Ok(Some(vec![
 //            OneStepFlow::new_for_local_executor_with_group_and_proportion("diffTarget", "targetA", "exe_5", "sameGroup", 2).unwrap(),
@@ -218,7 +218,7 @@ mod test_group_and_weight {
 //
 //        let from_clone = from.clone();
 //        let mocks = MyMocks::new();
-//        mocks.s.expect(mocks.d_one_step.get_relations_call(check(move |t: &&Thing| t == &&from_clone)).and_return_clone(relations).times(1));
+//        mocks.s.expect(mocks.d_one_step.get_relations_call(check(move |t: &&Meta| t == &&from_clone)).and_return_clone(relations).times(1));
 //        let mocker = OneStepFlowCacheImpl {
 //            dao: mocks.d_one_step.clone()
 //        };
@@ -237,7 +237,7 @@ mod test_group_and_weight {
 //    #[test]
 //    fn same_target_same_group() {
 //        let _ = setup_logger();
-//        let from = Thing::new("same_target_same_group").unwrap();
+//        let from = Meta::new("same_target_same_group").unwrap();
 //
 //        let relations = Ok(Some(vec![
 //            OneStepFlow::new_for_local_executor_with_group_and_proportion("sameTarget", "sameGroup", "exe_3", "same_group", 5).unwrap(),
@@ -246,7 +246,7 @@ mod test_group_and_weight {
 //
 //        let from_clone = from.clone();
 //        let mocks = MyMocks::new();
-//        mocks.s.expect(mocks.d_one_step.get_relations_call(check(move |t: &&Thing| t == &&from_clone)).and_return_clone(relations).times(1));
+//        mocks.s.expect(mocks.d_one_step.get_relations_call(check(move |t: &&Meta| t == &&from_clone)).and_return_clone(relations).times(1));
 //        let mocker = OneStepFlowCacheImpl {
 //            dao: mocks.d_one_step.clone()
 //        };
@@ -264,7 +264,7 @@ mod test_group_and_weight {
 //    #[test]
 //    fn weight_test() {
 //        let _ = setup_logger();
-//        let from = Thing::new("weight_test").unwrap();
+//        let from = Meta::new("weight_test").unwrap();
 //
 //        let relations = Ok(Some(vec![
 //            OneStepFlow::new_for_local_executor_with_group_and_proportion("weight_from", "to_1", "exe_1", "grp", 2).unwrap(),
@@ -273,7 +273,7 @@ mod test_group_and_weight {
 //
 //        let from_clone = from.clone();
 //        let mocks = MyMocks::new();
-//        mocks.s.expect(mocks.d_one_step.get_relations_call(check(move |t: &&Thing| t == &&from_clone)).and_return_clone(relations).times(1));
+//        mocks.s.expect(mocks.d_one_step.get_relations_call(check(move |t: &&Meta| t == &&from_clone)).and_return_clone(relations).times(1));
 //        let mocker = OneStepFlowCacheImpl {
 //            dao: mocks.d_one_step.clone()
 //        };
