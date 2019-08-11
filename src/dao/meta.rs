@@ -79,6 +79,7 @@ mod test {
             version: 100,
             states: Some("status".to_string()),
             fields: Some("fields".to_string()),
+            config: "{}".to_string(),
             create_time: Local::now().naive_local(),
         };
         let meta = Meta::new_with_version_and_type("/test", 100, MetaType::Business).unwrap();

@@ -7,8 +7,7 @@ use crate::schema::plan;
 #[table_name = "plan"]
 pub struct RawPlanInfo {
     pub upstream: String,
-    pub to_biz: String,
-    pub to_version: i32,
+    pub downstream: String,
     pub content: String,
     pub create_time: NaiveDateTime,
 }

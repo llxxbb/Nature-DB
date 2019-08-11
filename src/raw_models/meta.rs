@@ -23,6 +23,8 @@ pub struct RawMeta {
     /// Define whats the `Meta` should include
     pub fields: Option<String>,
 
+    pub config: String,
+
     pub create_time: NaiveDateTime,
 }
 
@@ -34,6 +36,7 @@ impl Default for RawMeta {
             version: 1,
             states: None,
             fields: None,
+            config: "{}".to_string(),
             create_time: Local::now().naive_local(),
         }
     }

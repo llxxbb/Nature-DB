@@ -22,6 +22,7 @@ table! {
         version -> Integer,
         states -> Nullable<Text>,
         fields -> Nullable<Text>,
+        config -> Text,
         create_time -> Timestamp,
     }
 }
@@ -35,10 +36,9 @@ table! {
 }
 
 table! {
-    plan (upstream, to_biz, to_version) {
+    plan (upstream, downstream) {
         upstream -> Text,
-        to_biz -> Text,
-        to_version -> Integer,
+        downstream -> Text,
         content -> Text,
         create_time -> Timestamp,
     }
