@@ -46,7 +46,7 @@ impl Default for RawMeta {
 }
 
 impl RawMeta {
-    pub fn is_status(&self) -> bool {
+    pub fn has_states(&self) -> bool {
         self.states.is_some()
     }
 }
