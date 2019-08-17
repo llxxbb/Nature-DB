@@ -25,6 +25,8 @@ pub struct RawMeta {
 
     pub config: String,
 
+    pub flag: i32,
+
     pub create_time: NaiveDateTime,
 }
 
@@ -37,6 +39,7 @@ impl Default for RawMeta {
             states: None,
             fields: None,
             config: "{}".to_string(),
+            flag: 1,
             create_time: Local::now().naive_local(),
         }
     }

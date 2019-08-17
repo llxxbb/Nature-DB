@@ -1,19 +1,19 @@
 use diesel::prelude::*;
 
 use crate::{CONN, CONNNECTION};
-use crate::models::define::MetaDaoTrait;
 use crate::raw_models::RawMeta;
 
 use super::*;
 
 pub struct MetaDaoImpl;
 
-impl MetaDaoTrait for MetaDaoImpl {
-    fn get(meta_def: &Meta) -> Result<Option<RawMeta>> {
-        use super::schema::meta::dsl::*;
+impl MetaDaoImpl {
+    pub fn get(meta_def: &Meta) -> Result<Option<RawMeta>> {
+        use self::schema::meta::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = meta.filter(full_key.eq(&meta_def.get_full_key()))
             .filter(version.eq(meta_def.version))
+            .filter(flag.eq(1))
             .load::<RawMeta>(conn);
         match def {
             Ok(rtn) => match rtn.len() {
@@ -25,7 +25,7 @@ impl MetaDaoTrait for MetaDaoImpl {
         }
     }
 
-    fn insert(define: &RawMeta) -> Result<usize> {
+    pub fn insert(define: &RawMeta) -> Result<usize> {
         use self::schema::meta;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::insert_into(meta::table)
@@ -37,7 +37,21 @@ impl MetaDaoTrait for MetaDaoImpl {
         }
     }
 
-    fn delete(meta_def: &Meta) -> Result<usize> {
+    pub fn update_flag(full_key_f: &str, version_f: i32, flag_f: i32) -> Result<usize> {
+        use self::schema::meta::dsl::*;
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
+        let rtn = diesel::update(
+            meta.filter(full_key.eq(full_key_f))
+                .filter(version.eq(version_f)))
+            .set(flag.eq(flag_f))
+            .execute(conn);
+        match rtn {
+            Ok(x) => Ok(x),
+            Err(e) => Err(DbError::from(e))
+        }
+    }
+
+    pub fn delete(meta_def: &Meta) -> Result<usize> {
         use self::schema::meta::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::delete(meta.filter(full_key.eq(&meta_def.get_full_key())).filter(version.eq(meta_def.version)))
@@ -67,26 +81,28 @@ mod test {
 
     use crate::*;
     use crate::dao::MetaDaoImpl;
-    use crate::models::define::MetaDaoTrait;
 
     #[test]
     fn define_test() {
         // prepare data to insert
         env::set_var("DATABASE_URL", CONN_STR);
         let define = RawMeta {
-            full_key: "/test".to_string(),
+            full_key: "/B/test".to_string(),
             description: Some("description".to_string()),
             version: 100,
             states: Some("status".to_string()),
             fields: Some("fields".to_string()),
             config: "{}".to_string(),
+            flag: 1,
             create_time: Local::now().naive_local(),
         };
         let meta = Meta::new_with_version_and_type("/test", 100, MetaType::Business).unwrap();
+
         // delete if it exists
         if let Ok(Some(_)) = MetaDaoImpl::get(&meta) {
             let _ = MetaDaoImpl::delete(&meta);
         }
+
         // insert
         let rtn = MetaDaoImpl::insert(&define);
         assert_eq!(rtn.unwrap(), 1);
@@ -102,6 +118,12 @@ mod test {
         // find inserted
         let row = MetaDaoImpl::get(&meta).unwrap().unwrap();
         assert_eq!(row, define);
+
+        // change flag
+        let _ = MetaDaoImpl::update_flag("/B/test", 100, 0);
+        let row = MetaDaoImpl::get(&meta).unwrap();
+        assert_eq!(row, None);
+
         // delete it
         MetaDaoImpl::delete(&meta).unwrap();
     }

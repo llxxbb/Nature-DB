@@ -1,14 +1,5 @@
 use std::env;
 
-use nature_common::{Meta, Result};
-use crate::RawMeta;
-
-pub trait MetaDaoTrait {
-    fn get(meta: &Meta) -> Result<Option<RawMeta>>;
-    fn insert(define: &RawMeta) -> Result<usize>;
-    fn delete(meta: &Meta) -> Result<usize>;
-}
-
 lazy_static! {
     pub static ref INSTANCE_CONTENT_MAX_LENGTH : usize = {
         env::var("INSTANCE_CONTENT_MAX_LENGTH").unwrap_or_else(|_| "65535".to_string()).parse::<usize>().unwrap()

@@ -7,7 +7,6 @@ use lru_time_cache::LruCache;
 
 use crate::*;
 use crate::dao::MetaDaoImpl;
-use crate::models::define::MetaDaoTrait;
 
 lazy_static! {
     static ref CACHE: Mutex<LruCache<Meta, RawMeta>> = Mutex::new(LruCache::<Meta, RawMeta>::with_expiry_duration(Duration::from_secs(3600)));

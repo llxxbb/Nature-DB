@@ -13,6 +13,7 @@ pub struct RawOneStepFlow {
     pub from_meta: String,
     pub to_meta: String,
     pub settings: String,
+    pub flag: i32,
 }
 
 impl RawOneStepFlow {
@@ -22,6 +23,7 @@ impl RawOneStepFlow {
             from_meta: from.get_string(),
             to_meta: to.get_string(),
             settings: st,
+            flag: 1,
         };
         Ok(rtn)
     }
@@ -85,6 +87,7 @@ mod test {
             from_meta: "from".to_string(),
             to_meta: "to".to_string(),
             settings: serde_json::to_string(&settings).unwrap(),
+            flag: 1,
         };
         let rtn = OneStepFlow::from_raw(raw);
         assert_eq!(rtn.is_ok(), true);
@@ -113,6 +116,7 @@ mod test {
             from_meta: "from".to_string(),
             to_meta: "to".to_string(),
             settings: serde_json::to_string(&settings).unwrap(),
+            flag: 1,
         };
         let rtn = OneStepFlow::from_raw(raw);
         assert_eq!(rtn, Err(NatureError::VerifyError("in one setting all executor's grpup must be same.".to_string())));

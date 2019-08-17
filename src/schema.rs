@@ -23,6 +23,7 @@ table! {
         states -> Nullable<Text>,
         fields -> Nullable<Text>,
         config -> Text,
+        flag -> Integer,
         create_time -> Timestamp,
     }
 }
@@ -32,6 +33,7 @@ table! {
         from_meta -> Text,
         to_meta -> Text,
         settings -> Text,
+        flag -> Integer,
     }
 }
 

@@ -1,11 +1,12 @@
 -- Your SQL goes here
-CREATE TABLE `meta` (
+create TABLE `meta` (
 	`full_key`	VARCHAR ( 255 ) NOT NULL,
 	`description`	VARCHAR ( 1023 ),
 	`version`	INTEGER NOT NULL,
 	`states`	VARCHAR ( 1023 ),
 	`fields`	VARCHAR ( 1023 ),
 	`config`    VARCHAR(2048) DEFAULT '{}' NOT NULL,
+	`flag`      INTEGER DEFAULT 1 NOT NULL,
 	`create_time`	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY(`full_key`,`version`)
 );
@@ -14,6 +15,7 @@ create TABLE `one_step_flow` (
 	`from_meta`	VARCHAR ( 255 ) NOT NULL,
 	`to_meta`	VARCHAR ( 255 ) NOT NULL,
 	`settings`  VARCHAR ( 1023 ) NOT NULL,
+	`flag`      INTEGER DEFAULT 1 NOT NULL,
 	PRIMARY KEY(`from_meta`,`to_meta`)
 );
 

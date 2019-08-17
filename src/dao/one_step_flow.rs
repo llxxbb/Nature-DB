@@ -16,6 +16,7 @@ impl OneStepFlowDaoImpl {
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = match one_step_flow
             .filter(from_meta.eq(&from.get_string()))
+            .filter(flag.eq(1))
             .load::<RawOneStepFlow>(conn)
             {
                 Ok(rows) => rows,
@@ -70,6 +71,22 @@ impl OneStepFlowDaoImpl {
         }
     }
 
+    /// `from` and `to`'s form are full_key:version
+    pub fn update_flag(from: &str, to: &str, flag_f: i32) -> Result<usize> {
+        use self::schema::one_step_flow::dsl::*;
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
+        let rtn = diesel::update(
+            one_step_flow.filter(from_meta.eq(Meta::new(from).unwrap().get_string()))
+                .filter(to_meta.eq(Meta::new(to).unwrap().get_string())))
+            .set(flag.eq(flag_f))
+            .execute(conn);
+        match rtn {
+            Ok(x) => Ok(x),
+            Err(e) => Err(DbError::from(e))
+        }
+    }
+
+
     /// `version` will be set to 0
     pub fn insert_by_biz(
         from: &str,
@@ -101,6 +118,7 @@ impl OneStepFlowDaoImpl {
             from_meta: from.get_string(),
             to_meta: to.get_string(),
             settings: String::new(),
+            flag: 1,
         };
         OneStepFlowDaoImpl::delete(row)
     }
@@ -109,41 +127,38 @@ impl OneStepFlowDaoImpl {
 #[cfg(test)]
 mod test {
     // TODO
-//    extern crate log;
-//
-//    use std::env;
-//
-//    use nature_common::*;
-//
-//    use crate::CONN_STR;
-//
-//    use super::*;
-//
-//    #[test]
-//    fn one_step_test_for_http() {
-//        let one = before_test("from_good", "http");
-//        let meta = Meta::new("from_good").unwrap();
-//        let svc = OneStepFlowDaoImpl {};
-//        let rtn = svc.get_relations(&meta);
-//        assert_eq!(rtn.unwrap().unwrap().len(), 1);
-//        let _ = OneStepFlowDaoImpl::delete(one.unwrap());
-//    }
-//
-//    #[test]
-//    fn one_step_test_for_error_protocol() {
-//        let rtn = before_test("from_bad", "bad");
-//        assert_eq!(
-//            rtn.err().unwrap(),
-//            NatureError::VerifyError("unknown protocol : bad".to_string())
-//        );
-//    }
-//
-//    fn before_test(biz: &str, protocol: &str) -> Result<RawOneStepFlow> {
-//        env::set_var("DATABASE_URL", CONN_STR);
-//        let _ = setup_logger();
-//        // clear before insert
-//        let _ = OneStepFlowDaoImpl::delete_by_biz(biz, "to");
-//        // insert
-//        OneStepFlowDaoImpl::insert_by_biz(biz, "to", "url", protocol)
-//    }
+    extern crate log;
+
+    use std::env;
+
+    use crate::CONN_STR;
+
+    use super::*;
+
+    #[test]
+    fn one_step_test() {
+        env::set_var("DATABASE_URL", CONN_STR);
+        let _ = setup_logger();
+
+        // clear before test
+        let _ = OneStepFlowDaoImpl::delete_by_biz("from", "to");
+
+        // get null
+        let meta = Meta::new("from").unwrap();
+        let rtn = OneStepFlowDaoImpl::get_relations(&meta).unwrap();
+        assert_eq!(rtn, None);
+
+        // insert
+        let _ = OneStepFlowDaoImpl::insert_by_biz("from", "to", "url", "http");
+        let rtn = OneStepFlowDaoImpl::get_relations(&meta).unwrap();
+        assert_eq!(rtn.unwrap().len(), 1);
+
+        // update flag
+        let _ = OneStepFlowDaoImpl::update_flag("from", "to", 0);
+        let rtn = OneStepFlowDaoImpl::get_relations(&meta).unwrap();
+        assert_eq!(rtn, None);
+
+        // delete after test
+        let _ = OneStepFlowDaoImpl::delete_by_biz("from", "to");
+    }
 }
