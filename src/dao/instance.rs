@@ -1,5 +1,4 @@
 use diesel::prelude::*;
-use nature_common::util::id_tool::u128_to_vec_u8;
 
 use crate::{CONN, CONNNECTION};
 use crate::raw_models::RawInstance;

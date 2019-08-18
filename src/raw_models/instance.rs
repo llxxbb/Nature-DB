@@ -6,7 +6,6 @@ use lazy_static::__Deref;
 use serde_json;
 
 use nature_common::*;
-use nature_common::util::vec_to_u128;
 
 use crate::models::define::*;
 

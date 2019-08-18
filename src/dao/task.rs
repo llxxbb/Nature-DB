@@ -1,8 +1,6 @@
 use diesel::prelude::*;
 use diesel::result::*;
 
-use nature_common::util::id_tool::vec_to_hex_string;
-
 use crate::{CONN, CONNNECTION};
 use crate::raw_models::{RawTask, RawTaskError};
 
@@ -112,7 +110,6 @@ impl TaskDaoImpl {
             Err(e) => Err(DbError::from(e))
         }
     }
-
 }
 
 #[cfg(test)]
