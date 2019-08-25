@@ -203,4 +203,23 @@ mod test {
         let res_obj: OneStepFlowSettings = serde_json::from_str(res_str).unwrap();
         assert_eq!(res_obj, setting);
     }
+
+    #[test]
+    fn string_to_setting_no_selector(){
+        let setting = OneStepFlowSettings {
+            selector: None,
+            executor: vec![Executor{
+                protocol: Protocol::LocalRust,
+                url: "nature_demo.dll:order_new".to_string(),
+                group: "".to_string(),
+                proportion: 1
+            }],
+            use_upstream_id: true,
+        };
+        let result = serde_json::to_string(&setting).unwrap();
+        let res_str = r#"{"executor":[{"protocol":"LocalRust","url":"nature_demo.dll:order_new","proportion":1}],"use_upstream_id":true}"#;
+        assert_eq!(result, res_str);
+        let res_obj: OneStepFlowSettings = serde_json::from_str(res_str).unwrap();
+        assert_eq!(res_obj, setting);
+    }
 }
