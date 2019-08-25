@@ -39,6 +39,7 @@ pub struct OneStepFlow {
     pub to: Meta,
     pub selector: Option<Selector>,
     pub executor: Executor,
+    pub use_upstream_id: bool,
 }
 
 impl Iterator for OneStepFlow {
@@ -60,6 +61,7 @@ impl OneStepFlow {
                 group: "".to_string(),
                 proportion: 1,
             },
+            use_upstream_id: false,
         })
     }
     pub fn new_for_local_executor_with_group_and_proportion(from: &str, to: &str, local_executor: &str, group: &str, proportion: u32) -> Result<Self> {
@@ -73,6 +75,7 @@ impl OneStepFlow {
                 group: group.to_string(),
                 proportion,
             },
+            use_upstream_id: false,
         })
     }
     pub fn new_for_source_status_needed(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
@@ -88,6 +91,7 @@ impl OneStepFlow {
                 context_exclude: HashSet::new(),
             }),
             executor: Executor::default(),
+            use_upstream_id: false,
         })
     }
     pub fn new_for_source_status_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
@@ -103,6 +107,7 @@ impl OneStepFlow {
                 context_exclude: HashSet::new(),
             }),
             executor: Executor::default(),
+            use_upstream_id: false,
         })
     }
     pub fn new_for_context_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
@@ -118,6 +123,7 @@ impl OneStepFlow {
                 context_exclude: set.clone(),
             }),
             executor: Executor::default(),
+            use_upstream_id: false,
         })
     }
     pub fn new_for_context_include(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
@@ -133,6 +139,7 @@ impl OneStepFlow {
                 context_exclude: HashSet::new(),
             }),
             executor: Executor::default(),
+            use_upstream_id: false,
         })
     }
 }

@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use nature_common::{DynamicConverter, Executor, Instance, Meta, NatureError, Result, MetaType};
+use nature_common::{DynamicConverter, Executor, Instance, Meta, MetaType, NatureError, Result};
 
 use crate::{OneStepFlow, Selector};
 
@@ -10,7 +10,7 @@ pub struct Mission {
     pub to: Meta,
     pub executor: Executor,
     pub last_status_demand: Option<LastStatusDemand>,
-    pub use_upstream_id : bool,
+    pub use_upstream_id: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -48,6 +48,7 @@ impl Mission {
                 to: t,
                 executor: d.fun.clone(),
                 last_status_demand: None,
+                use_upstream_id: d.use_upstream_id,
             };
             missions.push(mission)
         }
@@ -85,6 +86,7 @@ impl Mission {
                         }
                     }
                 },
+                use_upstream_id: m.use_upstream_id,
             };
             rtn.push(t);
         }

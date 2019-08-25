@@ -50,6 +50,7 @@ impl OneStepFlow {
         if !group_check {
             return Err(NatureError::VerifyError("in one setting all executor's grpup must be same.".to_string()));
         }
+        let use_upstream_id = settings.use_upstream_id;
         let rtn = settings.executor.iter().map(|e| {
             let mut e2 = e.clone();
             e2.group = group.clone();
@@ -58,6 +59,7 @@ impl OneStepFlow {
                 to: Meta::from_string(&val.to_meta).unwrap(),
                 selector: selector.clone(),
                 executor: e2,
+                use_upstream_id,
             }
         }).collect();
         Ok(rtn)
