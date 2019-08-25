@@ -105,6 +105,7 @@ impl OneStepFlowDaoImpl {
                     group: "".to_string(),
                     proportion: 1,
                 }],
+                is_main: false,
             },
         )?;
         let _ = OneStepFlowDaoImpl::insert(one.clone());
