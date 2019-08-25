@@ -10,6 +10,7 @@ pub struct Mission {
     pub to: Meta,
     pub executor: Executor,
     pub last_status_demand: Option<LastStatusDemand>,
+    pub use_upstream_id : bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]

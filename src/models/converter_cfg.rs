@@ -146,7 +146,7 @@ pub struct OneStepFlowSettings {
     /// if the downstream is state meta, when `is_main` is set to true, the upstream's id will be used as downstream's id
     #[serde(skip_serializing_if = "is_false")]
     #[serde(default)]
-    pub is_main: bool,
+    pub use_upstream_id: bool,
 }
 
 fn is_false(val: &bool) -> bool {
@@ -188,7 +188,7 @@ mod test {
         let setting = OneStepFlowSettings {
             selector: None,
             executor: vec![],
-            is_main: false,
+            use_upstream_id: false,
         };
         let result = serde_json::to_string(&setting).unwrap();
         let res_str = r#"{"executor":[]}"#;

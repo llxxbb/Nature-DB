@@ -82,7 +82,7 @@ mod test {
                     proportion: 100,
                 },
             ],
-            is_main: false,
+            use_upstream_id: false,
         };
         let raw = RawOneStepFlow {
             from_meta: "from".to_string(),
@@ -112,7 +112,7 @@ mod test {
                     proportion: 200,
                 },
             ],
-            is_main: false,
+            use_upstream_id: false,
         };
         let raw = RawOneStepFlow {
             from_meta: "from".to_string(),
