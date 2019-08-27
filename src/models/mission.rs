@@ -67,7 +67,7 @@ impl Mission {
                     continue;
                 }
                 // only verify source status, target status will be checked later.
-                if !Self::source_status_check(&instance.data.status, selector) {
+                if !Self::source_status_check(&instance.data.states, selector) {
                     continue;
                 }
             }

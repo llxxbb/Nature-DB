@@ -45,7 +45,7 @@ impl RawInstance {
             None => HashMap::new(),
             Some(ref s) => serde_json::from_str::<HashMap<String, String>>(s)?
         };
-        let status = match self.status {
+        let states = match self.status {
             None => HashSet::new(),
             Some(ref s) => serde_json::from_str::<HashSet<String>>(s)?
         };
@@ -58,7 +58,7 @@ impl RawInstance {
                 create_time: self.create_time.timestamp_millis(),
                 content: self.content.clone(),
                 context,
-                status,
+                states,
                 status_version: self.status_version,
                 from,
             },
@@ -89,9 +89,9 @@ impl RawInstance {
                     _ => Some(serde_json::to_string(&instance.context)?)
                 }
             },
-            status: match instance.status.len() {
+            status: match instance.states.len() {
                 0 => None,
-                _ => Some(serde_json::to_string(&instance.status)?)
+                _ => Some(serde_json::to_string(&instance.states)?)
             },
             status_version: instance.status_version,
             from_meta: from_meta,
