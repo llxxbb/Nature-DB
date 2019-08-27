@@ -19,7 +19,7 @@ pub struct RawInstance {
     para: String,
     content: String,
     context: Option<String>,
-    status: Option<String>,
+    states: Option<String>,
     status_version: i32,
     from_meta: Option<String>,
     from_status_version: Option<i32>,
@@ -45,7 +45,7 @@ impl RawInstance {
             None => HashMap::new(),
             Some(ref s) => serde_json::from_str::<HashMap<String, String>>(s)?
         };
-        let states = match self.status {
+        let states = match self.states {
             None => HashSet::new(),
             Some(ref s) => serde_json::from_str::<HashSet<String>>(s)?
         };
@@ -89,7 +89,7 @@ impl RawInstance {
                     _ => Some(serde_json::to_string(&instance.context)?)
                 }
             },
-            status: match instance.states.len() {
+            states: match instance.states.len() {
                 0 => None,
                 _ => Some(serde_json::to_string(&instance.states)?)
             },

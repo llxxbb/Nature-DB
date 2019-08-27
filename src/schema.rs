@@ -5,7 +5,7 @@ table! {
         para -> Text,
         content -> Text,
         context -> Nullable<Text>,
-        status -> Nullable<Text>,
+        states -> Nullable<Text>,
         status_version -> Integer,
         from_meta -> Nullable<Text>,
         from_status_version -> Nullable<Integer>,

@@ -25,7 +25,7 @@ create TABLE `instances` (
 	`para`	VARCHAR ( 255 ) NOT NULL,
 	`content`	VARCHAR ( 1023 ) NOT NULL,
 	`context`	TEXT,
-	`status`	TEXT,
+	`states`	TEXT,
 	`status_version`	INTEGER NOT NULL,
 	`from_meta`	VARCHAR ( 255 ),
 	`from_status_version`	INTEGER,
