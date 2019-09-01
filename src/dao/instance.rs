@@ -1,15 +1,15 @@
 use diesel::prelude::*;
 
-use crate::{CONN, CONNNECTION};
-use crate::raw_models::RawInstance;
+use nature_common::*;
 
-use super::*;
+use crate::{CONN, CONNNECTION, DbError};
+use crate::raw_models::RawInstance;
 
 pub struct InstanceDaoImpl;
 
 impl InstanceDaoImpl {
     pub fn insert(instance: &Instance) -> Result<usize> {
-        use self::schema::instances;
+        use super::schema::instances;
         let new = RawInstance::new(instance)?;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         match diesel::insert_into(instances::table)
@@ -22,7 +22,7 @@ impl InstanceDaoImpl {
 
     /// check whether source stored earlier
     pub fn is_exists(ins: &Instance) -> Result<bool> {
-        use self::schema::instances::dsl::*;
+        use super::schema::instances::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = instances
             .filter(instance_id.eq(ins.id.to_ne_bytes().to_vec()))
@@ -41,7 +41,7 @@ impl InstanceDaoImpl {
         }
     }
     pub fn get_by_id(record_id: u128) -> Result<Option<Instance>> {
-        use self::schema::instances::dsl::*;
+        use super::schema::instances::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = instances
             .filter(instance_id.eq(u128_to_vec_u8(record_id)))
@@ -58,14 +58,40 @@ impl InstanceDaoImpl {
         }
     }
 
-    pub fn get_by_full_key(full_key: &str, limit: i64) -> Result<Option<Vec<Instance>>> {
-        use self::schema::instances::dsl::*;
+    pub fn fetch(full_key: Option<String>, from: Option<String>, limit: i64) -> Result<Option<Vec<Instance>>> {
+        use super::schema::instances::dsl::*;
+        if full_key.is_none() && from.is_none() {
+            return Err(NatureError::VerifyError("`full_key` or `from` must be assigned one".to_string()));
+        }
         let conn: &CONNNECTION = &CONN.lock().unwrap();
-        let def = instances
-            .filter(meta.eq(full_key))
-            .order(status_version.desc())
-            .limit(limit)
-            .load::<RawInstance>(conn);
+
+        let mut cond_1: Option<_> = None;
+        if full_key.is_some() {
+            let eq = meta.eq(full_key.unwrap());
+            cond_1 = Some(eq);
+        }
+        let mut cond_2: Option<_> = None;
+        if from.is_some() {
+            cond_2 = Some(from_meta.eq(from.unwrap()));
+        }
+        let def = if cond_1.is_none() {
+            instances.filter(cond_2.unwrap())
+                .order(status_version.desc())
+                .limit(limit)
+                .load::<RawInstance>(conn)
+        } else {
+            if cond_2.is_none() {
+                instances.filter(cond_1.unwrap())
+                    .order(status_version.desc())
+                    .limit(limit)
+                    .load::<RawInstance>(conn)
+            } else {
+                instances.filter(cond_1.unwrap()).filter(cond_2.unwrap())
+                    .order(status_version.desc())
+                    .limit(limit)
+                    .load::<RawInstance>(conn)
+            }
+        };
         match def {
             Ok(rtn) => if rtn.len() == 0 {
                 Ok(None)
@@ -80,14 +106,12 @@ impl InstanceDaoImpl {
     /// default `MetaType` is `Business`
     pub fn get_by_key(biz_key: &str, limit: i64) -> Result<Option<Vec<Instance>>> {
         let tk = Meta::new(biz_key)?;
-        Self::get_by_full_key(&tk.get_full_key(), limit)
+        Self::fetch(Some(tk.get_full_key()), None, limit)
     }
-}
 
-impl InstanceDaoImpl {
     pub fn delete(ins: &Instance) -> Result<usize> {
         debug!("delete instance, id is : {:?}", ins.id);
-        use self::schema::instances::dsl::*;
+        use super::schema::instances::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rows = instances
             .filter(instance_id.eq(ins.id.to_ne_bytes().to_vec()))
