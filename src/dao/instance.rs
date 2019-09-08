@@ -58,57 +58,6 @@ impl InstanceDaoImpl {
         }
     }
 
-    pub fn fetch(full_key: Option<String>, from: Option<String>, limit: i64) -> Result<Option<Vec<Instance>>> {
-        use super::schema::instances::dsl::*;
-        if full_key.is_none() && from.is_none() {
-            return Err(NatureError::VerifyError("`full_key` or `from` must be assigned one".to_string()));
-        }
-        let conn: &CONNNECTION = &CONN.lock().unwrap();
-
-        let mut cond_1: Option<_> = None;
-        if full_key.is_some() {
-            let eq = meta.eq(full_key.unwrap());
-            cond_1 = Some(eq);
-        }
-        let mut cond_2: Option<_> = None;
-        if from.is_some() {
-            cond_2 = Some(from_meta.eq(from.unwrap()));
-        }
-        let def = if cond_1.is_none() {
-            instances.filter(cond_2.unwrap())
-                .order(status_version.desc())
-                .limit(limit)
-                .load::<RawInstance>(conn)
-        } else {
-            if cond_2.is_none() {
-                instances.filter(cond_1.unwrap())
-                    .order(status_version.desc())
-                    .limit(limit)
-                    .load::<RawInstance>(conn)
-            } else {
-                instances.filter(cond_1.unwrap()).filter(cond_2.unwrap())
-                    .order(status_version.desc())
-                    .limit(limit)
-                    .load::<RawInstance>(conn)
-            }
-        };
-        match def {
-            Ok(rtn) => if rtn.len() == 0 {
-                Ok(None)
-            } else {
-                let r = rtn.iter().map(|x| x.to().unwrap()).collect();
-                Ok(Some(r))
-            }
-            Err(e) => Err(DbError::from(e))
-        }
-    }
-
-    /// default `MetaType` is `Business`
-    pub fn get_by_key(biz_key: &str, limit: i64) -> Result<Option<Vec<Instance>>> {
-        let tk = Meta::new(biz_key)?;
-        Self::fetch(Some(tk.get_full_key()), None, limit)
-    }
-
     pub fn delete(ins: &Instance) -> Result<usize> {
         debug!("delete instance, id is : {:?}", ins.id);
         use super::schema::instances::dsl::*;
