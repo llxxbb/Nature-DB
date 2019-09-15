@@ -20,9 +20,9 @@ pub struct RawInstance {
     content: String,
     context: Option<String>,
     states: Option<String>,
-    status_version: i32,
+    state_version: i32,
     from_meta: Option<String>,
-    from_status_version: Option<i32>,
+    from_state_version: Option<i32>,
     event_time: NaiveDateTime,
     execute_time: NaiveDateTime,
     create_time: NaiveDateTime,
@@ -36,7 +36,7 @@ impl RawInstance {
                 let meta = Meta::from_string(k)?;
                 Some(FromInstance {
                     meta,
-                    status_version: self.from_status_version.unwrap(),
+                    status_version: self.from_state_version.unwrap(),
                 })
             }
         };
@@ -59,14 +59,14 @@ impl RawInstance {
                 content: self.content.clone(),
                 context,
                 states,
-                status_version: self.status_version,
+                state_version: self.state_version,
                 from,
             },
         })
     }
 
     pub fn new(instance: &Instance) -> Result<RawInstance> {
-        let (from_meta, from_status_version) = match instance.from {
+        let (from_meta, from_state_version) = match instance.from {
             None => (None, None),
             Some(ref from) => (Some(from.meta.get_string()), Some(from.status_version))
         };
@@ -93,10 +93,10 @@ impl RawInstance {
                 0 => None,
                 _ => Some(serde_json::to_string(&instance.states)?)
             },
-            status_version: instance.status_version,
-            from_meta: from_meta,
+            state_version: instance.state_version,
+            from_meta,
             para: "".to_string(),
-            from_status_version,
+            from_state_version,
             event_time: NaiveDateTime::from_timestamp(instance.event_time, 0),
             execute_time: NaiveDateTime::from_timestamp(instance.execute_time, 0),
             create_time: NaiveDateTime::from_timestamp(instance.create_time, 0),

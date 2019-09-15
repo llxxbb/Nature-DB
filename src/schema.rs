@@ -1,14 +1,14 @@
 table! {
-    instances (instance_id, meta, para, status_version) {
+    instances (instance_id, meta, para, state_version) {
         instance_id -> Binary,
         meta -> Text,
         para -> Text,
         content -> Text,
         context -> Nullable<Text>,
         states -> Nullable<Text>,
-        status_version -> Integer,
+        state_version -> Integer,
         from_meta -> Nullable<Text>,
-        from_status_version -> Nullable<Integer>,
+        from_state_version -> Nullable<Integer>,
         event_time -> Timestamp,
         execute_time -> Timestamp,
         create_time -> Timestamp,

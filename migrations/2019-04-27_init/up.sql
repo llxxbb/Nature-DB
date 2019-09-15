@@ -26,13 +26,13 @@ create TABLE `instances` (
 	`content`	VARCHAR ( 1023 ) NOT NULL,
 	`context`	TEXT,
 	`states`	TEXT,
-	`status_version`	INTEGER NOT NULL,
+	`state_version`	INTEGER NOT NULL,
 	`from_meta`	VARCHAR ( 255 ),
-	`from_status_version`	INTEGER,
+	`from_state_version`	INTEGER,
 	`event_time`	DATETIME NOT NULL,
 	`execute_time`	DATETIME NOT NULL,
 	`create_time`	DATETIME NOT NULL,
-	PRIMARY KEY(`meta`,`para`,`instance_id`,`status_version`)
+	PRIMARY KEY(`meta`,`para`,`instance_id`,`state_version`)
 );
 
 create TABLE `task` (

@@ -30,8 +30,8 @@ impl InstanceDaoImpl {
         let def = instances
             .filter(instance_id.eq(ins.id.to_ne_bytes().to_vec()))
             .filter(meta.eq(ins.meta.get_string()))
-            .filter(status_version.eq(ins.status_version))
-            .order(status_version.desc())
+            .filter(state_version.eq(ins.state_version))
+            .order(state_version.desc())
             .limit(1)
             .load::<RawInstance>(conn);
         match def {
@@ -43,12 +43,14 @@ impl InstanceDaoImpl {
             Err(e) => Err(DbError::from(e))
         }
     }
-    pub fn get_by_id(record_id: u128) -> Result<Option<Instance>> {
+    pub fn get_by_id(f_para: &ParaForQueryByID) -> Result<Option<Instance>> {
         use super::schema::instances::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = instances
-            .filter(instance_id.eq(u128_to_vec_u8(record_id)))
-            .order(status_version.desc())
+            .filter(instance_id.eq(u128_to_vec_u8(f_para.id))
+                .and(meta.eq(&f_para.meta)
+                ))
+            .order(state_version.desc())
             .limit(1)
             .load::<RawInstance>(conn);
         match def {
@@ -68,7 +70,7 @@ impl InstanceDaoImpl {
         let rows = instances
             .filter(instance_id.eq(ins.id.to_ne_bytes().to_vec()))
             .filter(meta.eq(ins.meta.get_string()))
-            .filter(status_version.eq(ins.status_version));
+            .filter(state_version.eq(ins.state_version));
         //        debug!("rows filter : {:?}", rows);
         match diesel::delete(rows).execute(conn) {
             Ok(rtn) => Ok(rtn),
