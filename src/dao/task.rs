@@ -28,7 +28,7 @@ impl TaskDaoImpl {
             },
             Err(e) => {
                 error!("insert task error: {:?}", e);
-                Err(DbError::from(e))
+                Err(DbError::from_with_msg(e, &format!("mata : {}, id : {}", &raw.meta, id_tool::vec_to_u128(&raw.task_id))))
             }
         }
     }

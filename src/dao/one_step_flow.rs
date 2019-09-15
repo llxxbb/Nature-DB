@@ -49,11 +49,11 @@ impl OneStepFlowDaoImpl {
         use self::schema::one_step_flow;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::insert_into(one_step_flow::table)
-            .values(one)
+            .values(&one)
             .execute(conn);
         match rtn {
             Ok(x) => Ok(x),
-            Err(e) => Err(DbError::from(e)),
+            Err(e) => Err(DbError::from_with_msg(e, &format!("{:?}", &one))),
         }
     }
     pub fn delete(one: RawOneStepFlow) -> Result<usize> {

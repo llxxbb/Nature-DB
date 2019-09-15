@@ -22,7 +22,7 @@ impl StorePlanDaoImpl {
                     num
                 ))),
             },
-            Err(e) => Err(DbError::from(e)),
+            Err(e) => Err(DbError::from_with_msg(e, &format!("upstream : {}, downstream : {}", plan.upstream, plan.downstream))),
         }
     }
 

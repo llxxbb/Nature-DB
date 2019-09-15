@@ -32,7 +32,7 @@ impl OneStepFlowCacheImpl {
     pub fn get(from: &Meta) -> Result<Option<Vec<OneStepFlow>>> {
         let (relations, balances) = Self::get_balanced(from)?;
         if relations.is_none() {
-            debug!("no route info for : {:?}", from);
+            debug!("No relations of `Meta`: {:?}", from.get_full_key());
             Ok(None)
         } else {
             let vec = Self::weight_filter(&relations.unwrap(), &balances.unwrap());

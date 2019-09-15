@@ -16,10 +16,10 @@ impl InstanceDaoImpl {
             .values(new)
             .execute(conn) {
             Ok(rtn) => {
-                debug!("saved instance for `Meta` {:?}, id : {:?}", instance.meta.get_full_key(), instance.id);
+                debug!("Saved instance for `Meta` {:?}, id : {:?}", instance.meta.get_full_key(), instance.id);
                 Ok(rtn)
-            },
-            Err(err) => Err(DbError::from(err))
+            }
+            Err(err) => Err(DbError::from_with_msg(err, &instance.id.to_string()))
         }
     }
 
