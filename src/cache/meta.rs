@@ -18,7 +18,9 @@ impl MetaCacheImpl {
     pub fn get(meta: &Meta) -> Result<RawMeta> {
 //        debug!("get `Meta` from cache for meta : {:?}", meta);
         if meta.get_full_key().is_empty() {
-            return Err(NatureError::VerifyError("[biz] must not be empty!".to_string()));
+            let error = NatureError::VerifyError("[biz] must not be empty!".to_string());
+            warn!("{}", error);
+            return Err(error);
         }
         let mut cache = CACHE.lock().unwrap();
         {   // An explicit scope to avoid cache.insert error
@@ -27,7 +29,11 @@ impl MetaCacheImpl {
             };
         };
         match MetaDaoImpl::get(&meta)? {
-            None => Err(NatureError::MetaNotDefined(format!("{} not defined", meta.get_full_key()))),
+            None => {
+                let error = NatureError::MetaNotDefined(format!("{} not defined", meta.get_full_key()));
+                warn!("{}", error);
+                Err(error)
+            }
             Some(def) => {
                 cache.insert(meta.clone(), def.clone());
                 Ok(def)
@@ -38,7 +44,6 @@ impl MetaCacheImpl {
 
 #[cfg(test)]
 mod test {
-
     #[test]
     fn can_not_get_from_cache() {
         // TODO
@@ -49,7 +54,6 @@ mod test {
 //        let testee = InstanceServiceImpl { define_cache: mocks.c_meta.clone() };
 //        let result = testee.verify(&mut instance);
 //        assert!(result.is_err());
-
     }
 
     #[test]
@@ -63,6 +67,5 @@ mod test {
 //        let testee = InstanceServiceImpl { define_cache: mocks.c_meta.clone() };
 //        let result = testee.verify(&mut instance);
 //        assert!(result.is_ok());
-
     }
 }

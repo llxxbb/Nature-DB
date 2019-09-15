@@ -42,13 +42,6 @@ impl RawTask {
         })
     }
 
-    pub fn save<T: Serialize + Debug, F>(task: &T, meta: &str, data_type: i16, saver: F) -> Result<RawTask>
-        where F: Fn(&RawTask) -> Result<usize>
-    {
-        let result = Self::new(task, meta, data_type)?;
-        saver(&result)?;
-        Ok(result)
-    }
 
     /// by performance reason, for one-to-one carry we can reuse the beginning carry to finish all flows.
     /// That way we need not to communicate with DB for create new and delete old carrier.

@@ -58,7 +58,6 @@ impl Mission {
 
     pub fn filter_relations(para: (&Instance, Vec<OneStepFlow>)) -> Option<Vec<Mission>> {
         let (instance, maps) = para;
-        debug!("------------------filter_relations------------------------");
         let mut rtn: Vec<Mission> = Vec::new();
         for m in maps {
             if m.selector.is_some() {

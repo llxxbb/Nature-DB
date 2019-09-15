@@ -35,7 +35,9 @@ impl OneStepFlowCacheImpl {
             debug!("no route info for : {:?}", from);
             Ok(None)
         } else {
-            Ok(Some(Self::weight_filter(&relations.unwrap(), &balances.unwrap())))
+            let vec = Self::weight_filter(&relations.unwrap(), &balances.unwrap());
+            debug!("Available relations of `Meta`: {:?}， number : {:?}", from.get_full_key(), vec.len());
+            Ok(Some(vec))
         }
     }
     fn get_balanced(from: &Meta) -> Result<ITEM> {
@@ -48,7 +50,7 @@ impl OneStepFlowCacheImpl {
                 (None, None)
             }
             Ok(Some(relations)) => {
-                debug!("get relations for: {:?}， number : {:?}", from, relations.len());
+                debug!("Get relations of `Meta`: {:?}， number : {:?}", from.get_full_key(), relations.len());
                 let label_groups = Self::get_label_groups(&relations);
                 let weight_cal = Self::weight_calculate(&label_groups);
                 (Some(relations), Some(weight_cal))
@@ -61,7 +63,6 @@ impl OneStepFlowCacheImpl {
     }
 
     fn weight_filter(relations: &[OneStepFlow], balances: &HashMap<Executor, Range<f32>>) -> Vec<OneStepFlow> {
-        debug!("weight_filter relation's number{}", relations.len());
         let mut rtn: Vec<OneStepFlow> = Vec::new();
         let rnd = thread_rng().gen::<f32>();
         for m in relations {

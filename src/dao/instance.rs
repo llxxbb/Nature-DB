@@ -15,7 +15,10 @@ impl InstanceDaoImpl {
         match diesel::insert_into(instances::table)
             .values(new)
             .execute(conn) {
-            Ok(rtn) => Ok(rtn),
+            Ok(rtn) => {
+                debug!("saved instance for `Meta` {:?}, id : {:?}", instance.meta.get_full_key(), instance.id);
+                Ok(rtn)
+            },
             Err(err) => Err(DbError::from(err))
         }
     }
@@ -70,18 +73,6 @@ impl InstanceDaoImpl {
         match diesel::delete(rows).execute(conn) {
             Ok(rtn) => Ok(rtn),
             Err(e) => Err(DbError::from(e))
-        }
-    }
-
-    pub fn save(instance: &Instance) -> Result<usize> {
-        debug!("save instance for `Meta` {:?}, id : {:?}", instance.meta.get_full_key(), instance.id);
-        let result = Self::insert(instance);
-        match result {
-            Ok(num) => Ok(num),
-            Err(err) => match err {
-                NatureError::DaoDuplicated(_) => Ok(0),
-                _ => Err(err)
-            }
         }
     }
 }
