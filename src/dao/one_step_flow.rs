@@ -106,6 +106,7 @@ impl OneStepFlowDaoImpl {
                     proportion: 1,
                 }],
                 use_upstream_id: false,
+                target_state: None
             },
         )?;
         let _ = OneStepFlowDaoImpl::insert(one.clone());

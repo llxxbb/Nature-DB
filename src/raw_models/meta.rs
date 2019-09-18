@@ -45,6 +45,24 @@ impl Default for RawMeta {
     }
 }
 
+impl From<Meta> for RawMeta {
+    fn from(m: Meta) -> Self {
+        RawMeta {
+            full_key: m.get_full_key(),
+            description: None,
+            version: m.version,
+            states: match m.state{
+                None => None,
+                Some(x) => Some(State::states_to_string(&x, ","))
+            },
+            fields: None,
+            config: "".to_string(),
+            flag: 0,
+            create_time: Local::now().naive_local(),
+        }
+    }
+}
+
 impl RawMeta {
     pub fn has_states(&self) -> bool {
         self.states.is_some()

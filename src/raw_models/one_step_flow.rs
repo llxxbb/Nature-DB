@@ -85,6 +85,7 @@ mod test {
                 },
             ],
             use_upstream_id: false,
+            target_state: None,
         };
         let raw = RawOneStepFlow {
             from_meta: "from".to_string(),
@@ -115,6 +116,7 @@ mod test {
                 },
             ],
             use_upstream_id: false,
+            target_state: None,
         };
         let raw = RawOneStepFlow {
             from_meta: "from".to_string(),

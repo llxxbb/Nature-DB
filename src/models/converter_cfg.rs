@@ -154,6 +154,19 @@ pub struct OneStepFlowSettings {
     #[serde(skip_serializing_if = "is_false")]
     #[serde(default)]
     pub use_upstream_id: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub target_state: Option<TargetState>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+pub struct TargetState {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub add: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub remove: Option<Vec<String>>,
 }
 
 fn is_false(val: &bool) -> bool {
@@ -196,6 +209,7 @@ mod test {
             selector: None,
             executor: vec![],
             use_upstream_id: false,
+            target_state: None,
         };
         let result = serde_json::to_string(&setting).unwrap();
         let res_str = r#"{"executor":[]}"#;
@@ -205,16 +219,17 @@ mod test {
     }
 
     #[test]
-    fn string_to_setting_no_selector(){
+    fn string_to_setting_no_selector() {
         let setting = OneStepFlowSettings {
             selector: None,
-            executor: vec![Executor{
+            executor: vec![Executor {
                 protocol: Protocol::LocalRust,
                 url: "nature_demo.dll:order_new".to_string(),
                 group: "".to_string(),
-                proportion: 1
+                proportion: 1,
             }],
             use_upstream_id: true,
+            target_state: None,
         };
         let result = serde_json::to_string(&setting).unwrap();
         let res_str = r#"{"executor":[{"protocol":"LocalRust","url":"nature_demo.dll:order_new","proportion":1}],"use_upstream_id":true}"#;
