@@ -10,8 +10,7 @@ use lru_time_cache::LruCache;
 
 use nature_common::*;
 
-use crate::models::converter_cfg::OneStepFlow;
-use crate::OneStepFlowDaoImpl;
+use crate::{OneStepFlow, OneStepFlowDaoImpl};
 
 use self::rand::{Rng, thread_rng};
 

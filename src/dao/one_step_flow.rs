@@ -2,8 +2,8 @@ use std::str::FromStr;
 
 use diesel::prelude::*;
 
-use crate::{CONN, CONNNECTION};
-use crate::models::converter_cfg::{OneStepFlow, OneStepFlowSettings};
+use crate::{CONN, CONNNECTION, OneStepFlow};
+use crate::models::converter_cfg::OneStepFlowSettings;
 use crate::raw_models::RawOneStepFlow;
 
 use super::*;
@@ -106,7 +106,7 @@ impl OneStepFlowDaoImpl {
                     proportion: 1,
                 }],
                 use_upstream_id: false,
-                target_state: None
+                target_state: None,
             },
         )?;
         let _ = OneStepFlowDaoImpl::insert(one.clone());

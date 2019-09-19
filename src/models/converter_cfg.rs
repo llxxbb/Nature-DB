@@ -1,7 +1,8 @@
 use std::collections::HashSet;
-use std::iter::Iterator;
 
 use nature_common::*;
+
+use crate::OneStepFlow;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RouteInfo {
@@ -31,118 +32,6 @@ pub struct Selector {
     pub context_exclude: HashSet<String>,
 }
 
-
-/// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
-pub struct OneStepFlow {
-    pub from: Meta,
-    pub to: Meta,
-    pub selector: Option<Selector>,
-    pub executor: Executor,
-    pub use_upstream_id: bool,
-}
-
-impl Iterator for OneStepFlow {
-    type Item = OneStepFlow;
-    fn next(&mut self) -> Option<Self::Item> {
-        Some(self.clone())
-    }
-}
-
-impl OneStepFlow {
-    pub fn new_for_local_executor(from: &str, to: &str, local_executor: &str) -> Result<Self> {
-        Ok(OneStepFlow {
-            from: Meta::new(from)?,
-            to: Meta::new(to)?,
-            selector: None,
-            executor: Executor {
-                protocol: Protocol::LocalRust,
-                url: local_executor.to_string(),
-                group: "".to_string(),
-                proportion: 1,
-            },
-            use_upstream_id: false,
-        })
-    }
-    pub fn new_for_local_executor_with_group_and_proportion(from: &str, to: &str, local_executor: &str, group: &str, proportion: u32) -> Result<Self> {
-        Ok(OneStepFlow {
-            from: Meta::new(from)?,
-            to: Meta::new(to)?,
-            selector: None,
-            executor: Executor {
-                protocol: Protocol::LocalRust,
-                url: local_executor.to_string(),
-                group: group.to_string(),
-                proportion,
-            },
-            use_upstream_id: false,
-        })
-    }
-    pub fn new_for_source_status_needed(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
-        Ok(OneStepFlow {
-            from: Meta::new(from)?,
-            to: Meta::new(to)?,
-            selector: Some(Selector {
-                source_status_include: set.clone(),
-                source_status_exclude: HashSet::new(),
-                target_status_include: HashSet::new(),
-                target_status_exclude: HashSet::new(),
-                context_include: HashSet::new(),
-                context_exclude: HashSet::new(),
-            }),
-            executor: Executor::default(),
-            use_upstream_id: false,
-        })
-    }
-    pub fn new_for_source_status_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
-        Ok(OneStepFlow {
-            from: Meta::new(from)?,
-            to: Meta::new(to)?,
-            selector: Some(Selector {
-                source_status_include: HashSet::new(),
-                source_status_exclude: set.clone(),
-                target_status_include: HashSet::new(),
-                target_status_exclude: HashSet::new(),
-                context_include: HashSet::new(),
-                context_exclude: HashSet::new(),
-            }),
-            executor: Executor::default(),
-            use_upstream_id: false,
-        })
-    }
-    pub fn new_for_context_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
-        Ok(OneStepFlow {
-            from: Meta::new(from)?,
-            to: Meta::new(to)?,
-            selector: Some(Selector {
-                source_status_include: HashSet::new(),
-                source_status_exclude: HashSet::new(),
-                target_status_include: HashSet::new(),
-                target_status_exclude: HashSet::new(),
-                context_include: HashSet::new(),
-                context_exclude: set.clone(),
-            }),
-            executor: Executor::default(),
-            use_upstream_id: false,
-        })
-    }
-    pub fn new_for_context_include(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
-        Ok(OneStepFlow {
-            from: Meta::new(from)?,
-            to: Meta::new(to)?,
-            selector: Some(Selector {
-                source_status_include: HashSet::new(),
-                source_status_exclude: HashSet::new(),
-                target_status_include: HashSet::new(),
-                target_status_exclude: HashSet::new(),
-                context_include: set.clone(),
-                context_exclude: HashSet::new(),
-            }),
-            executor: Executor::default(),
-            use_upstream_id: false,
-        })
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct OneStepFlowSettings {
