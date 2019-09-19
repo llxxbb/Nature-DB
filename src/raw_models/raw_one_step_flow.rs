@@ -2,7 +2,7 @@ use serde_json;
 
 use nature_common::*;
 
-use crate::models::converter_cfg::OneStepFlowSettings;
+use crate::OneStepFlowSettings;
 use crate::schema::one_step_flow;
 
 #[derive(Debug)]

@@ -155,7 +155,6 @@ impl OneStepFlow {
 
 #[cfg(test)]
 mod test_from_raw {
-
     use super::*;
 
     #[test]

@@ -2,8 +2,7 @@ use std::str::FromStr;
 
 use diesel::prelude::*;
 
-use crate::{CONN, CONNNECTION, OneStepFlow};
-use crate::models::converter_cfg::OneStepFlowSettings;
+use crate::{CONN, CONNNECTION, OneStepFlow, OneStepFlowSettings};
 use crate::raw_models::RawOneStepFlow;
 
 use super::*;

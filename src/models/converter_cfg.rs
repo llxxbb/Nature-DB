@@ -33,24 +33,6 @@ pub struct Selector {
 }
 
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
-pub struct OneStepFlowSettings {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub selector: Option<Selector>,
-    pub executor: Vec<Executor>,
-    /// if the downstream is state meta, when `is_main` is set to true, the upstream's id will be used as downstream's id
-    #[serde(skip_serializing_if = "is_false")]
-    #[serde(default)]
-    pub use_upstream_id: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    pub target_state: Option<TargetState>,
-}
-
-fn is_false(val: &bool) -> bool {
-    !val.clone()
-}
 
 #[cfg(test)]
 mod test {
@@ -80,40 +62,5 @@ mod test {
         let de: Selector = serde_json::from_str(&rtn).unwrap();
         assert_eq!(de.context_exclude.is_empty(), true);
         assert_eq!(de.source_status_include.len(), 1);
-    }
-
-    #[test]
-    fn none_for_selector_one_step_flow_settings() {
-        let setting = OneStepFlowSettings {
-            selector: None,
-            executor: vec![],
-            use_upstream_id: false,
-            target_state: None,
-        };
-        let result = serde_json::to_string(&setting).unwrap();
-        let res_str = r#"{"executor":[]}"#;
-        assert_eq!(result, res_str);
-        let res_obj: OneStepFlowSettings = serde_json::from_str(res_str).unwrap();
-        assert_eq!(res_obj, setting);
-    }
-
-    #[test]
-    fn string_to_setting_no_selector() {
-        let setting = OneStepFlowSettings {
-            selector: None,
-            executor: vec![Executor {
-                protocol: Protocol::LocalRust,
-                url: "nature_demo.dll:order_new".to_string(),
-                group: "".to_string(),
-                proportion: 1,
-            }],
-            use_upstream_id: true,
-            target_state: None,
-        };
-        let result = serde_json::to_string(&setting).unwrap();
-        let res_str = r#"{"executor":[{"protocol":"LocalRust","url":"nature_demo.dll:order_new","proportion":1}],"use_upstream_id":true}"#;
-        assert_eq!(result, res_str);
-        let res_obj: OneStepFlowSettings = serde_json::from_str(res_str).unwrap();
-        assert_eq!(res_obj, setting);
     }
 }
