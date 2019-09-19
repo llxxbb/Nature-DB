@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use nature_common::{DynamicConverter, Executor, Instance, Meta, MetaType, NatureError, Result};
 
-use crate::{OneStepFlow, Selector};
+use crate::{OneStepFlow, FlowSelector};
 
 /// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -97,7 +97,7 @@ impl Mission {
         }
     }
 
-    fn context_check(contexts: &HashMap<String, String>, selector: &Selector) -> bool {
+    fn context_check(contexts: &HashMap<String, String>, selector: &FlowSelector) -> bool {
         for exclude in &selector.context_exclude {
             if contexts.contains_key(exclude) {
                 return false;
@@ -111,7 +111,7 @@ impl Mission {
         true
     }
 
-    fn source_status_check(status: &HashSet<String>, selector: &Selector) -> bool {
+    fn source_status_check(status: &HashSet<String>, selector: &FlowSelector) -> bool {
         for exclude in &selector.source_status_exclude {
             if status.contains(exclude) {
                 return false;

@@ -1,12 +1,12 @@
 use nature_common::{Executor, TargetState};
 
-use crate::Selector;
+use crate::FlowSelector;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct OneStepFlowSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
-    pub selector: Option<Selector>,
+    pub selector: Option<FlowSelector>,
     pub executor: Vec<Executor>,
     /// if the downstream is state meta, when `is_main` is set to true, the upstream's id will be used as downstream's id
     #[serde(skip_serializing_if = "is_false")]

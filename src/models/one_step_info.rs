@@ -4,14 +4,14 @@ use std::string::ToString;
 
 use nature_common::{Executor, Meta, NatureError, Protocol, Result};
 
-use crate::{OneStepFlowSettings, RawOneStepFlow, Selector};
+use crate::{OneStepFlowSettings, RawOneStepFlow, FlowSelector};
 
 /// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct OneStepFlow {
     pub from: Meta,
     pub to: Meta,
-    pub selector: Option<Selector>,
+    pub selector: Option<FlowSelector>,
     pub executor: Executor,
     pub use_upstream_id: bool,
 }
@@ -91,7 +91,7 @@ impl OneStepFlow {
         Ok(OneStepFlow {
             from: Meta::new(from)?,
             to: Meta::new(to)?,
-            selector: Some(Selector {
+            selector: Some(FlowSelector {
                 source_status_include: set.clone(),
                 source_status_exclude: HashSet::new(),
                 target_status_include: HashSet::new(),
@@ -107,7 +107,7 @@ impl OneStepFlow {
         Ok(OneStepFlow {
             from: Meta::new(from)?,
             to: Meta::new(to)?,
-            selector: Some(Selector {
+            selector: Some(FlowSelector {
                 source_status_include: HashSet::new(),
                 source_status_exclude: set.clone(),
                 target_status_include: HashSet::new(),
@@ -123,7 +123,7 @@ impl OneStepFlow {
         Ok(OneStepFlow {
             from: Meta::new(from)?,
             to: Meta::new(to)?,
-            selector: Some(Selector {
+            selector: Some(FlowSelector {
                 source_status_include: HashSet::new(),
                 source_status_exclude: HashSet::new(),
                 target_status_include: HashSet::new(),
@@ -139,7 +139,7 @@ impl OneStepFlow {
         Ok(OneStepFlow {
             from: Meta::new(from)?,
             to: Meta::new(to)?,
-            selector: Some(Selector {
+            selector: Some(FlowSelector {
                 source_status_include: HashSet::new(),
                 source_status_exclude: HashSet::new(),
                 target_status_include: HashSet::new(),
