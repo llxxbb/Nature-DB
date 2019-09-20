@@ -1,10 +1,14 @@
 use std::clone::Clone;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
+use std::ops::Range;
+use std::ptr;
 use std::string::ToString;
+
+use rand::{Rng, thread_rng};
 
 use nature_common::{Executor, Meta, NatureError, Protocol, Result};
 
-use crate::{OneStepFlowSettings, RawOneStepFlow, FlowSelector};
+use crate::{FlowSelector, OneStepFlowSettings, RawOneStepFlow};
 
 /// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
@@ -57,6 +61,59 @@ impl OneStepFlow {
             }
         }).collect();
         Ok(rtn)
+    }
+
+    pub fn weight_filter(relations: &[OneStepFlow], balances: &HashMap<Executor, Range<f32>>) -> Vec<OneStepFlow> {
+        let mut rtn: Vec<OneStepFlow> = Vec::new();
+        let rnd = thread_rng().gen::<f32>();
+        for m in relations {
+            match balances.get(&m.executor) {
+                Some(rng) => if rng.contains(&rnd) {
+                    rtn.push(m.clone());
+                },
+                None => rtn.push(m.clone())
+            };
+        }
+        rtn
+    }
+
+    /// weight group will be cached
+    pub fn weight_calculate(groups: &HashMap<String, Vec<OneStepFlow>>) -> HashMap<Executor, Range<f32>> {
+        let mut rtn: HashMap<Executor, Range<f32>> = HashMap::new();
+        for group in groups.values() {
+            // summarize the weight for one group
+            let sum = group.iter().fold(0u32, |sum, mapping| {
+                sum + mapping.executor.proportion
+            });
+            if sum == 0 {
+                continue;
+            }
+            // give a certain range for every participants
+            let mut begin = 0.0;
+            let last = group.last().unwrap();
+            for m in group {
+                let w = m.executor.proportion as f32 / sum as f32;
+                let end = begin + w;
+                if ptr::eq(m, last) {
+                    // last must great 1
+                    rtn.insert(m.executor.clone(), begin..1.1);
+                } else {
+                    rtn.insert(m.executor.clone(), begin..end);
+                }
+                begin = end;
+            }
+        }
+        rtn
+    }
+
+    /// group by labels. Only one flow will be used when there are same label. This can be used to switch two different flows smoothly.
+    pub fn get_label_groups(maps: &[OneStepFlow]) -> HashMap<String, Vec<OneStepFlow>> {
+        let mut labels: HashMap<String, Vec<OneStepFlow>> = HashMap::new();
+        for mapping in maps {
+            let mappings = labels.entry(mapping.executor.group.clone()).or_insert_with(Vec::new);
+            mappings.push(mapping.clone());
+        }
+        labels
     }
 
     pub fn new_for_local_executor(from: &str, to: &str, local_executor: &str) -> Result<Self> {

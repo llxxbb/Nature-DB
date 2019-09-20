@@ -2,7 +2,6 @@ extern crate rand;
 
 use std::collections::HashMap;
 use std::ops::Range;
-use std::ptr;
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -11,8 +10,6 @@ use lru_time_cache::LruCache;
 use nature_common::*;
 
 use crate::{OneStepFlow, OneStepFlowDaoImpl};
-
-use self::rand::{Rng, thread_rng};
 
 /// all flows for one upper `Meta` and what a chance to lower `group`
 type ITEM = (Option<Vec<OneStepFlow>>, Option<HashMap<Executor, Range<f32>>>);
@@ -34,7 +31,7 @@ impl OneStepFlowCacheImpl {
             debug!("No relations of `Meta`: {:?}", from.get_full_key());
             Ok(None)
         } else {
-            let vec = Self::weight_filter(&relations.unwrap(), &balances.unwrap());
+            let vec = OneStepFlow::weight_filter(&relations.unwrap(), &balances.unwrap());
             debug!("Available relations of `Meta`: {:?}， number : {:?}", from.get_full_key(), vec.len());
             Ok(Some(vec))
         }
@@ -50,8 +47,8 @@ impl OneStepFlowCacheImpl {
             }
             Ok(Some(relations)) => {
                 debug!("Get relations of `Meta`: {:?}， number : {:?}", from.get_full_key(), relations.len());
-                let label_groups = Self::get_label_groups(&relations);
-                let weight_cal = Self::weight_calculate(&label_groups);
+                let label_groups = OneStepFlow::get_label_groups(&relations);
+                let weight_cal = OneStepFlow::weight_calculate(&label_groups);
                 (Some(relations), Some(weight_cal))
             }
             Err(err) => return Err(err)
@@ -60,70 +57,13 @@ impl OneStepFlowCacheImpl {
         cache.insert(from.clone(), rtn);
         Ok(cpy)
     }
-
-    fn weight_filter(relations: &[OneStepFlow], balances: &HashMap<Executor, Range<f32>>) -> Vec<OneStepFlow> {
-        let mut rtn: Vec<OneStepFlow> = Vec::new();
-        let rnd = thread_rng().gen::<f32>();
-        for m in relations {
-            match balances.get(&m.executor) {
-                Some(rng) => if rng.contains(&rnd) {
-                    rtn.push(m.clone());
-                },
-                None => rtn.push(m.clone())
-            };
-        }
-        rtn
-    }
-
-    /// weight group will be cached
-    fn weight_calculate(groups: &HashMap<String, Vec<OneStepFlow>>) -> HashMap<Executor, Range<f32>> {
-        let mut rtn: HashMap<Executor, Range<f32>> = HashMap::new();
-        for group in groups.values() {
-            // summarize the weight for one group
-            let sum = group.iter().fold(0u32, |sum, mapping| {
-                sum + mapping.executor.proportion
-            });
-            if sum == 0 {
-                continue;
-            }
-            // give a certain range for every participants
-            let mut begin = 0.0;
-            let last = group.last().unwrap();
-            for m in group {
-                let w = m.executor.proportion as f32 / sum as f32;
-                let end = begin + w;
-                if ptr::eq(m, last) {
-                    // last must great 1
-                    rtn.insert(m.executor.clone(), begin..1.1);
-                } else {
-                    rtn.insert(m.executor.clone(), begin..end);
-                }
-                begin = end;
-            }
-        }
-        rtn
-    }
-
-    /// group by labels. Only one flow will be used when there are same label. This can be used to switch two different flows smoothly.
-    fn get_label_groups(maps: &[OneStepFlow]) -> HashMap<String, Vec<OneStepFlow>> {
-        let mut labels: HashMap<String, Vec<OneStepFlow>> = HashMap::new();
-        for mapping in maps {
-            let mappings = labels.entry(mapping.executor.group.clone()).or_insert_with(Vec::new);
-            mappings.push(mapping.clone());
-        }
-        labels
-    }
 }
 
 #[cfg(test)]
 mod test_none_or_error {
     // TODO
-//    use mockers::matchers::check;
-//
-//    use crate::test_util::*;
-//
 //    use super::*;
-//
+
 //    /// test cache also
 //    #[test]
 //    fn get_error() {
