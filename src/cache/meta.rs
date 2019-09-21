@@ -5,8 +5,9 @@ use std::time::Duration;
 
 use lru_time_cache::LruCache;
 
-use crate::*;
-use crate::dao::MetaDaoImpl;
+use nature_common::{Meta, NatureError, Result};
+
+use crate::{MetaGetter, RawMeta};
 
 lazy_static! {
     static ref CACHE: Mutex<LruCache<Meta, RawMeta>> = Mutex::new(LruCache::<Meta, RawMeta>::with_expiry_duration(Duration::from_secs(3600)));
@@ -15,7 +16,7 @@ lazy_static! {
 pub struct MetaCacheImpl;
 
 impl MetaCacheImpl {
-    pub fn get(meta: &Meta) -> Result<RawMeta> {
+    pub fn get(meta: &Meta, getter: MetaGetter) -> Result<RawMeta> {
 //        debug!("get `Meta` from cache for meta : {:?}", meta);
         if meta.get_full_key().is_empty() {
             let error = NatureError::VerifyError("[biz] must not be empty!".to_string());
@@ -28,7 +29,7 @@ impl MetaCacheImpl {
                 return Ok(x.clone());
             };
         };
-        match MetaDaoImpl::get(&meta)? {
+        match getter(&meta)? {
             None => {
                 let error = NatureError::MetaNotDefined(format!("{} not defined", meta.get_full_key()));
                 warn!("{}", error);

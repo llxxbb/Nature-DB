@@ -5,6 +5,8 @@ use crate::raw_models::RawMeta;
 
 use super::*;
 
+pub type MetaGetter = fn(&Meta) -> Result<Option<RawMeta>>;
+
 pub struct MetaDaoImpl;
 
 impl MetaDaoImpl {
