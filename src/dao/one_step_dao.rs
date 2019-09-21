@@ -9,8 +9,11 @@ use super::*;
 
 pub struct OneStepFlowDaoImpl;
 
+pub type RelationResult = Result<Option<Vec<OneStepFlow>>>;
+pub type RelationGetter = fn(&Meta) -> RelationResult;
+
 impl OneStepFlowDaoImpl {
-    pub fn get_relations(from: &Meta) -> Result<Option<Vec<OneStepFlow>>> {
+    pub fn get_relations(from: &Meta) -> RelationResult {
         use self::schema::one_step_flow::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = match one_step_flow

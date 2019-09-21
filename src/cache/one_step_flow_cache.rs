@@ -9,12 +9,11 @@ use lru_time_cache::LruCache;
 
 use nature_common::*;
 
-use crate::{OneStepFlow, OneStepFlowDaoImpl};
+use crate::{OneStepFlow, RelationGetter, RelationResult};
 
 /// all flows for one upper `Meta` and what a chance to lower `group`
 type ITEM = (Option<Vec<OneStepFlow>>, Option<HashMap<Executor, Range<f32>>>);
 type CACHE = Mutex<LruCache<Meta, ITEM>>;
-
 lazy_static! {
     static ref CACHE_MAPPING: CACHE = Mutex::new(LruCache::<Meta, ITEM>::with_expiry_duration(Duration::from_secs(3600)));
 }
@@ -22,11 +21,9 @@ lazy_static! {
 
 pub struct OneStepFlowCacheImpl;
 
-type Dao = OneStepFlowDaoImpl;
-
 impl OneStepFlowCacheImpl {
-    pub fn get(from: &Meta) -> Result<Option<Vec<OneStepFlow>>> {
-        let (relations, balances) = Self::get_balanced(from)?;
+    pub fn get(from: &Meta, getter: RelationGetter) -> RelationResult {
+        let (relations, balances) = Self::get_balanced(from, getter)?;
         if relations.is_none() {
             debug!("No relations of `Meta`: {:?}", from.get_full_key());
             Ok(None)
@@ -36,12 +33,12 @@ impl OneStepFlowCacheImpl {
             Ok(Some(vec))
         }
     }
-    fn get_balanced(from: &Meta) -> Result<ITEM> {
+    fn get_balanced(from: &Meta, getter: RelationGetter) -> Result<ITEM> {
         let mut cache = CACHE_MAPPING.lock().unwrap();
         if let Some(balances) = cache.get(from) {
             return Ok(balances.clone());
         }
-        let rtn = match Dao::get_relations(from) {
+        let rtn = match getter(from) {
             Ok(None) => {
                 (None, None)
             }
