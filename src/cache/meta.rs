@@ -42,31 +42,3 @@ impl MetaCacheImpl {
         }
     }
 }
-
-#[cfg(test)]
-mod test {
-    #[test]
-    fn can_not_get_from_cache() {
-        // TODO
-//        let mocks = MyMocks::new();
-//        let mut instance = Instance::new("/err").unwrap();
-//        let expected_instance = instance.clone();
-//        mocks.s.expect(mocks.c_meta.get_call(check(move |t: &&Meta| **t == expected_instance.meta)).and_return(Err(NatureError::VerifyError("test error".to_string()))));
-//        let testee = InstanceServiceImpl { define_cache: mocks.c_meta.clone() };
-//        let result = testee.verify(&mut instance);
-//        assert!(result.is_err());
-    }
-
-    #[test]
-    fn can_get_from_cache() {
-        // TODO
-//        let mocks = MyMocks::new();
-//        let mut instance = Instance::new("/ok").unwrap();
-//        let expected_instance = instance.clone();
-//        let define = RawMeta::default();
-//        mocks.s.expect(mocks.c_meta.get_call(check(move |t: &&Meta| **t == expected_instance.meta)).and_return(Ok(define)));
-//        let testee = InstanceServiceImpl { define_cache: mocks.c_meta.clone() };
-//        let result = testee.verify(&mut instance);
-//        assert!(result.is_ok());
-    }
-}
