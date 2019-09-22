@@ -14,7 +14,7 @@ pub struct OneStepFlowSettings {
     pub use_upstream_id: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
-    pub target_state: Option<TargetState>,
+    pub target_states: Option<TargetState>,
 }
 
 fn is_false(val: &bool) -> bool {
@@ -33,7 +33,7 @@ mod test {
             selector: None,
             executor: vec![],
             use_upstream_id: false,
-            target_state: None,
+            target_states: None,
         };
         let result = serde_json::to_string(&setting).unwrap();
         let res_str = r#"{"executor":[]}"#;
@@ -53,7 +53,7 @@ mod test {
                 proportion: 1,
             }],
             use_upstream_id: true,
-            target_state: None,
+            target_states: None,
         };
         let result = serde_json::to_string(&setting).unwrap();
         let res_str = r#"{"executor":[{"protocol":"LocalRust","url":"nature_demo.dll:order_new","proportion":1}],"use_upstream_id":true}"#;

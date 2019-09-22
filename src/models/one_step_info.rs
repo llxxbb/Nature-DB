@@ -7,7 +7,7 @@ use std::string::ToString;
 
 use rand::{Rng, thread_rng};
 
-use nature_common::{Executor, Meta, NatureError, Protocol, Result};
+use nature_common::{Executor, Meta, NatureError, Protocol, Result, TargetState};
 
 use crate::{FlowSelector, MetaCacheGetter, MetaGetter, OneStepFlowSettings, RawOneStepFlow};
 
@@ -19,6 +19,7 @@ pub struct OneStepFlow {
     pub selector: Option<FlowSelector>,
     pub executor: Executor,
     pub use_upstream_id: bool,
+    pub target_states: Option<TargetState>,
 }
 
 impl Iterator for OneStepFlow {
@@ -61,6 +62,7 @@ impl OneStepFlow {
                 selector: selector.clone(),
                 executor: e2,
                 use_upstream_id,
+                target_states: settings.target_states.clone(),
             }
         }).collect();
         Ok(rtn)
@@ -70,7 +72,7 @@ impl OneStepFlow {
         let m_to = Meta::from_string(meta_to)?;
         let m_to = meta_cache_getter(&m_to, meta_getter)?;
         let m_to = m_to.try_into()?;
-        if let Some(ts) = &settings.target_state {
+        if let Some(ts) = &settings.target_states {
             if let Some(x) = &ts.add {
                 OneStepFlow::check_state(&m_to, x)?
             };
@@ -154,6 +156,7 @@ impl OneStepFlow {
                 proportion: 1,
             },
             use_upstream_id: false,
+            target_states: None,
         })
     }
     pub fn new_for_local_executor_with_group_and_proportion(from: &str, to: &str, local_executor: &str, group: &str, proportion: u32) -> Result<Self> {
@@ -168,6 +171,7 @@ impl OneStepFlow {
                 proportion,
             },
             use_upstream_id: false,
+            target_states: None,
         })
     }
     pub fn new_for_source_status_needed(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
@@ -184,6 +188,7 @@ impl OneStepFlow {
             }),
             executor: Executor::default(),
             use_upstream_id: false,
+            target_states: None,
         })
     }
     pub fn new_for_source_status_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
@@ -200,6 +205,7 @@ impl OneStepFlow {
             }),
             executor: Executor::default(),
             use_upstream_id: false,
+            target_states: None,
         })
     }
     pub fn new_for_context_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
@@ -216,6 +222,7 @@ impl OneStepFlow {
             }),
             executor: Executor::default(),
             use_upstream_id: false,
+            target_states: None,
         })
     }
     pub fn new_for_context_include(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
@@ -232,6 +239,7 @@ impl OneStepFlow {
             }),
             executor: Executor::default(),
             use_upstream_id: false,
+            target_states: None,
         })
     }
 }
@@ -255,7 +263,7 @@ mod test_from_raw {
                 },
             ],
             use_upstream_id: false,
-            target_state: None,
+            target_states: None,
         };
         let raw = RawOneStepFlow {
             from_meta: "from".to_string(),
@@ -286,7 +294,7 @@ mod test_from_raw {
                 },
             ],
             use_upstream_id: false,
-            target_state: None,
+            target_states: None,
         };
         let raw = RawOneStepFlow {
             from_meta: "from".to_string(),

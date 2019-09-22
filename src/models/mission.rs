@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use nature_common::{DynamicConverter, Executor, Instance, Meta, MetaType, NatureError, Result};
+use nature_common::{DynamicConverter, Executor, Instance, Meta, MetaType, NatureError, Result, TargetState};
 
 use crate::{FlowSelector, OneStepFlow};
 
@@ -17,6 +17,7 @@ pub struct Mission {
 pub struct LastStatusDemand {
     pub target_status_include: HashSet<String>,
     pub target_status_exclude: HashSet<String>,
+    pub target_states: Option<TargetState>,
 }
 
 impl LastStatusDemand {
@@ -81,6 +82,7 @@ impl Mission {
                             let last_demand = LastStatusDemand {
                                 target_status_include: demand.target_status_include,
                                 target_status_exclude: demand.target_status_exclude,
+                                target_states: m.target_states,
                             };
                             Some(last_demand)
                         }
