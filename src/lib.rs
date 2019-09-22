@@ -17,7 +17,6 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 
-use nature_common::*;
 
 pub use self::cache::*;
 pub use self::conn::*;

@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use diesel::prelude::*;
 
-use crate::{CONN, CONNNECTION, OneStepFlow, OneStepFlowSettings};
+use crate::{CONN, CONNNECTION, MetaCacheGetter, OneStepFlow, OneStepFlowSettings};
 use crate::raw_models::RawOneStepFlow;
 
 use super::*;
@@ -10,10 +10,10 @@ use super::*;
 pub struct OneStepFlowDaoImpl;
 
 pub type RelationResult = Result<Option<Vec<OneStepFlow>>>;
-pub type RelationGetter = fn(&Meta) -> RelationResult;
+pub type RelationGetter = fn(&Meta, MetaCacheGetter, MetaGetter) -> RelationResult;
 
 impl OneStepFlowDaoImpl {
-    pub fn get_relations(from: &Meta) -> RelationResult {
+    pub fn get_relations(from: &Meta, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter) -> RelationResult {
         use self::schema::one_step_flow::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = match one_step_flow
@@ -29,7 +29,7 @@ impl OneStepFlowDaoImpl {
             x if x > 0 => {
                 let mut rtn: Vec<OneStepFlow> = Vec::new();
                 for d in def {
-                    match OneStepFlow::from_raw(d) {
+                    match OneStepFlow::from_raw(d, meta_cache_getter, meta_getter) {
                         Ok(multi) => multi.into_iter().for_each(|e| rtn.push(e)),
                         Err(e) => {
                             warn!("raw to `one_step_flow` occur error : {:?}", e);
@@ -134,7 +134,7 @@ mod test {
 
     use std::env;
 
-    use crate::CONN_STR;
+    use crate::{CONN_STR, MetaCacheImpl};
 
     use super::*;
 
@@ -148,17 +148,17 @@ mod test {
 
         // get null
         let meta = Meta::new("from").unwrap();
-        let rtn = OneStepFlowDaoImpl::get_relations(&meta).unwrap();
+        let rtn = OneStepFlowDaoImpl::get_relations(&meta, MetaCacheImpl::get, MetaDaoImpl::get).unwrap();
         assert_eq!(rtn, None);
 
         // insert
         let _ = OneStepFlowDaoImpl::insert_by_biz("from", "to", "url", "http");
-        let rtn = OneStepFlowDaoImpl::get_relations(&meta).unwrap();
+        let rtn = OneStepFlowDaoImpl::get_relations(&meta, MetaCacheImpl::get, MetaDaoImpl::get).unwrap();
         assert_eq!(rtn.unwrap().len(), 1);
 
         // update flag
         let _ = OneStepFlowDaoImpl::update_flag("from", "to", 0);
-        let rtn = OneStepFlowDaoImpl::get_relations(&meta).unwrap();
+        let rtn = OneStepFlowDaoImpl::get_relations(&meta, MetaCacheImpl::get, MetaDaoImpl::get).unwrap();
         assert_eq!(rtn, None);
 
         // delete after test

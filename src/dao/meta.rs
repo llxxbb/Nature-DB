@@ -1,9 +1,10 @@
 use diesel::prelude::*;
 
-use crate::{CONN, CONNNECTION};
-use crate::raw_models::RawMeta;
+use nature_common::{Meta, NatureError, Result};
 
-use super::*;
+use crate::{CONN, CONNNECTION, DbError};
+use crate::raw_models::RawMeta;
+use crate::schema;
 
 pub type MetaGetter = fn(&Meta) -> Result<Option<RawMeta>>;
 
@@ -81,8 +82,11 @@ mod test {
 
     use chrono::prelude::*;
 
-    use crate::*;
-    use crate::dao::MetaDaoImpl;
+    use nature_common::MetaType;
+
+    use crate::CONN_STR;
+
+    use super::*;
 
     #[test]
     fn define_test() {

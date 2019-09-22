@@ -1,6 +1,8 @@
+use std::convert::TryInto;
+
 use chrono::prelude::*;
 
-use crate::*;
+use nature_common::{Meta, NatureError, State};
 
 use super::super::schema::meta;
 
@@ -51,7 +53,7 @@ impl From<Meta> for RawMeta {
             full_key: m.get_full_key(),
             description: None,
             version: m.version,
-            states: match m.state{
+            states: match m.state {
                 None => None,
                 Some(x) => Some(State::states_to_string(&x, ","))
             },
@@ -60,6 +62,19 @@ impl From<Meta> for RawMeta {
             flag: 0,
             create_time: Local::now().naive_local(),
         }
+    }
+}
+
+impl TryInto<Meta> for RawMeta {
+    type Error = NatureError;
+
+    fn try_into(self) -> Result<Meta, Self::Error> {
+        let mut rtn = Meta::from_full_key(&self.full_key, self.version)?;
+        if let Some(s) = self.states {
+            let (s, _) = State::string_to_states(&s)?;
+            rtn.state = Some(s);
+        }
+        Ok(rtn)
     }
 }
 

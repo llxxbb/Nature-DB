@@ -13,6 +13,8 @@ lazy_static! {
     static ref CACHE: Mutex<LruCache<Meta, RawMeta>> = Mutex::new(LruCache::<Meta, RawMeta>::with_expiry_duration(Duration::from_secs(3600)));
 }
 
+pub type MetaCacheGetter = fn(&Meta, MetaGetter) -> Result<RawMeta>;
+
 pub struct MetaCacheImpl;
 
 impl MetaCacheImpl {

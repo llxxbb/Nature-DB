@@ -1,5 +1,6 @@
 use std::clone::Clone;
 use std::collections::{HashMap, HashSet};
+use std::convert::TryInto;
 use std::ops::Range;
 use std::ptr;
 use std::string::ToString;
@@ -8,7 +9,7 @@ use rand::{Rng, thread_rng};
 
 use nature_common::{Executor, Meta, NatureError, Protocol, Result};
 
-use crate::{FlowSelector, OneStepFlowSettings, RawOneStepFlow};
+use crate::{FlowSelector, MetaCacheGetter, MetaGetter, OneStepFlowSettings, RawOneStepFlow};
 
 /// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
@@ -28,9 +29,9 @@ impl Iterator for OneStepFlow {
 }
 
 impl OneStepFlow {
-    pub fn from_raw(val: RawOneStepFlow) -> Result<Vec<OneStepFlow>> {
+    pub fn from_raw(val: RawOneStepFlow, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter) -> Result<Vec<OneStepFlow>> {
         let settings = serde_json::from_str::<OneStepFlowSettings>(&val.settings)?;
-        let selector = settings.selector;
+        let selector = &settings.selector;
         let mut group = String::new();
         let id = uuid::Uuid::new_v4().to_string();
         // check group: only one group is allowed.
@@ -50,15 +51,7 @@ impl OneStepFlow {
         }
         let use_upstream_id = settings.use_upstream_id;
         let m_from = Meta::from_string(&val.from_meta)?;
-        let m_to = Meta::from_string(&val.to_meta)?;
-        if let Some(ts) = settings.target_state {
-            if let Some(x) = ts.add {
-                OneStepFlow::check_state(&m_to, x)?
-            };
-            if let Some(x) = ts.remove {
-                OneStepFlow::check_state(&m_to, x)?
-            };
-        }
+        let m_to = OneStepFlow::check_converter(&val.to_meta, meta_cache_getter, meta_getter, &settings)?;
         let rtn = settings.executor.iter().map(|e| {
             let mut e2 = e.clone();
             e2.group = group.clone();
@@ -73,7 +66,22 @@ impl OneStepFlow {
         Ok(rtn)
     }
 
-    fn check_state(m_to: &Meta, x: Vec<String>) -> Result<()> {
+    fn check_converter(meta_to: &str, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter, settings: &OneStepFlowSettings) -> Result<Meta> {
+        let m_to = Meta::from_string(meta_to)?;
+        let m_to = meta_cache_getter(&m_to, meta_getter)?;
+        let m_to = m_to.try_into()?;
+        if let Some(ts) = &settings.target_state {
+            if let Some(x) = &ts.add {
+                OneStepFlow::check_state(&m_to, x)?
+            };
+            if let Some(x) = &ts.remove {
+                OneStepFlow::check_state(&m_to, x)?
+            };
+        }
+        Ok(m_to)
+    }
+
+    fn check_state(m_to: &Meta, x: &Vec<String>) -> Result<()> {
         let b = x.iter().filter(|one| { !m_to.has_state_name(one) }).collect::<Vec<&String>>();
         if b.len() > 0 {
             return Err(NatureError::VerifyError(format!("[to meta] did not defined state : {:?} ", b)));
@@ -230,6 +238,8 @@ impl OneStepFlow {
 
 #[cfg(test)]
 mod test_from_raw {
+    use crate::RawMeta;
+
     use super::*;
 
     #[test]
@@ -253,7 +263,7 @@ mod test_from_raw {
             settings: serde_json::to_string(&settings).unwrap(),
             flag: 1,
         };
-        let rtn = OneStepFlow::from_raw(raw);
+        let rtn = OneStepFlow::from_raw(raw, meta_cache, meta);
         assert_eq!(rtn.is_ok(), true);
     }
 
@@ -284,7 +294,15 @@ mod test_from_raw {
             settings: serde_json::to_string(&settings).unwrap(),
             flag: 1,
         };
-        let rtn = OneStepFlow::from_raw(raw);
+        let rtn = OneStepFlow::from_raw(raw, meta_cache, meta);
         assert_eq!(rtn, Err(NatureError::VerifyError("in one setting all executor's grpup must be same.".to_string())));
+    }
+
+    fn meta_cache(m: &Meta, _: MetaGetter) -> Result<RawMeta> {
+        Ok(RawMeta::from(m.clone()))
+    }
+
+    fn meta(m: &Meta) -> Result<Option<RawMeta>> {
+        Ok(Some(RawMeta::from(m.clone())))
     }
 }
