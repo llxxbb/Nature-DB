@@ -1,8 +1,9 @@
+use std::collections::HashSet;
 use std::convert::TryInto;
 
 use chrono::prelude::*;
 
-use nature_common::{Meta, NatureError, State};
+use nature_common::{Meta, NatureError, Result, State, States};
 
 use super::super::schema::meta;
 
@@ -68,11 +69,12 @@ impl From<Meta> for RawMeta {
 impl TryInto<Meta> for RawMeta {
     type Error = NatureError;
 
-    fn try_into(self) -> Result<Meta, Self::Error> {
+    fn try_into(self) -> std::result::Result<Meta, Self::Error> {
         let mut rtn = Meta::from_full_key(&self.full_key, self.version)?;
-        if let Some(s) = self.states {
-            let (s, _) = State::string_to_states(&s)?;
-            rtn.state = Some(s);
+        if let Some(s) = &self.states {
+            let (ss, _) = State::string_to_states(&s)?;
+            self.check_name(&ss)?;
+            rtn.state = Some(ss);
         }
         Ok(rtn)
     }
@@ -81,6 +83,46 @@ impl TryInto<Meta> for RawMeta {
 impl RawMeta {
     pub fn has_states(&self) -> bool {
         self.states.is_some()
+    }
+
+    fn check_name(&self, s: &States) -> Result<()> {
+        let mut set: HashSet<String> = HashSet::new();
+        for one in s {
+            if !set.insert(one.get_name()) {
+                return Err(NatureError::VerifyError(format!("repeated state name: {:?}, for `Meta`: {:?}", one.get_name(), self.full_key)));
+            }
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn try_into_test() {
+        // error full_key
+        let meta = RawMeta::default();
+        let result: Result<Meta> = meta.try_into();
+        assert_eq!(result.err().unwrap(), NatureError::VerifyError("illegal format for `full_key` : ".to_string()));
+
+        let meta = RawMeta::from(Meta::from_full_key("/B/hello", 1).unwrap());
+        let result: Meta = meta.try_into().unwrap();
+        assert_eq!(result.get_full_key(), "/B/hello")
+    }
+
+    #[test]
+    fn try_into_state_check_test() {
+        let mut meta = RawMeta::from(Meta::from_full_key("/B/hello", 1).unwrap());
+        meta.states = Some("a,b".to_string());
+        let result: Result<Meta> = meta.try_into();
+        assert_eq!(result.is_ok(), true);
+
+        let mut meta = RawMeta::from(Meta::from_full_key("/B/hello", 1).unwrap());
+        meta.states = Some("b,b".to_string());
+        let result: Result<Meta> = meta.try_into();
+        assert_eq!(result.err().unwrap(), NatureError::VerifyError("repeated state name: \"b\", for `Meta`: \"/B/hello\"".to_string()));
     }
 }
 
