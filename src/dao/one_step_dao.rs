@@ -130,7 +130,6 @@ impl OneStepFlowDaoImpl {
 
 #[cfg(test)]
 mod test {
-    // TODO
     extern crate log;
 
     use std::env;

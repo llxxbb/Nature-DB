@@ -49,18 +49,36 @@ impl OneStepFlow {
             return Err(NatureError::VerifyError("in one setting all executor's group must be same.".to_string()));
         }
         let use_upstream_id = settings.use_upstream_id;
+        let m_from = Meta::from_string(&val.from_meta)?;
+        let m_to = Meta::from_string(&val.to_meta)?;
+        if let Some(ts) = settings.target_state {
+            if let Some(x) = ts.add {
+                OneStepFlow::check_state(&m_to, x)?
+            };
+            if let Some(x) = ts.remove {
+                OneStepFlow::check_state(&m_to, x)?
+            };
+        }
         let rtn = settings.executor.iter().map(|e| {
             let mut e2 = e.clone();
             e2.group = group.clone();
             OneStepFlow {
-                from: Meta::from_string(&val.from_meta).unwrap(),
-                to: Meta::from_string(&val.to_meta).unwrap(),
+                from: m_from.clone(),
+                to: m_to.clone(),
                 selector: selector.clone(),
                 executor: e2,
                 use_upstream_id,
             }
         }).collect();
         Ok(rtn)
+    }
+
+    fn check_state(m_to: &Meta, x: Vec<String>) -> Result<()> {
+        let b = x.iter().filter(|one| { !m_to.has_state_name(one) }).collect::<Vec<&String>>();
+        if b.len() > 0 {
+            return Err(NatureError::VerifyError(format!("[to meta] did not defined state : {:?} ", b)));
+        }
+        Ok(())
     }
 
     pub fn weight_filter(relations: &[OneStepFlow], balances: &HashMap<Executor, Range<f32>>) -> Vec<OneStepFlow> {
@@ -215,7 +233,7 @@ mod test_from_raw {
     use super::*;
 
     #[test]
-    fn can_group_is_ok() {
+    fn one_group_is_ok() {
         let settings = OneStepFlowSettings {
             selector: None,
             executor: vec![
