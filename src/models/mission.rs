@@ -9,25 +9,25 @@ use crate::{FlowSelector, OneStepFlow};
 pub struct Mission {
     pub to: Meta,
     pub executor: Executor,
-    pub last_status_demand: Option<LastStatusDemand>,
+    pub last_states_demand: Option<LastStatusDemand>,
     pub use_upstream_id: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct LastStatusDemand {
-    pub target_status_include: HashSet<String>,
-    pub target_status_exclude: HashSet<String>,
+    pub target_states_include: HashSet<String>,
+    pub target_states_exclude: HashSet<String>,
     pub target_states: Option<TargetState>,
 }
 
 impl LastStatusDemand {
     pub fn check(&self, last: &HashSet<String>) -> Result<()> {
-        for s in &self.target_status_include {
+        for s in &self.target_states_include {
             if !last.contains(s) {
                 return Err(NatureError::TargetInstanceNotIncludeStatus(s.clone()));
             }
         }
-        for s in &self.target_status_include {
+        for s in &self.target_states_include {
             if last.contains(s) {
                 return Err(NatureError::TargetInstanceContainsExcludeStatus(s.clone()));
             }
@@ -50,7 +50,7 @@ impl Mission {
             let mission = Mission {
                 to: t,
                 executor: d.fun.clone(),
-                last_status_demand: None,
+                last_states_demand: None,
                 use_upstream_id: d.use_upstream_id,
             };
             missions.push(mission)
@@ -75,13 +75,13 @@ impl Mission {
             let t = Mission {
                 to: m.to.clone(),
                 executor: m.executor,
-                last_status_demand: {
+                last_states_demand: {
                     match m.selector {
                         None => None,
                         Some(demand) => {
                             let last_demand = LastStatusDemand {
-                                target_status_include: demand.target_status_include,
-                                target_status_exclude: demand.target_status_exclude,
+                                target_states_include: demand.target_status_include,
+                                target_states_exclude: demand.target_status_exclude,
                                 target_states: m.target_states,
                             };
                             Some(last_demand)
