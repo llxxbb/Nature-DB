@@ -11,7 +11,7 @@ use nature_common::{Meta, NatureError, Result};
 use crate::MetaGetter;
 
 lazy_static! {
-    static ref CACHE: Mutex<LruCache<Meta, Meta>> = Mutex::new(LruCache::<Meta, Meta>::with_expiry_duration(Duration::from_secs(3600)));
+    static ref CACHE: Mutex<LruCache<String, Meta>> = Mutex::new(LruCache::<String, Meta>::with_expiry_duration(Duration::from_secs(3600)));
 }
 
 pub type MetaCacheGetter = fn(&mut Meta, MetaGetter) -> Result<()>;
@@ -27,8 +27,9 @@ impl MetaCacheImpl {
             return Err(error);
         }
         let mut cache = CACHE.lock().unwrap();
+        let key = meta.meta_string();
         {   // An explicit scope to avoid cache.insert error
-            if let Some(x) = cache.get(meta) {
+            if let Some(x) = cache.get(&key) {
                 *meta = x.clone();
                 return Ok(());
             };
@@ -40,7 +41,7 @@ impl MetaCacheImpl {
                 Err(error)
             }
             Some(def) => {
-                cache.insert(meta.clone(), def.try_into()?);
+                cache.insert(key, def.try_into()?);
                 Ok(())
             }
         }
