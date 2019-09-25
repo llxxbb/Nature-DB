@@ -1,6 +1,5 @@
 use std::clone::Clone;
 use std::collections::{HashMap, HashSet};
-use std::convert::TryInto;
 use std::ops::Range;
 use std::ptr;
 use std::string::ToString;
@@ -69,9 +68,8 @@ impl OneStepFlow {
     }
 
     fn check_converter(meta_to: &str, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter, settings: &OneStepFlowSettings) -> Result<Meta> {
-        let m_to = Meta::from_string(meta_to)?;
-        let m_to = meta_cache_getter(&m_to, meta_getter)?;
-        let m_to = m_to.try_into()?;
+        let mut m_to = Meta::from_string(meta_to)?;
+        meta_cache_getter(&mut m_to, meta_getter)?;
         if let Some(ts) = &settings.target_states {
             if let Some(x) = &ts.add {
                 OneStepFlow::check_state(&m_to, x)?
@@ -306,8 +304,8 @@ mod test_from_raw {
         assert_eq!(rtn, Err(NatureError::VerifyError("in one setting all executor's grpup must be same.".to_string())));
     }
 
-    fn meta_cache(m: &Meta, _: MetaGetter) -> Result<RawMeta> {
-        Ok(RawMeta::from(m.clone()))
+    fn meta_cache(_: &mut Meta, _: MetaGetter) -> Result<()> {
+        Ok(())
     }
 
     fn meta(m: &Meta) -> Result<Option<RawMeta>> {

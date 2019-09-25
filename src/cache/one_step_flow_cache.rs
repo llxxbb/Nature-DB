@@ -77,8 +77,8 @@ mod test {
         Ok(None)
     }
 
-    fn meta_cache(m: &Meta, _: MetaGetter) -> Result<RawMeta> {
-        Ok(RawMeta::from(m.clone()))
+    fn meta_cache(_: &mut Meta, _: MetaGetter) -> Result<()> {
+        Ok(())
     }
 
     fn meta(m: &Meta) -> Result<Option<RawMeta>> {

@@ -1,5 +1,6 @@
 extern crate r2d2;
 
+use std::convert::TryInto;
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -7,18 +8,18 @@ use lru_time_cache::LruCache;
 
 use nature_common::{Meta, NatureError, Result};
 
-use crate::{MetaGetter, RawMeta};
+use crate::MetaGetter;
 
 lazy_static! {
-    static ref CACHE: Mutex<LruCache<Meta, RawMeta>> = Mutex::new(LruCache::<Meta, RawMeta>::with_expiry_duration(Duration::from_secs(3600)));
+    static ref CACHE: Mutex<LruCache<Meta, Meta>> = Mutex::new(LruCache::<Meta, Meta>::with_expiry_duration(Duration::from_secs(3600)));
 }
 
-pub type MetaCacheGetter = fn(&Meta, MetaGetter) -> Result<RawMeta>;
+pub type MetaCacheGetter = fn(&mut Meta, MetaGetter) -> Result<()>;
 
 pub struct MetaCacheImpl;
 
 impl MetaCacheImpl {
-    pub fn get(meta: &Meta, getter: MetaGetter) -> Result<RawMeta> {
+    pub fn get(meta: &mut Meta, getter: MetaGetter) -> Result<()> {
 //        debug!("get `Meta` from cache for meta : {:?}", meta);
         if meta.get_full_key().is_empty() {
             let error = NatureError::VerifyError("[biz] must not be empty!".to_string());
@@ -28,7 +29,8 @@ impl MetaCacheImpl {
         let mut cache = CACHE.lock().unwrap();
         {   // An explicit scope to avoid cache.insert error
             if let Some(x) = cache.get(meta) {
-                return Ok(x.clone());
+                *meta = x.clone();
+                return Ok(());
             };
         };
         match getter(&meta)? {
@@ -38,8 +40,8 @@ impl MetaCacheImpl {
                 Err(error)
             }
             Some(def) => {
-                cache.insert(meta.clone(), def.clone());
-                Ok(def)
+                cache.insert(meta.clone(), def.try_into()?);
+                Ok(())
             }
         }
     }
