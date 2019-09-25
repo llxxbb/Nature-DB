@@ -3,7 +3,7 @@ use std::convert::TryInto;
 
 use chrono::prelude::*;
 
-use nature_common::{Meta, NatureError, Result, State, States};
+use nature_common::{Meta, MetaSetting, NatureError, Result, State, States};
 
 use super::super::schema::meta;
 
@@ -59,7 +59,10 @@ impl From<Meta> for RawMeta {
                 Some(x) => Some(State::states_to_string(&x, ","))
             },
             fields: None,
-            config: "".to_string(),
+            config: match m.setting {
+                None => "".to_string(),
+                Some(s) => serde_json::to_string(&s).unwrap(),
+            },
             flag: 0,
             create_time: Local::now().naive_local(),
         }
@@ -76,15 +79,21 @@ impl TryInto<Meta> for RawMeta {
             self.check_name(&ss)?;
             rtn.state = Some(ss);
         }
+        if !self.config.is_empty() {
+            let setting: MetaSetting = serde_json::from_str(&self.config)?;
+            if setting.is_state {
+                rtn.is_state = true;
+            }
+            rtn.setting = Some(setting);
+        }
+        if rtn.state.is_some() {
+            rtn.is_state = true;
+        }
         Ok(rtn)
     }
 }
 
 impl RawMeta {
-    pub fn has_states(&self) -> bool {
-        self.states.is_some()
-    }
-
     fn check_name(&self, s: &States) -> Result<()> {
         let mut set: HashSet<String> = HashSet::new();
         for one in s {
