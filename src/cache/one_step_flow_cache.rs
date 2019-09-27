@@ -13,38 +13,38 @@ use crate::{MetaCacheGetter, MetaGetter, OneStepFlow, RelationGetter, RelationRe
 
 /// all flows for one upper `Meta` and what a chance to lower `group`
 type ITEM = (Option<Vec<OneStepFlow>>, Option<HashMap<Executor, Range<f32>>>);
-type CACHE = Mutex<LruCache<Meta, ITEM>>;
+type CACHE = Mutex<LruCache<String, ITEM>>;
 lazy_static! {
-    static ref CACHE_MAPPING: CACHE = Mutex::new(LruCache::<Meta, ITEM>::with_expiry_duration(Duration::from_secs(3600)));
+    static ref CACHE_MAPPING: CACHE = Mutex::new(LruCache::<String, ITEM>::with_expiry_duration(Duration::from_secs(3600)));
 }
 
-pub type RelationCacheGetter = fn(&Meta, RelationGetter, MetaCacheGetter, MetaGetter) -> RelationResult;
+pub type RelationCacheGetter = fn(&str, RelationGetter, MetaCacheGetter, MetaGetter) -> RelationResult;
 
 pub struct OneStepFlowCacheImpl;
 
 impl OneStepFlowCacheImpl {
-    pub fn get(from: &Meta, getter: RelationGetter, meta_cache: MetaCacheGetter, meta: MetaGetter) -> RelationResult {
-        let (relations, balances) = Self::get_balanced(from, getter, meta_cache, meta)?;
+    pub fn get(meta_from: &str, getter: RelationGetter, meta_cache: MetaCacheGetter, meta: MetaGetter) -> RelationResult {
+        let (relations, balances) = Self::get_balanced(meta_from, getter, meta_cache, meta)?;
         if relations.is_none() {
-            debug!("No relations of `Meta`: {:?}", from.get_full_key());
+            debug!("No relations of `Meta`: {}", meta_from);
             Ok(None)
         } else {
             let vec = OneStepFlow::weight_filter(&relations.unwrap(), &balances.unwrap());
-            debug!("Available relations of `Meta`: {:?}， number : {:?}", from.get_full_key(), vec.len());
+            debug!("Available relations of `Meta`: {}， number : {:?}", meta_from, vec.len());
             Ok(Some(vec))
         }
     }
-    fn get_balanced(from: &Meta, getter: RelationGetter, meta_cache: MetaCacheGetter, meta: MetaGetter) -> Result<ITEM> {
+    fn get_balanced(meta_from: &str, getter: RelationGetter, meta_cache: MetaCacheGetter, meta: MetaGetter) -> Result<ITEM> {
         let mut cache = CACHE_MAPPING.lock().unwrap();
-        if let Some(balances) = cache.get(from) {
+        if let Some(balances) = cache.get(meta_from) {
             return Ok(balances.clone());
         }
-        let rtn = match getter(from, meta_cache, meta) {
+        let rtn = match getter(meta_from, meta_cache, meta) {
             Ok(None) => {
                 (None, None)
             }
             Ok(Some(relations)) => {
-                debug!("Get relations of `Meta`: {:?}， number : {:?}", from.get_full_key(), relations.len());
+                debug!("Get relations of `Meta`: {}， number : {}", meta_from, relations.len());
                 let label_groups = OneStepFlow::get_label_groups(&relations);
                 let weight_cal = OneStepFlow::weight_calculate(&label_groups);
                 (Some(relations), Some(weight_cal))
@@ -52,7 +52,7 @@ impl OneStepFlowCacheImpl {
             Err(err) => return Err(err)
         };
         let cpy = rtn.clone();
-        cache.insert(from.clone(), rtn);
+        cache.insert(meta_from.to_string(), rtn);
         Ok(cpy)
     }
 }
@@ -65,24 +65,24 @@ mod test {
 
     use super::*;
 
-    fn rtn_err(_: &Meta, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
+    fn rtn_err(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
         Err(NatureError::DaoEnvironmentError("can't connect".to_string()))
     }
 
-    fn rtn_err2(_: &Meta, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
+    fn rtn_err2(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
         Err(NatureError::DaoEnvironmentError("another error".to_string()))
     }
 
-    fn rtn_none(_: &Meta, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
+    fn rtn_none(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
         Ok(None)
     }
 
-    fn meta_cache(_: &mut Meta, _: MetaGetter) -> Result<()> {
-        Ok(())
+    fn meta_cache(meta_str: &str, _: MetaGetter) -> Result<Meta> {
+        Ok(Meta::from_string(meta_str)?)
     }
 
-    fn meta(m: &Meta) -> Result<Option<RawMeta>> {
-        Ok(Some(RawMeta::from(m.clone())))
+    fn meta(m: &str) -> Result<Option<RawMeta>> {
+        Ok(Some(RawMeta::from(Meta::from_string(m)?)))
     }
 
     mod test_none_or_error {
@@ -90,7 +90,7 @@ mod test {
 
         #[test]
         fn get_error() {
-            let from = Meta::new("error").unwrap();
+            let from = "/B/error:1";
 
             // this will call mocker
             let result = OneStepFlowCacheImpl::get(&from, rtn_err, meta_cache, meta);
@@ -103,7 +103,7 @@ mod test {
         /// test cache also
         #[test]
         fn get_none() {
-            let from = Meta::new("none").unwrap();
+            let from = "/B/none:1";
             // this will call mocker
             let result = OneStepFlowCacheImpl::get(&from, rtn_none, meta_cache, meta);
             assert_eq!(result.is_ok(), true);
@@ -125,9 +125,9 @@ mod test {
         #[test]
         fn only_one_group_for_a_given_target() {
             let _ = setup_logger();
-            let from = Meta::new("only_one_group_for_a_given_target").unwrap();
+            let from = "/B/only_one_group_for_a_given_target:1";
 
-            fn rtn_one(_: &Meta, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
+            fn rtn_one(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
                 Ok(Some(vec![
                     OneStepFlow::new_for_local_executor_with_group_and_proportion("oneFrom", "oneTo", "exe_0", "one", 10).unwrap(),
                 ]))
@@ -145,9 +145,9 @@ mod test {
 
         #[test]
         fn same_group_different_target() {
-            let from = Meta::new("same_group_different_target").unwrap();
+            let from = "/B/same_group_different_target:1";
 
-            fn rtn_some(_: &Meta, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
+            fn rtn_some(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
                 Ok(Some(vec![
                     OneStepFlow::new_for_local_executor_with_group_and_proportion("diffTarget", "targetA", "exe_5", "sameGroup", 2).unwrap(),
                     OneStepFlow::new_for_local_executor_with_group_and_proportion("diffTarget", "targetB", "exe_6", "sameGroup", 8).unwrap(),
@@ -167,9 +167,9 @@ mod test {
         #[test]
         fn same_target_same_group() {
             let _ = setup_logger();
-            let from = Meta::new("same_target_same_group").unwrap();
+            let from = "/B/same_target_same_group:1";
 
-            fn rtn_some(_: &Meta, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
+            fn rtn_some(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
                 Ok(Some(vec![
                     OneStepFlow::new_for_local_executor_with_group_and_proportion("sameTarget", "sameGroup", "exe_3", "same_group", 5).unwrap(),
                     OneStepFlow::new_for_local_executor_with_group_and_proportion("sameTarget", "sameGroup", "exe_4", "same_group", 10).unwrap(),
@@ -189,9 +189,9 @@ mod test {
         #[test]
         fn weight_test() {
             let _ = setup_logger();
-            let from = Meta::new("weight_test").unwrap();
+            let from = "/B/weight_test:1";
 
-            fn rtn_some(_: &Meta, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
+            fn rtn_some(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
                 Ok(Some(vec![
                     OneStepFlow::new_for_local_executor_with_group_and_proportion("weight_from", "to_1", "exe_1", "grp", 1).unwrap(),
                     OneStepFlow::new_for_local_executor_with_group_and_proportion("weight_from", "to_2", "exe_2", "grp", 9).unwrap(),

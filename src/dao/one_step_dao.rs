@@ -10,14 +10,14 @@ use super::*;
 pub struct OneStepFlowDaoImpl;
 
 pub type RelationResult = Result<Option<Vec<OneStepFlow>>>;
-pub type RelationGetter = fn(&Meta, MetaCacheGetter, MetaGetter) -> RelationResult;
+pub type RelationGetter = fn(&str, MetaCacheGetter, MetaGetter) -> RelationResult;
 
 impl OneStepFlowDaoImpl {
-    pub fn get_relations(from: &Meta, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter) -> RelationResult {
+    pub fn get_relations(from: &str, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter) -> RelationResult {
         use self::schema::one_step_flow::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = match one_step_flow
-            .filter(from_meta.eq(&from.get_string()))
+            .filter(from_meta.eq(from))
             .filter(flag.eq(1))
             .load::<RawOneStepFlow>(conn)
             {

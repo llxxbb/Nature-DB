@@ -6,16 +6,17 @@ use crate::{CONN, CONNNECTION, DbError};
 use crate::raw_models::RawMeta;
 use crate::schema;
 
-pub type MetaGetter = fn(&Meta) -> Result<Option<RawMeta>>;
+pub type MetaGetter = fn(&str) -> Result<Option<RawMeta>>;
 
 pub struct MetaDaoImpl;
 
 impl MetaDaoImpl {
-    pub fn get(meta_def: &Meta) -> Result<Option<RawMeta>> {
+    pub fn get(meta_str: &str) -> Result<Option<RawMeta>> {
         use self::schema::meta::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
-        let def = meta.filter(full_key.eq(&meta_def.get_full_key()))
-            .filter(version.eq(meta_def.version))
+        let t = Meta::make_tuple_from_str(meta_str)?;
+        let def = meta.filter(full_key.eq(t.0))
+            .filter(version.eq(t.1))
             .filter(flag.eq(1))
             .load::<RawMeta>(conn);
         match def {
@@ -102,10 +103,10 @@ mod test {
             flag: 1,
             create_time: Local::now().naive_local(),
         };
-        let meta = Meta::new_with_version_and_type("/test", 100, MetaType::Business).unwrap();
+        let meta = "/B/test:100";
 
         // delete if it exists
-        if let Ok(Some(_)) = MetaDaoImpl::get(&meta) {
+        if let Ok(Some(_)) = MetaDaoImpl::get("/B/test:100") {
             let _ = MetaDaoImpl::delete(&meta);
         }
 

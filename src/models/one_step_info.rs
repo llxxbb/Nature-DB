@@ -68,8 +68,7 @@ impl OneStepFlow {
     }
 
     fn check_converter(meta_to: &str, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter, settings: &OneStepFlowSettings) -> Result<Meta> {
-        let mut m_to = Meta::from_string(meta_to)?;
-        meta_cache_getter(&mut m_to, meta_getter)?;
+        let m_to = meta_cache_getter(meta_to, meta_getter)?;
         if let Some(ts) = &settings.target_states {
             if let Some(x) = &ts.add {
                 OneStepFlow::check_state(&m_to, x)?
