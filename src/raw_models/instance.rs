@@ -52,7 +52,7 @@ impl RawInstance {
         Ok(Instance {
             id,
             data: InstanceNoID {
-                meta: Meta::from_string(&self.meta)?,
+                meta: self.meta.clone(),
                 event_time: self.event_time.timestamp_millis(),
                 execute_time: self.execute_time.timestamp_millis(),
                 create_time: self.create_time.timestamp_millis(),
@@ -72,7 +72,7 @@ impl RawInstance {
         };
         Ok(RawInstance {
             instance_id: instance.id.to_ne_bytes().to_vec(),
-            meta: instance.meta.get_string(),
+            meta: instance.meta.clone(),
             content: {
                 if instance.content.len() > *INSTANCE_CONTENT_MAX_LENGTH.deref() {
                     return Err(NatureError::DaoLogicalError("content's length can' be over : ".to_owned() + &INSTANCE_CONTENT_MAX_LENGTH.to_string()));

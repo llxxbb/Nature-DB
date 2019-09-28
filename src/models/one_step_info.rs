@@ -1,12 +1,12 @@
 use std::clone::Clone;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::ops::Range;
 use std::ptr;
 use std::string::ToString;
 
 use rand::{Rng, thread_rng};
 
-use nature_common::{Executor, Meta, NatureError, Protocol, Result, TargetState};
+use nature_common::{Executor, Meta, NatureError, Result, TargetState};
 
 use crate::{FlowSelector, MetaCacheGetter, MetaGetter, OneStepFlowSettings, RawOneStepFlow};
 
@@ -50,7 +50,7 @@ impl OneStepFlow {
             return Err(NatureError::VerifyError("in one setting all executor's group must be same.".to_string()));
         }
         let use_upstream_id = settings.use_upstream_id;
-        let m_from = Meta::from_string(&val.from_meta)?;
+        let m_from = meta_cache_getter(&val.from_meta, meta_getter)?;
         let m_to = OneStepFlow::check_converter(&val.to_meta, meta_cache_getter, meta_getter, &settings)?;
         let rtn = settings.executor.iter().map(|e| {
             let mut e2 = e.clone();
@@ -140,109 +140,12 @@ impl OneStepFlow {
         }
         labels
     }
-
-    pub fn new_for_local_executor(from: &str, to: &str, local_executor: &str) -> Result<Self> {
-        Ok(OneStepFlow {
-            from: Meta::new(from)?,
-            to: Meta::new(to)?,
-            selector: None,
-            executor: Executor {
-                protocol: Protocol::LocalRust,
-                url: local_executor.to_string(),
-                group: "".to_string(),
-                proportion: 1,
-            },
-            use_upstream_id: false,
-            target_states: None,
-        })
-    }
-    pub fn new_for_local_executor_with_group_and_proportion(from: &str, to: &str, local_executor: &str, group: &str, proportion: u32) -> Result<Self> {
-        Ok(OneStepFlow {
-            from: Meta::new(from)?,
-            to: Meta::new(to)?,
-            selector: None,
-            executor: Executor {
-                protocol: Protocol::LocalRust,
-                url: local_executor.to_string(),
-                group: group.to_string(),
-                proportion,
-            },
-            use_upstream_id: false,
-            target_states: None,
-        })
-    }
-    pub fn new_for_source_status_needed(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
-        Ok(OneStepFlow {
-            from: Meta::new(from)?,
-            to: Meta::new(to)?,
-            selector: Some(FlowSelector {
-                source_status_include: set.clone(),
-                source_status_exclude: HashSet::new(),
-                target_status_include: HashSet::new(),
-                target_status_exclude: HashSet::new(),
-                context_include: HashSet::new(),
-                context_exclude: HashSet::new(),
-            }),
-            executor: Executor::default(),
-            use_upstream_id: false,
-            target_states: None,
-        })
-    }
-    pub fn new_for_source_status_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
-        Ok(OneStepFlow {
-            from: Meta::new(from)?,
-            to: Meta::new(to)?,
-            selector: Some(FlowSelector {
-                source_status_include: HashSet::new(),
-                source_status_exclude: set.clone(),
-                target_status_include: HashSet::new(),
-                target_status_exclude: HashSet::new(),
-                context_include: HashSet::new(),
-                context_exclude: HashSet::new(),
-            }),
-            executor: Executor::default(),
-            use_upstream_id: false,
-            target_states: None,
-        })
-    }
-    pub fn new_for_context_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
-        Ok(OneStepFlow {
-            from: Meta::new(from)?,
-            to: Meta::new(to)?,
-            selector: Some(FlowSelector {
-                source_status_include: HashSet::new(),
-                source_status_exclude: HashSet::new(),
-                target_status_include: HashSet::new(),
-                target_status_exclude: HashSet::new(),
-                context_include: HashSet::new(),
-                context_exclude: set.clone(),
-            }),
-            executor: Executor::default(),
-            use_upstream_id: false,
-            target_states: None,
-        })
-    }
-    pub fn new_for_context_include(from: &str, to: &str, set: &HashSet<String>) -> Result<Self> {
-        Ok(OneStepFlow {
-            from: Meta::new(from)?,
-            to: Meta::new(to)?,
-            selector: Some(FlowSelector {
-                source_status_include: HashSet::new(),
-                source_status_exclude: HashSet::new(),
-                target_status_include: HashSet::new(),
-                target_status_exclude: HashSet::new(),
-                context_include: set.clone(),
-                context_exclude: HashSet::new(),
-            }),
-            executor: Executor::default(),
-            use_upstream_id: false,
-            target_states: None,
-        })
-    }
 }
 
 #[cfg(test)]
 mod test_from_raw {
+    use nature_common::Protocol;
+
     use crate::RawMeta;
 
     use super::*;
@@ -303,11 +206,11 @@ mod test_from_raw {
         assert_eq!(rtn, Err(NatureError::VerifyError("in one setting all executor's grpup must be same.".to_string())));
     }
 
-    fn meta_cache(_: &mut Meta, _: MetaGetter) -> Result<()> {
-        Ok(())
+    fn meta_cache(m: &str, _: MetaGetter) -> Result<Meta> {
+        Meta::from_string(m)
     }
 
-    fn meta(m: &Meta) -> Result<Option<RawMeta>> {
-        Ok(Some(RawMeta::from(m.clone())))
+    fn meta(m: &str) -> Result<Option<RawMeta>> {
+        Ok(Some(RawMeta::from(Meta::from_string(m)?)))
     }
 }

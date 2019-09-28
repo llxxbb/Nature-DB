@@ -78,8 +78,8 @@ impl OneStepFlowDaoImpl {
         use self::schema::one_step_flow::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::update(
-            one_step_flow.filter(from_meta.eq(Meta::new(from).unwrap().get_string()))
-                .filter(to_meta.eq(Meta::new(to).unwrap().get_string())))
+            one_step_flow.filter(from_meta.eq(&from))
+                .filter(to_meta.eq(&to)))
             .set(flag.eq(flag_f))
             .execute(conn);
         match rtn {
@@ -88,17 +88,11 @@ impl OneStepFlowDaoImpl {
         }
     }
 
-
     /// `version` will be set to 0
-    pub fn insert_by_biz(
-        from: &str,
-        to: &str,
-        url: &str,
-        protocol: &str,
-    ) -> Result<RawOneStepFlow> {
+    pub fn insert_by_biz(from: &str, to: &str, url: &str, protocol: &str) -> Result<RawOneStepFlow> {
         let one = RawOneStepFlow::new(
-            &Meta::new(from)?,
-            &Meta::new(to)?,
+            from,
+            to,
             &OneStepFlowSettings {
                 selector: None,
                 executor: vec![Executor {
@@ -116,11 +110,9 @@ impl OneStepFlowDaoImpl {
     }
 
     pub fn delete_by_biz(from: &str, to: &str) -> Result<usize> {
-        let from = &Meta::new(from)?;
-        let to = &Meta::new(to)?;
         let row = RawOneStepFlow {
-            from_meta: from.get_string(),
-            to_meta: to.get_string(),
+            from_meta: from.to_string(),
+            to_meta: to.to_string(),
             settings: String::new(),
             flag: 1,
         };
@@ -147,18 +139,18 @@ mod test {
         let _ = OneStepFlowDaoImpl::delete_by_biz("from", "to");
 
         // get null
-        let meta = Meta::new("from").unwrap();
-        let rtn = OneStepFlowDaoImpl::get_relations(&meta, MetaCacheImpl::get, MetaDaoImpl::get).unwrap();
+        let meta = "/B/from:1";
+        let rtn = OneStepFlowDaoImpl::get_relations(meta, MetaCacheImpl::get, MetaDaoImpl::get).unwrap();
         assert_eq!(rtn, None);
 
         // insert
         let _ = OneStepFlowDaoImpl::insert_by_biz("from", "to", "url", "http");
-        let rtn = OneStepFlowDaoImpl::get_relations(&meta, MetaCacheImpl::get, MetaDaoImpl::get).unwrap();
+        let rtn = OneStepFlowDaoImpl::get_relations(meta, MetaCacheImpl::get, MetaDaoImpl::get).unwrap();
         assert_eq!(rtn.unwrap().len(), 1);
 
         // update flag
         let _ = OneStepFlowDaoImpl::update_flag("from", "to", 0);
-        let rtn = OneStepFlowDaoImpl::get_relations(&meta, MetaCacheImpl::get, MetaDaoImpl::get).unwrap();
+        let rtn = OneStepFlowDaoImpl::get_relations(meta, MetaCacheImpl::get, MetaDaoImpl::get).unwrap();
         assert_eq!(rtn, None);
 
         // delete after test

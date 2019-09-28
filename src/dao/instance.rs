@@ -16,7 +16,7 @@ impl InstanceDaoImpl {
             .values(new)
             .execute(conn) {
             Ok(rtn) => {
-                debug!("Saved instance for `Meta` {:?}, id : {:?}", instance.meta.get_full_key(), instance.id);
+                debug!("Saved instance for `Meta` {}, id : {:?}", instance.meta, instance.id);
                 Ok(rtn)
             }
             Err(err) => Err(DbError::from_with_msg(err, &instance.id.to_string()))
@@ -29,7 +29,7 @@ impl InstanceDaoImpl {
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = instances
             .filter(instance_id.eq(ins.id.to_ne_bytes().to_vec()))
-            .filter(meta.eq(ins.meta.get_string()))
+            .filter(meta.eq(&ins.meta))
             .filter(state_version.eq(ins.state_version))
             .order(state_version.desc())
             .limit(1)
@@ -69,7 +69,7 @@ impl InstanceDaoImpl {
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rows = instances
             .filter(instance_id.eq(ins.id.to_ne_bytes().to_vec()))
-            .filter(meta.eq(ins.meta.get_string()))
+            .filter(meta.eq(&ins.meta))
             .filter(state_version.eq(ins.state_version));
         //        debug!("rows filter : {:?}", rows);
         match diesel::delete(rows).execute(conn) {

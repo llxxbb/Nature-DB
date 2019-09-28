@@ -1,6 +1,6 @@
 use diesel::prelude::*;
 
-use nature_common::{Meta, NatureError, Result};
+use nature_common::{Meta, MetaString, NatureError, Result};
 
 use crate::{CONN, CONNNECTION, DbError};
 use crate::raw_models::RawMeta;
@@ -14,9 +14,9 @@ impl MetaDaoImpl {
     pub fn get(meta_str: &str) -> Result<Option<RawMeta>> {
         use self::schema::meta::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
-        let t = Meta::make_tuple_from_str(meta_str)?;
-        let def = meta.filter(full_key.eq(t.0))
-            .filter(version.eq(t.1))
+        let (fk, ver) = MetaString::make_tuple_from_str(meta_str)?;
+        let def = meta.filter(full_key.eq(&fk))
+            .filter(version.eq(ver))
             .filter(flag.eq(1))
             .load::<RawMeta>(conn);
         match def {
@@ -56,9 +56,13 @@ impl MetaDaoImpl {
     }
 
     pub fn delete(meta_def: &Meta) -> Result<usize> {
+        Self::delete_by_full_key(&meta_def.get_full_key(), meta_def.version)
+    }
+
+    pub fn delete_by_full_key(full_key_f: &str, version_f: i32) -> Result<usize> {
         use self::schema::meta::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
-        let rtn = diesel::delete(meta.filter(full_key.eq(&meta_def.get_full_key())).filter(version.eq(meta_def.version)))
+        let rtn = diesel::delete(meta.filter(full_key.eq(full_key_f)).filter(version.eq(version_f)))
             .execute(conn);
         match rtn {
             Ok(x) => Ok(x),
@@ -69,10 +73,9 @@ impl MetaDaoImpl {
 
 impl MetaDaoImpl {
     pub fn new_by_key(key: &str) -> Result<usize> {
-        let meta = Meta::new(key)?;
         let mut define = RawMeta::default();
-        define.version = meta.version;
-        define.full_key = meta.get_full_key();
+        define.version = 1;
+        define.full_key = MetaString::full_key(key)?;
         MetaDaoImpl::insert(&define)
     }
 }
@@ -82,8 +85,6 @@ mod test {
     use std::env;
 
     use chrono::prelude::*;
-
-    use nature_common::MetaType;
 
     use crate::CONN_STR;
 
@@ -107,7 +108,7 @@ mod test {
 
         // delete if it exists
         if let Ok(Some(_)) = MetaDaoImpl::get("/B/test:100") {
-            let _ = MetaDaoImpl::delete(&meta);
+            let _ = MetaDaoImpl::delete_by_full_key("/B/test", 100);
         }
 
         // insert
@@ -132,6 +133,6 @@ mod test {
         assert_eq!(row, None);
 
         // delete it
-        MetaDaoImpl::delete(&meta).unwrap();
+        let _ = MetaDaoImpl::delete_by_full_key("/B/test", 100);
     }
 }

@@ -44,8 +44,8 @@ impl Mission {
         let mut missions: Vec<Mission> = Vec::new();
         for d in dynamic {
             let t = match d.to {
-                None => Meta::new_null(),
-                Some(s) => Meta::new_with_type(&s, MetaType::Dynamic)?,
+                None => Meta::new("", 1, MetaType::Null)?,
+                Some(s) => Meta::new(&s, 1, MetaType::Dynamic)?,
             };
             let mission = Mission {
                 to: t,
@@ -142,7 +142,7 @@ mod selector_test {
         let mut instance = Instance::default();
 
         // set status required.
-        let osf = vec![OneStepFlow::new_for_source_status_needed("from", "to", &set).unwrap()];
+        let osf = vec![new_for_source_status_needed("from", "to", &set).unwrap()];
 
         // condition does not satisfy.
         let option = Mission::filter_relations(&instance, osf.clone());
@@ -175,7 +175,7 @@ mod selector_test {
         let mut instance = Instance::default();
 
         // set state required.
-        let osf = vec![OneStepFlow::new_for_source_status_excluded("from", "to", &set).unwrap()];
+        let osf = vec![new_for_source_status_excluded("from", "to", &set).unwrap()];
 
         // condition satisfy
         let option = Mission::filter_relations(&instance, osf.clone());
@@ -208,7 +208,7 @@ mod selector_test {
         let mut instance = Instance::default();
 
         // set state required.
-        let osf = vec![OneStepFlow::new_for_context_include("from", "to", &set).unwrap()];
+        let osf = vec![new_for_context_include("from", "to", &set).unwrap()];
 
         // condition does not satisfy.
         let option = Mission::filter_relations(&instance, osf.clone());
@@ -241,7 +241,7 @@ mod selector_test {
         let mut instance = Instance::default();
 
         // set state required.
-        let osf = vec![OneStepFlow::new_for_context_excluded("from", "to", &set).unwrap()];
+        let osf = vec![new_for_context_excluded("from", "to", &set).unwrap()];
 
         // condition satisfy
         let option = Mission::filter_relations(&instance, osf.clone());
@@ -264,10 +264,84 @@ mod selector_test {
         let option = Mission::filter_relations(&instance, osf.clone());
         assert_eq!(option.is_none(), true);
     }
+
+    pub fn new_for_source_status_needed(from: &str, to: &str, set: &HashSet<String>) -> Result<OneStepFlow> {
+        Ok(OneStepFlow {
+            from: Meta::from_string(from)?,
+            to: Meta::from_string(to)?,
+            selector: Some(FlowSelector {
+                source_status_include: set.clone(),
+                source_status_exclude: HashSet::new(),
+                target_status_include: HashSet::new(),
+                target_status_exclude: HashSet::new(),
+                context_include: HashSet::new(),
+                context_exclude: HashSet::new(),
+            }),
+            executor: Executor::default(),
+            use_upstream_id: false,
+            target_states: None,
+        })
+    }
+
+    pub fn new_for_context_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<OneStepFlow> {
+        Ok(OneStepFlow {
+            from: Meta::from_string(from)?,
+            to: Meta::from_string(to)?,
+            selector: Some(FlowSelector {
+                source_status_include: HashSet::new(),
+                source_status_exclude: HashSet::new(),
+                target_status_include: HashSet::new(),
+                target_status_exclude: HashSet::new(),
+                context_include: HashSet::new(),
+                context_exclude: set.clone(),
+            }),
+            executor: Executor::default(),
+            use_upstream_id: false,
+            target_states: None,
+        })
+    }
+
+    pub fn new_for_source_status_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<OneStepFlow> {
+        Ok(OneStepFlow {
+            from: Meta::from_string(from)?,
+            to: Meta::from_string(to)?,
+            selector: Some(FlowSelector {
+                source_status_include: HashSet::new(),
+                source_status_exclude: set.clone(),
+                target_status_include: HashSet::new(),
+                target_status_exclude: HashSet::new(),
+                context_include: HashSet::new(),
+                context_exclude: HashSet::new(),
+            }),
+            executor: Executor::default(),
+            use_upstream_id: false,
+            target_states: None,
+        })
+    }
+
+    pub fn new_for_context_include(from: &str, to: &str, set: &HashSet<String>) -> Result<OneStepFlow> {
+        Ok(OneStepFlow {
+            from: Meta::from_string(from)?,
+            to: Meta::from_string(to)?,
+            selector: Some(FlowSelector {
+                source_status_include: HashSet::new(),
+                source_status_exclude: HashSet::new(),
+                target_status_include: HashSet::new(),
+                target_status_exclude: HashSet::new(),
+                context_include: set.clone(),
+                context_exclude: HashSet::new(),
+            }),
+            executor: Executor::default(),
+            use_upstream_id: false,
+            target_states: None,
+        })
+    }
 }
 
 #[cfg(test)]
 mod other_test {
+    use nature_common::Protocol;
+
     use super::*;
 
     #[test]
@@ -281,9 +355,25 @@ mod other_test {
     #[test]
     fn no_selector_but_only_executor() {
         let instance = Instance::default();
-        let osf = vec![OneStepFlow::new_for_local_executor("from", "to", "local").unwrap()];
+        let osf = vec![new_for_local_executor("from", "to", "local").unwrap()];
         let option = Mission::filter_relations(&instance, osf);
         assert_eq!(option.unwrap().len(), 1)
+    }
+
+    pub fn new_for_local_executor(from: &str, to: &str, local_executor: &str) -> Result<OneStepFlow> {
+        Ok(OneStepFlow {
+            from: Meta::from_string(from)?,
+            to: Meta::from_string(to)?,
+            selector: None,
+            executor: Executor {
+                protocol: Protocol::LocalRust,
+                url: local_executor.to_string(),
+                group: "".to_string(),
+                proportion: 1,
+            },
+            use_upstream_id: false,
+            target_states: None,
+        })
     }
 }
 

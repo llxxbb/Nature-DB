@@ -17,11 +17,11 @@ pub struct RawOneStepFlow {
 }
 
 impl RawOneStepFlow {
-    pub fn new(from: &Meta, to: &Meta, settings: &OneStepFlowSettings) -> Result<Self> {
+    pub fn new(from: &str, to: &str, settings: &OneStepFlowSettings) -> Result<Self> {
         let st = serde_json::to_string(settings)?;
         let rtn = RawOneStepFlow {
-            from_meta: from.get_string(),
-            to_meta: to.get_string(),
+            from_meta: from.to_string(),
+            to_meta: to.to_string(),
             settings: st,
             flag: 1,
         };

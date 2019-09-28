@@ -129,7 +129,7 @@ mod test {
 
             fn rtn_one(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
                 Ok(Some(vec![
-                    OneStepFlow::new_for_local_executor_with_group_and_proportion("oneFrom", "oneTo", "exe_0", "one", 10).unwrap(),
+                    new_for_local_executor_with_group_and_proportion("oneFrom", "oneTo", "exe_0", "one", 10).unwrap(),
                 ]))
             }
 
@@ -149,8 +149,8 @@ mod test {
 
             fn rtn_some(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
                 Ok(Some(vec![
-                    OneStepFlow::new_for_local_executor_with_group_and_proportion("diffTarget", "targetA", "exe_5", "sameGroup", 2).unwrap(),
-                    OneStepFlow::new_for_local_executor_with_group_and_proportion("diffTarget", "targetB", "exe_6", "sameGroup", 8).unwrap(),
+                    new_for_local_executor_with_group_and_proportion("diffTarget", "targetA", "exe_5", "sameGroup", 2).unwrap(),
+                    new_for_local_executor_with_group_and_proportion("diffTarget", "targetB", "exe_6", "sameGroup", 8).unwrap(),
                 ]))
             }
 
@@ -171,8 +171,8 @@ mod test {
 
             fn rtn_some(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
                 Ok(Some(vec![
-                    OneStepFlow::new_for_local_executor_with_group_and_proportion("sameTarget", "sameGroup", "exe_3", "same_group", 5).unwrap(),
-                    OneStepFlow::new_for_local_executor_with_group_and_proportion("sameTarget", "sameGroup", "exe_4", "same_group", 10).unwrap(),
+                    new_for_local_executor_with_group_and_proportion("sameTarget", "sameGroup", "exe_3", "same_group", 5).unwrap(),
+                    new_for_local_executor_with_group_and_proportion("sameTarget", "sameGroup", "exe_4", "same_group", 10).unwrap(),
                 ]))
             }
 
@@ -193,8 +193,8 @@ mod test {
 
             fn rtn_some(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
                 Ok(Some(vec![
-                    OneStepFlow::new_for_local_executor_with_group_and_proportion("weight_from", "to_1", "exe_1", "grp", 1).unwrap(),
-                    OneStepFlow::new_for_local_executor_with_group_and_proportion("weight_from", "to_2", "exe_2", "grp", 9).unwrap(),
+                    new_for_local_executor_with_group_and_proportion("weight_from", "to_1", "exe_1", "grp", 1).unwrap(),
+                    new_for_local_executor_with_group_and_proportion("weight_from", "to_2", "exe_2", "grp", 9).unwrap(),
                 ]))
             }
 
@@ -218,5 +218,21 @@ mod test {
             println!("the rate is {}", rate);
             assert_eq!(rate < 0.2, true);
         }
+    }
+
+    fn new_for_local_executor_with_group_and_proportion(from: &str, to: &str, local_executor: &str, group: &str, proportion: u32) -> Result<OneStepFlow> {
+        Ok(OneStepFlow {
+            from: Meta::from_string(from)?,
+            to: Meta::from_string(to)?,
+            selector: None,
+            executor: Executor {
+                protocol: Protocol::LocalRust,
+                url: local_executor.to_string(),
+                group: group.to_string(),
+                proportion,
+            },
+            use_upstream_id: false,
+            target_states: None,
+        })
     }
 }
