@@ -142,7 +142,7 @@ mod selector_test {
         let mut instance = Instance::default();
 
         // set status required.
-        let osf = vec![new_for_source_status_needed("from", "to", &set).unwrap()];
+        let osf = vec![new_for_source_status_needed("/B/from:1", "/B/to:1", &set).unwrap()];
 
         // condition does not satisfy.
         let option = Mission::filter_relations(&instance, osf.clone());
@@ -175,7 +175,7 @@ mod selector_test {
         let mut instance = Instance::default();
 
         // set state required.
-        let osf = vec![new_for_source_status_excluded("from", "to", &set).unwrap()];
+        let osf = vec![new_for_source_status_excluded("/B/from:1", "/B/to:1", &set).unwrap()];
 
         // condition satisfy
         let option = Mission::filter_relations(&instance, osf.clone());
@@ -208,7 +208,7 @@ mod selector_test {
         let mut instance = Instance::default();
 
         // set state required.
-        let osf = vec![new_for_context_include("from", "to", &set).unwrap()];
+        let osf = vec![new_for_context_include("/B/from:1", "/B/to:1", &set).unwrap()];
 
         // condition does not satisfy.
         let option = Mission::filter_relations(&instance, osf.clone());
@@ -241,7 +241,7 @@ mod selector_test {
         let mut instance = Instance::default();
 
         // set state required.
-        let osf = vec![new_for_context_excluded("from", "to", &set).unwrap()];
+        let osf = vec![new_for_context_excluded("/B/from:1", "/B/to:1", &set).unwrap()];
 
         // condition satisfy
         let option = Mission::filter_relations(&instance, osf.clone());
@@ -355,7 +355,7 @@ mod other_test {
     #[test]
     fn no_selector_but_only_executor() {
         let instance = Instance::default();
-        let osf = vec![new_for_local_executor("from", "to", "local").unwrap()];
+        let osf = vec![new_for_local_executor("/B/from:1", "/B/to:1", "local").unwrap()];
         let option = Mission::filter_relations(&instance, osf);
         assert_eq!(option.unwrap().len(), 1)
     }

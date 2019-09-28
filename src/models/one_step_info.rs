@@ -166,8 +166,8 @@ mod test_from_raw {
             target_states: None,
         };
         let raw = RawOneStepFlow {
-            from_meta: "from".to_string(),
-            to_meta: "to".to_string(),
+            from_meta: "/B/from:1".to_string(),
+            to_meta: "/B/to:1".to_string(),
             settings: serde_json::to_string(&settings).unwrap(),
             flag: 1,
         };
@@ -203,7 +203,7 @@ mod test_from_raw {
             flag: 1,
         };
         let rtn = OneStepFlow::from_raw(raw, meta_cache, meta);
-        assert_eq!(rtn, Err(NatureError::VerifyError("in one setting all executor's grpup must be same.".to_string())));
+        assert_eq!(rtn, Err(NatureError::VerifyError("in one setting all executor's group must be same.".to_string())));
     }
 
     fn meta_cache(m: &str, _: MetaGetter) -> Result<Meta> {

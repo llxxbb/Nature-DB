@@ -129,7 +129,7 @@ mod test {
 
             fn rtn_one(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
                 Ok(Some(vec![
-                    new_for_local_executor_with_group_and_proportion("oneFrom", "oneTo", "exe_0", "one", 10).unwrap(),
+                    new_for_local_executor_with_group_and_proportion("/B/oneFrom:1", "/B/oneTo:1", "exe_0", "one", 10).unwrap(),
                 ]))
             }
 
@@ -149,8 +149,8 @@ mod test {
 
             fn rtn_some(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
                 Ok(Some(vec![
-                    new_for_local_executor_with_group_and_proportion("diffTarget", "targetA", "exe_5", "sameGroup", 2).unwrap(),
-                    new_for_local_executor_with_group_and_proportion("diffTarget", "targetB", "exe_6", "sameGroup", 8).unwrap(),
+                    new_for_local_executor_with_group_and_proportion("/B/diffTarget:1", "/B/targetA:1", "exe_5", "sameGroup", 2).unwrap(),
+                    new_for_local_executor_with_group_and_proportion("/B/diffTarget:1", "/B/targetB:1", "exe_6", "sameGroup", 8).unwrap(),
                 ]))
             }
 
@@ -171,8 +171,8 @@ mod test {
 
             fn rtn_some(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
                 Ok(Some(vec![
-                    new_for_local_executor_with_group_and_proportion("sameTarget", "sameGroup", "exe_3", "same_group", 5).unwrap(),
-                    new_for_local_executor_with_group_and_proportion("sameTarget", "sameGroup", "exe_4", "same_group", 10).unwrap(),
+                    new_for_local_executor_with_group_and_proportion("/B/sameTarget:1", "/B/sameGroup:1", "exe_3", "same_group", 5).unwrap(),
+                    new_for_local_executor_with_group_and_proportion("/B/sameTarget:1", "/B/sameGroup:1", "exe_4", "same_group", 10).unwrap(),
                 ]))
             }
 
@@ -193,15 +193,15 @@ mod test {
 
             fn rtn_some(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
                 Ok(Some(vec![
-                    new_for_local_executor_with_group_and_proportion("weight_from", "to_1", "exe_1", "grp", 1).unwrap(),
-                    new_for_local_executor_with_group_and_proportion("weight_from", "to_2", "exe_2", "grp", 9).unwrap(),
+                    new_for_local_executor_with_group_and_proportion("/B/weight_from:1", "/B/to_1:1", "exe_1", "grp", 1).unwrap(),
+                    new_for_local_executor_with_group_and_proportion("/B/weight_from:1", "/B/to_2:1", "exe_2", "grp", 9).unwrap(),
                 ]))
             }
 
             let mut exe_1_cnt = 0;
             let mut exe_2_cnt = 0;
 
-            for _i in 0..100 {
+            for _i in 0..1000 {
                 let result = OneStepFlowCacheImpl::get(&from, rtn_some, meta_cache, meta);
                 let result = &result.unwrap().unwrap()[0];
                 match result.to.get_full_key().as_ref() {
