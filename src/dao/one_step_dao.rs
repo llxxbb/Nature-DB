@@ -2,37 +2,36 @@ use std::str::FromStr;
 
 use diesel::prelude::*;
 
-use crate::{CONN, CONNNECTION, MetaCacheGetter, OneStepFlow, OneStepFlowSettings};
-use crate::raw_models::RawOneStepFlow;
+use crate::{CONN, CONNNECTION, MetaCacheGetter, OneStepFlowSettings, Relation};
+use crate::raw_models::RawRelation;
 
 use super::*;
 
 pub struct OneStepFlowDaoImpl;
 
-pub type RelationResult = Result<Option<Vec<OneStepFlow>>>;
+pub type RelationResult = Result<Option<Vec<Relation>>>;
 pub type RelationGetter = fn(&str, MetaCacheGetter, MetaGetter) -> RelationResult;
 
 impl OneStepFlowDaoImpl {
     pub fn get_relations(from: &str, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter) -> RelationResult {
-        use self::schema::one_step_flow::dsl::*;
+        use self::schema::relation::dsl::*;
         let rtn = { // {} used to release conn
             let conn: &CONNNECTION = &CONN.lock().unwrap();
-            one_step_flow
+            relation
                 .filter(from_meta.eq(from))
                 .filter(flag.eq(1))
-                .load::<RawOneStepFlow>(conn)
+                .load::<RawRelation>(conn)
         };
-        let def = match rtn
-            {
-                Ok(rows) => rows,
-                Err(e) => return Err(DbError::from(e)),
-            };
+        let def = match rtn {
+            Ok(rows) => rows,
+            Err(e) => return Err(DbError::from(e)),
+        };
         match def.len() {
             0 => Ok(None),
             x if x > 0 => {
-                let mut rtn: Vec<OneStepFlow> = Vec::new();
+                let mut rtn: Vec<Relation> = Vec::new();
                 for d in def {
-                    match OneStepFlow::from_raw(d, meta_cache_getter, meta_getter) {
+                    match Relation::from_raw(d, meta_cache_getter, meta_getter) {
                         Ok(multi) => multi.into_iter().for_each(|e| rtn.push(e)),
                         Err(e) => {
                             warn!("raw to `one_step_flow` occur error : {:?}", e);
@@ -50,10 +49,10 @@ impl OneStepFlowDaoImpl {
             )),
         }
     }
-    pub fn insert(one: RawOneStepFlow) -> Result<usize> {
-        use self::schema::one_step_flow;
+    pub fn insert(one: RawRelation) -> Result<usize> {
+        use self::schema::relation;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
-        let rtn = diesel::insert_into(one_step_flow::table)
+        let rtn = diesel::insert_into(relation::table)
             .values(&one)
             .execute(conn);
         match rtn {
@@ -61,11 +60,11 @@ impl OneStepFlowDaoImpl {
             Err(e) => Err(DbError::from_with_msg(e, &format!("{:?}", &one))),
         }
     }
-    pub fn delete(one: RawOneStepFlow) -> Result<usize> {
-        use self::schema::one_step_flow::dsl::*;
+    pub fn delete(one: RawRelation) -> Result<usize> {
+        use self::schema::relation::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::delete(
-            one_step_flow
+            relation
                 .filter(from_meta.eq(one.from_meta))
                 .filter(to_meta.eq(one.to_meta)),
         )
@@ -78,10 +77,10 @@ impl OneStepFlowDaoImpl {
 
     /// `from` and `to`'s form are full_key:version
     pub fn update_flag(from: &str, to: &str, flag_f: i32) -> Result<usize> {
-        use self::schema::one_step_flow::dsl::*;
+        use self::schema::relation::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::update(
-            one_step_flow.filter(from_meta.eq(&from))
+            relation.filter(from_meta.eq(&from))
                 .filter(to_meta.eq(&to)))
             .set(flag.eq(flag_f))
             .execute(conn);
@@ -92,8 +91,8 @@ impl OneStepFlowDaoImpl {
     }
 
     /// `version` will be set to 0
-    pub fn insert_by_biz(from: &str, to: &str, url: &str, protocol: &str) -> Result<RawOneStepFlow> {
-        let one = RawOneStepFlow::new(
+    pub fn insert_by_biz(from: &str, to: &str, url: &str, protocol: &str) -> Result<RawRelation> {
+        let one = RawRelation::new(
             from,
             to,
             &OneStepFlowSettings {
@@ -113,7 +112,7 @@ impl OneStepFlowDaoImpl {
     }
 
     pub fn delete_by_biz(from: &str, to: &str) -> Result<usize> {
-        let row = RawOneStepFlow {
+        let row = RawRelation {
             from_meta: from.to_string(),
             to_meta: to.to_string(),
             settings: String::new(),
@@ -139,26 +138,26 @@ mod test {
         let _ = setup_logger();
 
         // clear before test
-        let _ = OneStepFlowDaoImpl::delete_by_biz("from", "to");
+        let _ = OneStepFlowDaoImpl::delete_by_biz("/B/from:1", "/B/to:1");
 
         // get null
         let meta = "/B/from:1";
-        dbg!(&meta);
+        let rtn = OneStepFlowDaoImpl::get_relations(meta, MetaCacheImpl::get, MetaDaoImpl::get).unwrap();
+        assert_eq!(rtn, None);
+
+        // insert
+        let rtn = OneStepFlowDaoImpl::insert_by_biz("/B/from:1", "/B/to:1", "url", "http");
+        dbg!(&rtn);
         let rtn = OneStepFlowDaoImpl::get_relations(meta, MetaCacheImpl::get, MetaDaoImpl::get).unwrap();
         dbg!(&rtn);
+        assert_eq!(rtn.unwrap().len(), 1);
+
+        // update flag
+        let _ = OneStepFlowDaoImpl::update_flag("/B/from:1", "/B/to:1", 0);
+        let rtn = OneStepFlowDaoImpl::get_relations(meta, MetaCacheImpl::get, MetaDaoImpl::get).unwrap();
         assert_eq!(rtn, None);
-//
-//        // insert
-//        let _ = OneStepFlowDaoImpl::insert_by_biz("/B/from:1", "/B/to:1", "url", "http");
-//        let rtn = OneStepFlowDaoImpl::get_relations(meta, MetaCacheImpl::get, MetaDaoImpl::get).unwrap();
-//        assert_eq!(rtn.unwrap().len(), 1);
-//
-//        // update flag
-//        let _ = OneStepFlowDaoImpl::update_flag("/B/from:1", "/B/to:1", 0);
-//        let rtn = OneStepFlowDaoImpl::get_relations(meta, MetaCacheImpl::get, MetaDaoImpl::get).unwrap();
-//        assert_eq!(rtn, None);
-//
-//        // delete after test
-//        let _ = OneStepFlowDaoImpl::delete_by_biz("/B/from:1", "/B/to:1");
+
+        // delete after test
+        let _ = OneStepFlowDaoImpl::delete_by_biz("/B/from:1", "/B/to:1");
     }
 }

@@ -9,10 +9,10 @@ use lru_time_cache::LruCache;
 
 use nature_common::*;
 
-use crate::{MetaCacheGetter, MetaGetter, OneStepFlow, RelationGetter, RelationResult};
+use crate::{MetaCacheGetter, MetaGetter, Relation, RelationGetter, RelationResult};
 
 /// all flows for one upper `Meta` and what a chance to lower `group`
-type ITEM = (Option<Vec<OneStepFlow>>, Option<HashMap<Executor, Range<f32>>>);
+type ITEM = (Option<Vec<Relation>>, Option<HashMap<Executor, Range<f32>>>);
 type CACHE = Mutex<LruCache<String, ITEM>>;
 lazy_static! {
     static ref CACHE_MAPPING: CACHE = Mutex::new(LruCache::<String, ITEM>::with_expiry_duration(Duration::from_secs(3600)));
@@ -29,7 +29,7 @@ impl OneStepFlowCacheImpl {
             debug!("No relations of `Meta`: {}", meta_from);
             Ok(None)
         } else {
-            let vec = OneStepFlow::weight_filter(&relations.unwrap(), &balances.unwrap());
+            let vec = Relation::weight_filter(&relations.unwrap(), &balances.unwrap());
             debug!("Available relations of `Meta`: {}， number : {:?}", meta_from, vec.len());
             Ok(Some(vec))
         }
@@ -45,8 +45,8 @@ impl OneStepFlowCacheImpl {
             }
             Ok(Some(relations)) => {
                 debug!("Get relations of `Meta`: {}， number : {}", meta_from, relations.len());
-                let label_groups = OneStepFlow::get_label_groups(&relations);
-                let weight_cal = OneStepFlow::weight_calculate(&label_groups);
+                let label_groups = Relation::get_label_groups(&relations);
+                let weight_cal = Relation::weight_calculate(&label_groups);
                 (Some(relations), Some(weight_cal))
             }
             Err(err) => return Err(err)
@@ -220,8 +220,8 @@ mod test {
         }
     }
 
-    fn new_for_local_executor_with_group_and_proportion(from: &str, to: &str, local_executor: &str, group: &str, proportion: u32) -> Result<OneStepFlow> {
-        Ok(OneStepFlow {
+    fn new_for_local_executor_with_group_and_proportion(from: &str, to: &str, local_executor: &str, group: &str, proportion: u32) -> Result<Relation> {
+        Ok(Relation {
             from: Meta::from_string(from)?,
             to: Meta::from_string(to)?,
             selector: None,

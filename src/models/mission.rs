@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use nature_common::{DynamicConverter, Executor, Instance, Meta, MetaType, NatureError, Result, TargetState};
 
-use crate::{FlowSelector, OneStepFlow};
+use crate::{FlowSelector, Relation};
 
 /// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -36,7 +36,7 @@ impl LastStatusDemand {
     }
 }
 
-pub type MissionFilter = fn(&Instance, Vec<OneStepFlow>) -> Option<Vec<Mission>>;
+pub type MissionFilter = fn(&Instance, Vec<Relation>) -> Option<Vec<Mission>>;
 
 impl Mission {
     pub fn for_dynamic(dynamic: Vec<DynamicConverter>) -> Result<Vec<Mission>> {
@@ -59,7 +59,7 @@ impl Mission {
         Ok(missions)
     }
 
-    pub fn filter_relations(instance: &Instance, maps: Vec<OneStepFlow>) -> Option<Vec<Mission>> {
+    pub fn filter_relations(instance: &Instance, maps: Vec<Relation>) -> Option<Vec<Mission>> {
         let mut rtn: Vec<Mission> = Vec::new();
         for m in maps {
             if m.selector.is_some() {
@@ -265,8 +265,8 @@ mod selector_test {
         assert_eq!(option.is_none(), true);
     }
 
-    pub fn new_for_source_status_needed(from: &str, to: &str, set: &HashSet<String>) -> Result<OneStepFlow> {
-        Ok(OneStepFlow {
+    pub fn new_for_source_status_needed(from: &str, to: &str, set: &HashSet<String>) -> Result<Relation> {
+        Ok(Relation {
             from: Meta::from_string(from)?,
             to: Meta::from_string(to)?,
             selector: Some(FlowSelector {
@@ -283,8 +283,8 @@ mod selector_test {
         })
     }
 
-    pub fn new_for_context_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<OneStepFlow> {
-        Ok(OneStepFlow {
+    pub fn new_for_context_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<Relation> {
+        Ok(Relation {
             from: Meta::from_string(from)?,
             to: Meta::from_string(to)?,
             selector: Some(FlowSelector {
@@ -301,8 +301,8 @@ mod selector_test {
         })
     }
 
-    pub fn new_for_source_status_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<OneStepFlow> {
-        Ok(OneStepFlow {
+    pub fn new_for_source_status_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<Relation> {
+        Ok(Relation {
             from: Meta::from_string(from)?,
             to: Meta::from_string(to)?,
             selector: Some(FlowSelector {
@@ -319,8 +319,8 @@ mod selector_test {
         })
     }
 
-    pub fn new_for_context_include(from: &str, to: &str, set: &HashSet<String>) -> Result<OneStepFlow> {
-        Ok(OneStepFlow {
+    pub fn new_for_context_include(from: &str, to: &str, set: &HashSet<String>) -> Result<Relation> {
+        Ok(Relation {
             from: Meta::from_string(from)?,
             to: Meta::from_string(to)?,
             selector: Some(FlowSelector {
@@ -347,7 +347,7 @@ mod other_test {
     #[test]
     fn input_cfg_is_empty() {
         let instance = Instance::default();
-        let osf: Vec<OneStepFlow> = Vec::new();
+        let osf: Vec<Relation> = Vec::new();
         let option = Mission::filter_relations(&instance, osf);
         assert_eq!(option.is_none(), true)
     }
@@ -360,8 +360,8 @@ mod other_test {
         assert_eq!(option.unwrap().len(), 1)
     }
 
-    pub fn new_for_local_executor(from: &str, to: &str, local_executor: &str) -> Result<OneStepFlow> {
-        Ok(OneStepFlow {
+    pub fn new_for_local_executor(from: &str, to: &str, local_executor: &str) -> Result<Relation> {
+        Ok(Relation {
             from: Meta::from_string(from)?,
             to: Meta::from_string(to)?,
             selector: None,

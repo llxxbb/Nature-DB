@@ -11,7 +11,7 @@ create TABLE `meta` (
 	PRIMARY KEY(`full_key`,`version`)
 );
 
-create TABLE `one_step_flow` (
+create TABLE `relation` (
 	`from_meta`	VARCHAR ( 255 ) NOT NULL,
 	`to_meta`	VARCHAR ( 255 ) NOT NULL,
 	`settings`  VARCHAR ( 1023 ) NOT NULL,

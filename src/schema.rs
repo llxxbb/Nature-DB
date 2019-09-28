@@ -29,20 +29,20 @@ table! {
 }
 
 table! {
-    one_step_flow (from_meta, to_meta) {
-        from_meta -> Text,
-        to_meta -> Text,
-        settings -> Text,
-        flag -> Integer,
-    }
-}
-
-table! {
     plan (upstream, downstream) {
         upstream -> Text,
         downstream -> Text,
         content -> Text,
         create_time -> Timestamp,
+    }
+}
+
+table! {
+    relation (from_meta, to_meta) {
+        from_meta -> Text,
+        to_meta -> Text,
+        settings -> Text,
+        flag -> Integer,
     }
 }
 
@@ -72,8 +72,8 @@ table! {
 allow_tables_to_appear_in_same_query!(
     instances,
     meta,
-    one_step_flow,
     plan,
+    relation,
     task,
     task_error,
 );

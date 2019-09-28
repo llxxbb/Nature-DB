@@ -8,11 +8,11 @@ use rand::{Rng, thread_rng};
 
 use nature_common::{Executor, Meta, NatureError, Result, TargetState};
 
-use crate::{FlowSelector, MetaCacheGetter, MetaGetter, OneStepFlowSettings, RawOneStepFlow};
+use crate::{FlowSelector, MetaCacheGetter, MetaGetter, OneStepFlowSettings, RawRelation};
 
 /// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
-pub struct OneStepFlow {
+pub struct Relation {
     pub from: Meta,
     pub to: Meta,
     pub selector: Option<FlowSelector>,
@@ -21,15 +21,15 @@ pub struct OneStepFlow {
     pub target_states: Option<TargetState>,
 }
 
-impl Iterator for OneStepFlow {
-    type Item = OneStepFlow;
+impl Iterator for Relation {
+    type Item = Relation;
     fn next(&mut self) -> Option<Self::Item> {
         Some(self.clone())
     }
 }
 
-impl OneStepFlow {
-    pub fn from_raw(val: RawOneStepFlow, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter) -> Result<Vec<OneStepFlow>> {
+impl Relation {
+    pub fn from_raw(val: RawRelation, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter) -> Result<Vec<Relation>> {
         let settings = serde_json::from_str::<OneStepFlowSettings>(&val.settings)?;
         let selector = &settings.selector;
         let mut group = String::new();
@@ -51,11 +51,11 @@ impl OneStepFlow {
         }
         let use_upstream_id = settings.use_upstream_id;
         let m_from = meta_cache_getter(&val.from_meta, meta_getter)?;
-        let m_to = OneStepFlow::check_converter(&val.to_meta, meta_cache_getter, meta_getter, &settings)?;
+        let m_to = Relation::check_converter(&val.to_meta, meta_cache_getter, meta_getter, &settings)?;
         let rtn = settings.executor.iter().map(|e| {
             let mut e2 = e.clone();
             e2.group = group.clone();
-            OneStepFlow {
+            Relation {
                 from: m_from.clone(),
                 to: m_to.clone(),
                 selector: selector.clone(),
@@ -71,10 +71,10 @@ impl OneStepFlow {
         let m_to = meta_cache_getter(meta_to, meta_getter)?;
         if let Some(ts) = &settings.target_states {
             if let Some(x) = &ts.add {
-                OneStepFlow::check_state(&m_to, x)?
+                Relation::check_state(&m_to, x)?
             };
             if let Some(x) = &ts.remove {
-                OneStepFlow::check_state(&m_to, x)?
+                Relation::check_state(&m_to, x)?
             };
         }
         Ok(m_to)
@@ -88,8 +88,8 @@ impl OneStepFlow {
         Ok(())
     }
 
-    pub fn weight_filter(relations: &[OneStepFlow], balances: &HashMap<Executor, Range<f32>>) -> Vec<OneStepFlow> {
-        let mut rtn: Vec<OneStepFlow> = Vec::new();
+    pub fn weight_filter(relations: &[Relation], balances: &HashMap<Executor, Range<f32>>) -> Vec<Relation> {
+        let mut rtn: Vec<Relation> = Vec::new();
         let rnd = thread_rng().gen::<f32>();
         for m in relations {
             match balances.get(&m.executor) {
@@ -103,7 +103,7 @@ impl OneStepFlow {
     }
 
     /// weight group will be cached
-    pub fn weight_calculate(groups: &HashMap<String, Vec<OneStepFlow>>) -> HashMap<Executor, Range<f32>> {
+    pub fn weight_calculate(groups: &HashMap<String, Vec<Relation>>) -> HashMap<Executor, Range<f32>> {
         let mut rtn: HashMap<Executor, Range<f32>> = HashMap::new();
         for group in groups.values() {
             // summarize the weight for one group
@@ -132,8 +132,8 @@ impl OneStepFlow {
     }
 
     /// group by labels. Only one flow will be used when there are same label. This can be used to switch two different flows smoothly.
-    pub fn get_label_groups(maps: &[OneStepFlow]) -> HashMap<String, Vec<OneStepFlow>> {
-        let mut labels: HashMap<String, Vec<OneStepFlow>> = HashMap::new();
+    pub fn get_label_groups(maps: &[Relation]) -> HashMap<String, Vec<Relation>> {
+        let mut labels: HashMap<String, Vec<Relation>> = HashMap::new();
         for mapping in maps {
             let mappings = labels.entry(mapping.executor.group.clone()).or_insert_with(Vec::new);
             mappings.push(mapping.clone());
@@ -165,13 +165,13 @@ mod test_from_raw {
             use_upstream_id: false,
             target_states: None,
         };
-        let raw = RawOneStepFlow {
+        let raw = RawRelation {
             from_meta: "/B/from:1".to_string(),
             to_meta: "/B/to:1".to_string(),
             settings: serde_json::to_string(&settings).unwrap(),
             flag: 1,
         };
-        let rtn = OneStepFlow::from_raw(raw, meta_cache, meta);
+        let rtn = Relation::from_raw(raw, meta_cache, meta);
         assert_eq!(rtn.is_ok(), true);
     }
 
@@ -196,13 +196,13 @@ mod test_from_raw {
             use_upstream_id: false,
             target_states: None,
         };
-        let raw = RawOneStepFlow {
+        let raw = RawRelation {
             from_meta: "from".to_string(),
             to_meta: "to".to_string(),
             settings: serde_json::to_string(&settings).unwrap(),
             flag: 1,
         };
-        let rtn = OneStepFlow::from_raw(raw, meta_cache, meta);
+        let rtn = Relation::from_raw(raw, meta_cache, meta);
         assert_eq!(rtn, Err(NatureError::VerifyError("in one setting all executor's group must be same.".to_string())));
     }
 
