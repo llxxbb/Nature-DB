@@ -7,20 +7,21 @@ use crate::raw_models::RawRelation;
 
 use super::*;
 
-pub struct OneStepFlowDaoImpl;
+pub struct RelationDaoImpl;
 
 pub type RelationResult = Result<Option<Vec<Relation>>>;
 pub type RelationGetter = fn(&str, MetaCacheGetter, MetaGetter) -> RelationResult;
 
-impl OneStepFlowDaoImpl {
+impl RelationDaoImpl {
     pub fn get_relations(from: &str, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter) -> RelationResult {
         use self::schema::relation::dsl::*;
         let rtn = { // {} used to release conn
             let conn: &CONNNECTION = &CONN.lock().unwrap();
-            relation
-                .filter(from_meta.eq(from))
+            let r = relation
+                .filter(from_meta.eq(from.to_string()))
                 .filter(flag.eq(1))
-                .load::<RawRelation>(conn)
+                .load::<RawRelation>(conn);
+            r
         };
         let def = match rtn {
             Ok(rows) => rows,
@@ -32,13 +33,17 @@ impl OneStepFlowDaoImpl {
                 let mut rtn: Vec<Relation> = Vec::new();
                 for d in def {
                     match Relation::from_raw(d, meta_cache_getter, meta_getter) {
-                        Ok(multi) => multi.into_iter().for_each(|e| rtn.push(e)),
+                        Ok(multi) => {
+                            multi.into_iter().for_each(|e| rtn.push(e))
+                        }
                         Err(e) => {
+                            dbg!(&e);
                             warn!("raw to `one_step_flow` occur error : {:?}", e);
                         }
                     }
                 }
                 if rtn.is_empty() {
+                    dbg!(&rtn);
                     Ok(None)
                 } else {
                     Ok(Some(rtn))
@@ -107,7 +112,7 @@ impl OneStepFlowDaoImpl {
                 target_states: None,
             },
         )?;
-        let _ = OneStepFlowDaoImpl::insert(one.clone());
+        let _ = RelationDaoImpl::insert(one.clone());
         Ok(one)
     }
 
@@ -118,7 +123,7 @@ impl OneStepFlowDaoImpl {
             settings: String::new(),
             flag: 1,
         };
-        OneStepFlowDaoImpl::delete(row)
+        RelationDaoImpl::delete(row)
     }
 }
 
@@ -133,31 +138,33 @@ mod test {
     use super::*;
 
     #[test]
-    fn one_step_test() {
+    fn relation_test() {
         env::set_var("DATABASE_URL", CONN_STR);
         let _ = setup_logger();
 
         // clear before test
-        let _ = OneStepFlowDaoImpl::delete_by_biz("/B/from:1", "/B/to:1");
+        let _ = RelationDaoImpl::delete_by_biz("/B/from:1", "/B/to:1");
 
         // get null
         let meta = "/B/from:1";
-        let rtn = OneStepFlowDaoImpl::get_relations(meta, MetaCacheImpl::get, MetaDaoImpl::get).unwrap();
+        let rtn = RelationDaoImpl::get_relations(meta, MetaCacheImpl::get, MetaDaoImpl::get).unwrap();
         assert_eq!(rtn, None);
 
         // insert
-        let rtn = OneStepFlowDaoImpl::insert_by_biz("/B/from:1", "/B/to:1", "url", "http");
-        dbg!(&rtn);
-        let rtn = OneStepFlowDaoImpl::get_relations(meta, MetaCacheImpl::get, MetaDaoImpl::get).unwrap();
-        dbg!(&rtn);
+        let _ = RelationDaoImpl::insert_by_biz("/B/from:1", "/B/to:1", "url", "http");
+        let rtn = RelationDaoImpl::get_relations(meta, meta_cache, MetaDaoImpl::get).unwrap();
         assert_eq!(rtn.unwrap().len(), 1);
 
         // update flag
-        let _ = OneStepFlowDaoImpl::update_flag("/B/from:1", "/B/to:1", 0);
-        let rtn = OneStepFlowDaoImpl::get_relations(meta, MetaCacheImpl::get, MetaDaoImpl::get).unwrap();
+        let _ = RelationDaoImpl::update_flag("/B/from:1", "/B/to:1", 0);
+        let rtn = RelationDaoImpl::get_relations(meta, meta_cache, MetaDaoImpl::get).unwrap();
         assert_eq!(rtn, None);
 
         // delete after test
-        let _ = OneStepFlowDaoImpl::delete_by_biz("/B/from:1", "/B/to:1");
+        let _ = RelationDaoImpl::delete_by_biz("/B/from:1", "/B/to:1");
+    }
+
+    fn meta_cache(m: &str, _: MetaGetter) -> Result<Meta> {
+        Meta::from_string(m)
     }
 }
