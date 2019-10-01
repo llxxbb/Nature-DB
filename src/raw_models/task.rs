@@ -16,6 +16,7 @@ use super::super::schema::task;
 #[table_name = "task"]
 pub struct RawTask {
     pub task_id: Vec<u8>,
+    /// target meta
     pub meta: String,
     pub data_type: i16,
     pub data: String,
@@ -28,7 +29,7 @@ impl RawTask {
     pub fn new<T: Serialize + Debug>(task: &T, meta: &str, data_type: i16) -> Result<RawTask> {
         let json = serde_json::to_string(task)?;
         if json.len() > *TASK_CONTENT_MAX_LENGTH.deref() {
-            return Err(NatureError::DaoLogicalError("data's length can' be over : ".to_owned() + &TASK_CONTENT_MAX_LENGTH.to_string()));
+            return Err(NatureError::SystemError("data's length can' be over : ".to_owned() + &TASK_CONTENT_MAX_LENGTH.to_string()));
         }
         let time = Local::now().naive_local();
         Ok(RawTask {

@@ -20,9 +20,9 @@ lazy_static! {
 
 pub type RelationCacheGetter = fn(&str, RelationGetter, MetaCacheGetter, MetaGetter) -> RelationResult;
 
-pub struct OneStepFlowCacheImpl;
+pub struct RelationCacheImpl;
 
-impl OneStepFlowCacheImpl {
+impl RelationCacheImpl {
     pub fn get(meta_from: &str, getter: RelationGetter, meta_cache: MetaCacheGetter, meta: MetaGetter) -> RelationResult {
         let (relations, balances) = Self::get_balanced(meta_from, getter, meta_cache, meta)?;
         if relations.is_none() {
@@ -66,11 +66,11 @@ mod test {
     use super::*;
 
     fn rtn_err(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
-        Err(NatureError::DaoEnvironmentError("can't connect".to_string()))
+        Err(NatureError::EnvironmentError("can't connect".to_string()))
     }
 
     fn rtn_err2(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
-        Err(NatureError::DaoEnvironmentError("another error".to_string()))
+        Err(NatureError::EnvironmentError("another error".to_string()))
     }
 
     fn rtn_none(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
@@ -93,11 +93,11 @@ mod test {
             let from = "/B/error:1";
 
             // this will call mocker
-            let result = OneStepFlowCacheImpl::get(&from, rtn_err, meta_cache, meta);
-            assert_eq!(result, Err(NatureError::DaoEnvironmentError("can't connect".to_string())));
+            let result = RelationCacheImpl::get(&from, rtn_err, meta_cache, meta);
+            assert_eq!(result, Err(NatureError::EnvironmentError("can't connect".to_string())));
             // error can't be catched
-            let result = OneStepFlowCacheImpl::get(&from, rtn_err2, meta_cache, meta);
-            assert_eq!(result, Err(NatureError::DaoEnvironmentError("another error".to_string())));
+            let result = RelationCacheImpl::get(&from, rtn_err2, meta_cache, meta);
+            assert_eq!(result, Err(NatureError::EnvironmentError("another error".to_string())));
         }
 
         /// test cache also
@@ -105,12 +105,12 @@ mod test {
         fn get_none() {
             let from = "/B/none:1";
             // this will call mocker
-            let result = OneStepFlowCacheImpl::get(&from, rtn_none, meta_cache, meta);
+            let result = RelationCacheImpl::get(&from, rtn_none, meta_cache, meta);
             assert_eq!(result.is_ok(), true);
             let result = result.unwrap();
             assert_eq!(result, None);
             // and the repeated call will not call mocker but get from cache
-            let result = OneStepFlowCacheImpl::get(&from, rtn_err, meta_cache, meta);
+            let result = RelationCacheImpl::get(&from, rtn_err, meta_cache, meta);
             assert_eq!(result.is_ok(), true);
             let result = result.unwrap();
             assert_eq!(result, None);
@@ -134,11 +134,11 @@ mod test {
             }
 
             // this will call mocker
-            let result = OneStepFlowCacheImpl::get(&from, rtn_one, meta_cache, meta);
+            let result = RelationCacheImpl::get(&from, rtn_one, meta_cache, meta);
             let result = result.unwrap().unwrap();
             assert_eq!(result.len(), 1);
             // and the repeated call will not call mocker but get from cache
-            let result = OneStepFlowCacheImpl::get(&from, rtn_none, meta_cache, meta);
+            let result = RelationCacheImpl::get(&from, rtn_none, meta_cache, meta);
             let result = result.unwrap().unwrap();
             assert_eq!(result.len(), 1);
         }
@@ -155,11 +155,11 @@ mod test {
             }
 
             // this will call mocker
-            let result = OneStepFlowCacheImpl::get(&from, rtn_some, meta_cache, meta);
+            let result = RelationCacheImpl::get(&from, rtn_some, meta_cache, meta);
             let result = result.unwrap().unwrap();
             assert_eq!(result.len(), 1);
             // and the repeated call will not call mocker but get from cache
-            let result = OneStepFlowCacheImpl::get(&from, rtn_none, meta_cache, meta);
+            let result = RelationCacheImpl::get(&from, rtn_none, meta_cache, meta);
             let result = result.unwrap().unwrap();
             assert_eq!(result.len(), 1);
         }
@@ -177,11 +177,11 @@ mod test {
             }
 
             // this will call mocker
-            let result = OneStepFlowCacheImpl::get(&from, rtn_some, meta_cache, meta);
+            let result = RelationCacheImpl::get(&from, rtn_some, meta_cache, meta);
             let result = result.unwrap().unwrap();
             assert_eq!(result.len(), 1);
             // and the repeated call will not call mocker but get from cache
-            let result = OneStepFlowCacheImpl::get(&from, rtn_none, meta_cache, meta);
+            let result = RelationCacheImpl::get(&from, rtn_none, meta_cache, meta);
             let result = result.unwrap().unwrap();
             assert_eq!(result.len(), 1);
         }
@@ -202,7 +202,7 @@ mod test {
             let mut exe_2_cnt = 0;
 
             for _i in 0..1000 {
-                let result = OneStepFlowCacheImpl::get(&from, rtn_some, meta_cache, meta);
+                let result = RelationCacheImpl::get(&from, rtn_some, meta_cache, meta);
                 let result = &result.unwrap().unwrap()[0];
                 match result.to.get_full_key().as_ref() {
                     "/B/to_1" => {

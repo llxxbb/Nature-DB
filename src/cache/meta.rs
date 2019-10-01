@@ -22,7 +22,7 @@ impl MetaCacheImpl {
     pub fn get(meta_str: &str, getter: MetaGetter) -> Result<Meta> {
 //        debug!("get `Meta` from cache for meta : {}", meta_str);
         if meta_str.is_empty() {
-            let error = NatureError::VerifyError("[biz] must not be empty!".to_string());
+            let error = NatureError::VerifyError("[biz] can not be empty!".to_string());
             warn!("{}", error);
             return Err(error);
         }
@@ -34,7 +34,7 @@ impl MetaCacheImpl {
         };
         match getter(meta_str)? {
             None => {
-                let error = NatureError::MetaNotDefined(format!("{} not defined", meta_str));
+                let error = NatureError::VerifyError(format!("{} not defined", meta_str));
                 warn!("{}", error);
                 Err(error)
             }

@@ -22,9 +22,9 @@ impl TaskDaoImpl {
             Err(Error::DatabaseError(kind, info)) => match kind {
                 DatabaseErrorKind::UniqueViolation => Ok(0),
                 DatabaseErrorKind::__Unknown => {
-                    Err(NatureError::DaoEnvironmentError(format!("{:?}", info)))
+                    Err(NatureError::EnvironmentError(format!("{:?}", info)))
                 }
-                _ => Err(NatureError::DaoLogicalError(format!("{:?}", info))),
+                _ => Err(NatureError::SystemError(format!("{:?}", info))),
             },
             Err(e) => {
                 error!("insert task error: {:?}", e);
@@ -58,8 +58,8 @@ impl TaskDaoImpl {
                     debug!("delete succeed!");
                     Ok(1)
                 }
-                DatabaseErrorKind::__Unknown => Err(NatureError::DaoEnvironmentError(format!("{:?}", info))),
-                _ => Err(NatureError::DaoLogicalError(format!("{:?}", info))),
+                DatabaseErrorKind::__Unknown => Err(NatureError::EnvironmentError(format!("{:?}", info))),
+                _ => Err(NatureError::SystemError(format!("{:?}", info))),
             },
             Err(e) => {
                 error!("insert task_error to db occurred error");

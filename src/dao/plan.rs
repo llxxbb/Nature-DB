@@ -17,7 +17,7 @@ impl StorePlanDaoImpl {
         match rtn {
             Ok(x) => match x {
                 1 => Ok(()),
-                num => Err(NatureError::DaoLogicalError(format!(
+                num => Err(NatureError::SystemError(format!(
                     "should insert 1 but get {}",
                     num
                 ))),
@@ -36,8 +36,8 @@ impl StorePlanDaoImpl {
         match def.len() {
             0 => Ok(None),
             1 => Ok(Some(def[0].clone())),
-            x => Err(NatureError::DaoLogicalError(format!(
-                "not 1 and 0 but get {}",
+            x => Err(NatureError::SystemError(format!(
+                "not 1 or 0 but get {}",
                 x
             ))),
         }

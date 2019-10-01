@@ -14,10 +14,10 @@ impl DbError {
         match err {
             Error::DatabaseError(kind, info) => match kind {
                 DatabaseErrorKind::UniqueViolation => NatureError::DaoDuplicated(msg.to_string()),
-                DatabaseErrorKind::__Unknown => NatureError::DaoEnvironmentError(format!("{:?}", info)),
-                _ => NatureError::DaoLogicalError(format!("{:?}", info)),
+                DatabaseErrorKind::__Unknown => NatureError::EnvironmentError(format!("{:?}", info)),
+                _ => NatureError::SystemError(format!("{:?}", info)),
             }
-            _ => NatureError::DaoLogicalError(err.to_string()),
+            _ => NatureError::SystemError(err.to_string()),
         }
     }
 }

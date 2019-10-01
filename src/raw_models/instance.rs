@@ -75,14 +75,14 @@ impl RawInstance {
             meta: instance.meta.clone(),
             content: {
                 if instance.content.len() > *INSTANCE_CONTENT_MAX_LENGTH.deref() {
-                    return Err(NatureError::DaoLogicalError("content's length can' be over : ".to_owned() + &INSTANCE_CONTENT_MAX_LENGTH.to_string()));
+                    return Err(NatureError::SystemError("content's length can' be over : ".to_owned() + &INSTANCE_CONTENT_MAX_LENGTH.to_string()));
                 }
                 instance.content.clone()
             },
             context: {
                 let ctx_len = instance.context.len();
                 if ctx_len > *INSTANCE_CONTEXT_MAX_LENGTH.deref() {
-                    return Err(NatureError::DaoLogicalError("context's length can' be over : ".to_owned() + &INSTANCE_CONTEXT_MAX_LENGTH.to_string()));
+                    return Err(NatureError::SystemError("context's length can' be over : ".to_owned() + &INSTANCE_CONTEXT_MAX_LENGTH.to_string()));
                 }
                 match ctx_len {
                     0 => None,

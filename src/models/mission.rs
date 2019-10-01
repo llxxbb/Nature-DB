@@ -24,19 +24,19 @@ impl LastStatusDemand {
     pub fn check(&self, last: &HashSet<String>) -> Result<()> {
         for s in &self.target_states_include {
             if !last.contains(s) {
-                return Err(NatureError::TargetInstanceNotIncludeStatus(s.clone()));
+                return Err(NatureError::VerifyError(format!("must include status: {}", &s)));
             }
         }
-        for s in &self.target_states_include {
+        for s in &self.target_states_exclude {
             if last.contains(s) {
-                return Err(NatureError::TargetInstanceContainsExcludeStatus(s.clone()));
+                return Err(NatureError::VerifyError(format!("can not include status: {}", &s)));
             }
         }
         Ok(())
     }
 }
 
-pub type MissionFilter = fn(&Instance, Vec<Relation>) -> Option<Vec<Mission>>;
+pub type MissionFilter = fn(&Instance, &Vec<Relation>) -> Option<Vec<Mission>>;
 
 impl Mission {
     pub fn for_dynamic(dynamic: Vec<DynamicConverter>) -> Result<Vec<Mission>> {
@@ -59,7 +59,7 @@ impl Mission {
         Ok(missions)
     }
 
-    pub fn filter_relations(instance: &Instance, maps: Vec<Relation>) -> Option<Vec<Mission>> {
+    pub fn filter_relations(instance: &Instance, maps: &Vec<Relation>) -> Option<Vec<Mission>> {
         let mut rtn: Vec<Mission> = Vec::new();
         for m in maps {
             if m.selector.is_some() {
@@ -74,15 +74,15 @@ impl Mission {
             }
             let t = Mission {
                 to: m.to.clone(),
-                executor: m.executor,
+                executor: m.executor.clone(),
                 last_states_demand: {
-                    match m.selector {
+                    match &m.selector {
                         None => None,
                         Some(demand) => {
                             let last_demand = LastStatusDemand {
-                                target_states_include: demand.target_status_include,
-                                target_states_exclude: demand.target_status_exclude,
-                                target_states: m.target_states,
+                                target_states_include: demand.target_status_include.clone(),
+                                target_states_exclude: demand.target_status_exclude.clone(),
+                                target_states: m.target_states.clone(),
                             };
                             Some(last_demand)
                         }
@@ -145,24 +145,24 @@ mod selector_test {
         let osf = vec![new_for_source_status_needed("/B/from:1", "/B/to:1", &set).unwrap()];
 
         // condition does not satisfy.
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.states = HashSet::new();
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.states.insert("three".to_string());
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.states.insert("one".to_string());
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_none(), true);
 
         // condition satisfy
         instance.data.states.insert("two".to_string());
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_some(), true);
         instance.data.states.insert("four".to_string());
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_some(), true);
     }
 
@@ -178,24 +178,24 @@ mod selector_test {
         let osf = vec![new_for_source_status_excluded("/B/from:1", "/B/to:1", &set).unwrap()];
 
         // condition satisfy
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_some(), true);
         instance.data.states = HashSet::new();
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_some(), true);
         instance.data.states.insert("three".to_string());
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_some(), true);
 
         // condition does not satisfy
         instance.data.states.insert("one".to_string());
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.states.insert("two".to_string());
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.states.remove("one");
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_none(), true);
     }
 
@@ -211,24 +211,24 @@ mod selector_test {
         let osf = vec![new_for_context_include("/B/from:1", "/B/to:1", &set).unwrap()];
 
         // condition does not satisfy.
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.context = HashMap::new();
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.context.insert("three".to_string(), "three".to_string());
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.context.insert("one".to_string(), "one".to_string());
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_none(), true);
 
         // condition satisfy
         instance.data.context.insert("two".to_string(), "two".to_string());
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_some(), true);
         instance.data.context.insert("four".to_string(), "four".to_string());
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_some(), true);
     }
 
@@ -244,24 +244,24 @@ mod selector_test {
         let osf = vec![new_for_context_excluded("/B/from:1", "/B/to:1", &set).unwrap()];
 
         // condition satisfy
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_some(), true);
         instance.data.context = HashMap::new();
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_some(), true);
         instance.data.context.insert("three".to_string(), "three".to_string());
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_some(), true);
 
         // condition does not satisfy
         instance.data.context.insert("one".to_string(), "one".to_string());
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.context.insert("two".to_string(), "two".to_string());
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.context.remove("one");
-        let option = Mission::filter_relations(&instance, osf.clone());
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_none(), true);
     }
 
@@ -348,7 +348,7 @@ mod other_test {
     fn input_cfg_is_empty() {
         let instance = Instance::default();
         let osf: Vec<Relation> = Vec::new();
-        let option = Mission::filter_relations(&instance, osf);
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.is_none(), true)
     }
 
@@ -356,7 +356,7 @@ mod other_test {
     fn no_selector_but_only_executor() {
         let instance = Instance::default();
         let osf = vec![new_for_local_executor("/B/from:1", "/B/to:1", "local").unwrap()];
-        let option = Mission::filter_relations(&instance, osf);
+        let option = Mission::filter_relations(&instance, &osf);
         assert_eq!(option.unwrap().len(), 1)
     }
 
