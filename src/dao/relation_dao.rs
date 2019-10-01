@@ -17,11 +17,10 @@ impl RelationDaoImpl {
         use self::schema::relation::dsl::*;
         let rtn = { // {} used to release conn
             let conn: &CONNNECTION = &CONN.lock().unwrap();
-            let r = relation
+            relation
                 .filter(from_meta.eq(from.to_string()))
                 .filter(flag.eq(1))
-                .load::<RawRelation>(conn);
-            r
+                .load::<RawRelation>(conn)
         };
         let def = match rtn {
             Ok(rows) => rows,
