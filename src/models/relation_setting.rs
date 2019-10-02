@@ -53,10 +53,10 @@ mod test {
                 proportion: 1,
             }],
             use_upstream_id: true,
-            target_states: None,
+            target_states: Some(TargetState { add: Some(vec!["new".to_string()]), remove: None }),
         };
         let result = serde_json::to_string(&setting).unwrap();
-        let res_str = r#"{"executor":[{"protocol":"LocalRust","url":"nature_demo.dll:order_new","proportion":1}],"use_upstream_id":true}"#;
+        let res_str = r#"{"executor":[{"protocol":"LocalRust","url":"nature_demo.dll:order_new","proportion":1}],"use_upstream_id":true,"target_states":{"add":["new"]}}"#;
         assert_eq!(result, res_str);
         let res_obj: OneStepFlowSettings = serde_json::from_str(res_str).unwrap();
         assert_eq!(res_obj, setting);
