@@ -3,9 +3,9 @@ pub use self::task_error::*;
 pub use self::instance::*;
 pub use self::relation_raw::*;
 pub use self::plan::*;
-pub use self::meta::*;
+pub use self::meta_raw::*;
 
-mod meta;
+mod meta_raw;
 mod instance;
 mod task;
 mod relation_raw;

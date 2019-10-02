@@ -20,10 +20,13 @@ impl MetaDaoImpl {
             .filter(flag.eq(1))
             .load::<RawMeta>(conn);
         match def {
-            Ok(rtn) => match rtn.len() {
-                0 => Ok(None),
-                1 => Ok(Some(rtn[0].clone())),
-                _ => Err(NatureError::SystemError("should less than 2 record return".to_string())),
+            Ok(rtn) => {
+                debug!("load meta : {:?}", &rtn);
+                match rtn.len() {
+                    0 => Ok(None),
+                    1 => Ok(Some(rtn[0].clone())),
+                    _ => Err(NatureError::SystemError("should less than 2 record return".to_string())),
+                }
             }
             Err(e) => Err(DbError::from(e))
         }
