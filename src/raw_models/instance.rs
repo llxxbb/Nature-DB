@@ -23,7 +23,6 @@ pub struct RawInstance {
     state_version: i32,
     from_meta: Option<String>,
     from_state_version: Option<i32>,
-    event_time: NaiveDateTime,
     execute_time: NaiveDateTime,
     create_time: NaiveDateTime,
 }
@@ -53,7 +52,6 @@ impl RawInstance {
             id,
             data: InstanceNoID {
                 meta: self.meta.clone(),
-                event_time: self.event_time.timestamp_millis(),
                 execute_time: self.execute_time.timestamp_millis(),
                 create_time: self.create_time.timestamp_millis(),
                 content: self.content.clone(),
@@ -97,7 +95,6 @@ impl RawInstance {
             from_meta,
             para: "".to_string(),
             from_state_version,
-            event_time: NaiveDateTime::from_timestamp(instance.event_time, 0),
             execute_time: NaiveDateTime::from_timestamp(instance.execute_time, 0),
             create_time: NaiveDateTime::from_timestamp(instance.create_time, 0),
         })
