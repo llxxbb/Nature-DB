@@ -59,9 +59,11 @@ impl Mission {
         Ok(missions)
     }
 
-    pub fn filter_relations(instance: &Instance, maps: &Vec<Relation>) -> Option<Vec<Mission>> {
+    pub fn get_by_instance(instance: &Instance, relations: &Option<Vec<Relation>>) -> Option<Vec<Mission>> {
+        if relations.is_none() { return None; }
+        let relations = relations.as_ref().unwrap();
         let mut rtn: Vec<Mission> = Vec::new();
-        for m in maps {
+        for m in relations {
             if m.selector.is_some() {
                 let selector = &m.selector.clone().unwrap();
                 if !Self::context_check(&instance.data.context, selector) {
@@ -143,26 +145,27 @@ mod selector_test {
 
         // set status required.
         let osf = vec![new_for_source_status_needed("/B/from:1", "/B/to:1", &set).unwrap()];
+        let osf = Some(osf);
 
         // condition does not satisfy.
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.states = HashSet::new();
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.states.insert("three".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.states.insert("one".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
 
         // condition satisfy
         instance.data.states.insert("two".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_some(), true);
         instance.data.states.insert("four".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_some(), true);
     }
 
@@ -176,26 +179,27 @@ mod selector_test {
 
         // set state required.
         let osf = vec![new_for_source_status_excluded("/B/from:1", "/B/to:1", &set).unwrap()];
+        let osf = Some(osf);
 
         // condition satisfy
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_some(), true);
         instance.data.states = HashSet::new();
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_some(), true);
         instance.data.states.insert("three".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_some(), true);
 
         // condition does not satisfy
         instance.data.states.insert("one".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.states.insert("two".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.states.remove("one");
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
     }
 
@@ -209,26 +213,27 @@ mod selector_test {
 
         // set state required.
         let osf = vec![new_for_context_include("/B/from:1", "/B/to:1", &set).unwrap()];
+        let osf = Some(osf);
 
         // condition does not satisfy.
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.context = HashMap::new();
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.context.insert("three".to_string(), "three".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.context.insert("one".to_string(), "one".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
 
         // condition satisfy
         instance.data.context.insert("two".to_string(), "two".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_some(), true);
         instance.data.context.insert("four".to_string(), "four".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_some(), true);
     }
 
@@ -242,26 +247,27 @@ mod selector_test {
 
         // set state required.
         let osf = vec![new_for_context_excluded("/B/from:1", "/B/to:1", &set).unwrap()];
+        let osf = Some(osf);
 
         // condition satisfy
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_some(), true);
         instance.data.context = HashMap::new();
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_some(), true);
         instance.data.context.insert("three".to_string(), "three".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_some(), true);
 
         // condition does not satisfy
         instance.data.context.insert("one".to_string(), "one".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.context.insert("two".to_string(), "two".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.context.remove("one");
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
     }
 
@@ -348,7 +354,8 @@ mod other_test {
     fn input_cfg_is_empty() {
         let instance = Instance::default();
         let osf: Vec<Relation> = Vec::new();
-        let option = Mission::filter_relations(&instance, &osf);
+        let osf = Some(osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true)
     }
 
@@ -356,7 +363,8 @@ mod other_test {
     fn no_selector_but_only_executor() {
         let instance = Instance::default();
         let osf = vec![new_for_local_executor("/B/from:1", "/B/to:1", "local").unwrap()];
-        let option = Mission::filter_relations(&instance, &osf);
+        let osf = Some(osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.unwrap().len(), 1)
     }
 
