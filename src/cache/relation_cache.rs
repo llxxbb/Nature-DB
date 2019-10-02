@@ -222,7 +222,7 @@ mod test {
 
     fn new_for_local_executor_with_group_and_proportion(from: &str, to: &str, local_executor: &str, group: &str, proportion: u32) -> Result<Relation> {
         Ok(Relation {
-            from: Meta::from_string(from)?,
+            from: from.to_string(),
             to: Meta::from_string(to)?,
             selector: None,
             executor: Executor {

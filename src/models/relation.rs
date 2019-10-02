@@ -13,7 +13,7 @@ use crate::{FlowSelector, MetaCacheGetter, MetaGetter, OneStepFlowSettings, RawR
 /// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct Relation {
-    pub from: Meta,
+    pub from: String,
     pub to: Meta,
     pub selector: Option<FlowSelector>,
     pub executor: Executor,
@@ -50,13 +50,12 @@ impl Relation {
             return Err(NatureError::VerifyError("in one setting all executor's group must be same.".to_string()));
         }
         let use_upstream_id = settings.use_upstream_id;
-        let m_from = meta_cache_getter(&val.from_meta, meta_getter)?;
         let m_to = Relation::check_converter(&val.to_meta, meta_cache_getter, meta_getter, &settings)?;
         let rtn = settings.executor.iter().map(|e| {
             let mut e2 = e.clone();
             e2.group = group.clone();
             Relation {
-                from: m_from.clone(),
+                from: val.from_meta.to_string(),
                 to: m_to.clone(),
                 selector: selector.clone(),
                 executor: e2,

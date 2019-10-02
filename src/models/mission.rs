@@ -267,7 +267,7 @@ mod selector_test {
 
     pub fn new_for_source_status_needed(from: &str, to: &str, set: &HashSet<String>) -> Result<Relation> {
         Ok(Relation {
-            from: Meta::from_string(from)?,
+            from: from.to_string(),
             to: Meta::from_string(to)?,
             selector: Some(FlowSelector {
                 source_status_include: set.clone(),
@@ -285,7 +285,7 @@ mod selector_test {
 
     pub fn new_for_context_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<Relation> {
         Ok(Relation {
-            from: Meta::from_string(from)?,
+            from: from.to_string(),
             to: Meta::from_string(to)?,
             selector: Some(FlowSelector {
                 source_status_include: HashSet::new(),
@@ -303,7 +303,7 @@ mod selector_test {
 
     pub fn new_for_source_status_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<Relation> {
         Ok(Relation {
-            from: Meta::from_string(from)?,
+            from: from.to_string(),
             to: Meta::from_string(to)?,
             selector: Some(FlowSelector {
                 source_status_include: HashSet::new(),
@@ -321,7 +321,7 @@ mod selector_test {
 
     pub fn new_for_context_include(from: &str, to: &str, set: &HashSet<String>) -> Result<Relation> {
         Ok(Relation {
-            from: Meta::from_string(from)?,
+            from: from.to_string(),
             to: Meta::from_string(to)?,
             selector: Some(FlowSelector {
                 source_status_include: HashSet::new(),
@@ -362,7 +362,7 @@ mod other_test {
 
     pub fn new_for_local_executor(from: &str, to: &str, local_executor: &str) -> Result<Relation> {
         Ok(Relation {
-            from: Meta::from_string(from)?,
+            from: from.to_string(),
             to: Meta::from_string(to)?,
             selector: None,
             executor: Executor {
