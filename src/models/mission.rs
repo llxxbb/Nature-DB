@@ -9,25 +9,25 @@ use crate::{FlowSelector, Relation};
 pub struct Mission {
     pub to: Meta,
     pub executor: Executor,
-    pub last_states_demand: Option<LastStatusDemand>,
+    pub states_demand: Option<StatusDemand>,
     pub use_upstream_id: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct LastStatusDemand {
-    pub target_states_include: HashSet<String>,
-    pub target_states_exclude: HashSet<String>,
+pub struct StatusDemand {
+    pub last_states_include: HashSet<String>,
+    pub last_states_exclude: HashSet<String>,
     pub target_states: Option<TargetState>,
 }
 
-impl LastStatusDemand {
+impl StatusDemand {
     pub fn check(&self, last: &HashSet<String>) -> Result<()> {
-        for s in &self.target_states_include {
+        for s in &self.last_states_include {
             if !last.contains(s) {
                 return Err(NatureError::VerifyError(format!("must include status: {}", &s)));
             }
         }
-        for s in &self.target_states_exclude {
+        for s in &self.last_states_exclude {
             if last.contains(s) {
                 return Err(NatureError::VerifyError(format!("can not include status: {}", &s)));
             }
@@ -50,7 +50,7 @@ impl Mission {
             let mission = Mission {
                 to: t,
                 executor: d.fun.clone(),
-                last_states_demand: None,
+                states_demand: None,
                 use_upstream_id: d.use_upstream_id,
             };
             missions.push(mission)
@@ -77,13 +77,13 @@ impl Mission {
             let t = Mission {
                 to: m.to.clone(),
                 executor: m.executor.clone(),
-                last_states_demand: {
+                states_demand: {
                     match &m.selector {
                         None => None,
                         Some(demand) => {
-                            let last_demand = LastStatusDemand {
-                                target_states_include: demand.target_status_include.clone(),
-                                target_states_exclude: demand.target_status_exclude.clone(),
+                            let last_demand = StatusDemand {
+                                last_states_include: demand.target_status_include.clone(),
+                                last_states_exclude: demand.target_status_exclude.clone(),
                                 target_states: m.target_states.clone(),
                             };
                             Some(last_demand)
