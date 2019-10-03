@@ -50,16 +50,16 @@ impl RawInstance {
         };
         Ok(Instance {
             id,
-            data: InstanceNoID {
+            data: BizObject {
                 meta: self.meta.clone(),
-                execute_time: self.execute_time.timestamp_millis(),
-                create_time: self.create_time.timestamp_millis(),
                 content: self.content.clone(),
                 context,
                 states,
                 state_version: self.state_version,
                 from,
             },
+            execute_time: self.execute_time.timestamp_millis(),
+            create_time: self.create_time.timestamp_millis(),
         })
     }
 
