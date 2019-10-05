@@ -22,6 +22,7 @@ pub struct RawInstance {
     states: Option<String>,
     state_version: i32,
     from_meta: Option<String>,
+    from_id: Option<Vec<u8>>,
     from_state_version: Option<i32>,
     execute_time: NaiveDateTime,
     create_time: NaiveDateTime,
@@ -31,11 +32,11 @@ impl RawInstance {
     pub fn to(&self) -> Result<Instance> {
         let from = match &self.from_meta {
             None => None,
-            Some(k) => {
-                let meta = Meta::from_string(k)?;
+            Some(meta) => {
                 Some(FromInstance {
-                    meta,
-                    status_version: self.from_state_version.unwrap(),
+                    id: vec_to_u128(&self.from_id.as_ref().unwrap()),
+                    meta: meta.to_string(),
+                    state_version: self.from_state_version.unwrap(),
                 })
             }
         };
@@ -64,9 +65,9 @@ impl RawInstance {
     }
 
     pub fn new(instance: &Instance) -> Result<RawInstance> {
-        let (from_meta, from_state_version) = match instance.from {
-            None => (None, None),
-            Some(ref from) => (Some(from.meta.get_string()), Some(from.status_version))
+        let (from_id, from_meta, from_state_version) = match instance.from {
+            None => (None, None, None),
+            Some(ref from) => (Some(u128_to_vec_u8(from.id)), Some(from.meta.to_string()), Some(from.state_version))
         };
         Ok(RawInstance {
             instance_id: instance.id.to_ne_bytes().to_vec(),
@@ -95,6 +96,7 @@ impl RawInstance {
             from_meta,
             para: "".to_string(),
             from_state_version,
+            from_id,
             execute_time: Local.timestamp_millis(instance.execute_time).naive_local(),
             create_time: Local.timestamp_millis(instance.create_time).naive_local(),
         })
