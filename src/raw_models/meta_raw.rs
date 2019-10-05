@@ -75,9 +75,18 @@ impl TryInto<Meta> for RawMeta {
     fn try_into(self) -> std::result::Result<Meta, Self::Error> {
         let mut rtn = Meta::from_full_key(&self.full_key, self.version)?;
         if let Some(s) = &self.states {
-            let (ss, _) = State::string_to_states(&s)?;
-            self.check_name(&ss)?;
-            rtn.state = Some(ss);
+            if !s.is_empty() {
+                match State::string_to_states(&s) {
+                    Ok((ss, _)) => {
+                        self.check_name(&ss)?;
+                        rtn.state = Some(ss);
+                    }
+                    Err(e) => {
+                        warn!("meta : {} init error: {:?}", &self.full_key, e);
+                        return Err(e);
+                    }
+                }
+            }
         }
         if !self.config.is_empty() {
             let setting: MetaSetting = serde_json::from_str(&self.config)?;
@@ -132,6 +141,11 @@ mod test {
         meta.states = Some("b,b".to_string());
         let result: Result<Meta> = meta.try_into();
         assert_eq!(result.err().unwrap(), NatureError::VerifyError("repeated state name: \"b\", for `Meta`: \"/B/hello\"".to_string()));
+
+        let mut meta = RawMeta::from(Meta::from_full_key("/B/hello", 1).unwrap());
+        meta.states = Some("".to_string());
+        let result: Result<Meta> = meta.try_into();
+        assert_eq!(result.is_ok(), true);
     }
 }
 

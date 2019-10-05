@@ -28,8 +28,8 @@ create TABLE `instances` (
 	`states`	TEXT,
 	`state_version`	INTEGER NOT NULL,
 	`from_meta`	VARCHAR ( 255 ),
+	`from_id`	BINARY(16),
 	`from_state_version`	INTEGER,
-	`event_time`	DATETIME NOT NULL,
 	`execute_time`	DATETIME NOT NULL,
 	`create_time`	DATETIME NOT NULL,
 	PRIMARY KEY(`meta`,`para`,`instance_id`,`state_version`)

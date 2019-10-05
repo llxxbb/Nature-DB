@@ -9,25 +9,25 @@ use crate::{FlowSelector, Relation};
 pub struct Mission {
     pub to: Meta,
     pub executor: Executor,
-    pub last_states_demand: Option<LastStatusDemand>,
+    pub states_demand: Option<StateDemand>,
     pub use_upstream_id: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct LastStatusDemand {
-    pub target_states_include: HashSet<String>,
-    pub target_states_exclude: HashSet<String>,
+pub struct StateDemand {
+    pub last_states_include: HashSet<String>,
+    pub last_states_exclude: HashSet<String>,
     pub target_states: Option<TargetState>,
 }
 
-impl LastStatusDemand {
+impl StateDemand {
     pub fn check(&self, last: &HashSet<String>) -> Result<()> {
-        for s in &self.target_states_include {
+        for s in &self.last_states_include {
             if !last.contains(s) {
                 return Err(NatureError::VerifyError(format!("must include status: {}", &s)));
             }
         }
-        for s in &self.target_states_exclude {
+        for s in &self.last_states_exclude {
             if last.contains(s) {
                 return Err(NatureError::VerifyError(format!("can not include status: {}", &s)));
             }
@@ -50,7 +50,7 @@ impl Mission {
             let mission = Mission {
                 to: t,
                 executor: d.fun.clone(),
-                last_states_demand: None,
+                states_demand: None,
                 use_upstream_id: d.use_upstream_id,
             };
             missions.push(mission)
@@ -59,11 +59,13 @@ impl Mission {
         Ok(missions)
     }
 
-    pub fn filter_relations(instance: &Instance, maps: &Vec<Relation>) -> Option<Vec<Mission>> {
+    pub fn get_by_instance(instance: &Instance, relations: &Option<Vec<Relation>>) -> Option<Vec<Mission>> {
+        if relations.is_none() { return None; }
+        let relations = relations.as_ref().unwrap();
         let mut rtn: Vec<Mission> = Vec::new();
-        for m in maps {
-            if m.selector.is_some() {
-                let selector = &m.selector.clone().unwrap();
+        for r in relations {
+            if r.selector.is_some() {
+                let selector = &r.selector.clone().unwrap();
                 if !Self::context_check(&instance.data.context, selector) {
                     continue;
                 }
@@ -72,25 +74,36 @@ impl Mission {
                     continue;
                 }
             }
-            let t = Mission {
-                to: m.to.clone(),
-                executor: m.executor.clone(),
-                last_states_demand: {
-                    match &m.selector {
+            let m = Mission {
+                to: r.to.clone(),
+                executor: r.executor.clone(),
+                states_demand: {
+                    let demand = match &r.selector {
                         None => None,
                         Some(demand) => {
-                            let last_demand = LastStatusDemand {
-                                target_states_include: demand.target_status_include.clone(),
-                                target_states_exclude: demand.target_status_exclude.clone(),
-                                target_states: m.target_states.clone(),
+                            let last_demand = StateDemand {
+                                last_states_include: demand.target_status_include.clone(),
+                                last_states_exclude: demand.target_status_exclude.clone(),
+                                target_states: None,
                             };
                             Some(last_demand)
                         }
+                    };
+                    if r.target_states.is_none() {
+                        demand
+                    } else {
+                        let mut d = demand.unwrap_or(StateDemand {
+                            last_states_include: Default::default(),
+                            last_states_exclude: Default::default(),
+                            target_states: None,
+                        });
+                        d.target_states = r.target_states.clone();
+                        Some(d)
                     }
                 },
-                use_upstream_id: m.use_upstream_id,
+                use_upstream_id: r.use_upstream_id,
             };
-            rtn.push(t);
+            rtn.push(m);
         }
         match rtn.len() {
             x  if x > 0 => {
@@ -130,7 +143,7 @@ impl Mission {
 }
 
 #[cfg(test)]
-mod selector_test {
+mod demand_test {
     use super::*;
 
     #[test]
@@ -141,28 +154,45 @@ mod selector_test {
 
         let mut instance = Instance::default();
 
+        let relation = Relation {
+            from: "/B/from:1".to_string(),
+            to: Meta::from_string("/B/to:1").unwrap(),
+            selector: Some(FlowSelector {
+                source_status_include: set,
+                source_status_exclude: HashSet::new(),
+                target_status_include: HashSet::new(),
+                target_status_exclude: HashSet::new(),
+                context_include: HashSet::new(),
+                context_exclude: HashSet::new(),
+            }),
+            executor: Executor::default(),
+            use_upstream_id: false,
+            target_states: None,
+        };
+
         // set status required.
-        let osf = vec![new_for_source_status_needed("/B/from:1", "/B/to:1", &set).unwrap()];
+        let osf = vec![relation];
+        let osf = Some(osf);
 
         // condition does not satisfy.
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.states = HashSet::new();
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.states.insert("three".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.states.insert("one".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
 
         // condition satisfy
         instance.data.states.insert("two".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_some(), true);
         instance.data.states.insert("four".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_some(), true);
     }
 
@@ -174,28 +204,45 @@ mod selector_test {
 
         let mut instance = Instance::default();
 
+        let relation = Relation {
+            from: "/B/from:1".to_string(),
+            to: Meta::from_string("/B/to:1").unwrap(),
+            selector: Some(FlowSelector {
+                source_status_include: HashSet::new(),
+                source_status_exclude: set,
+                target_status_include: HashSet::new(),
+                target_status_exclude: HashSet::new(),
+                context_include: HashSet::new(),
+                context_exclude: HashSet::new(),
+            }),
+            executor: Executor::default(),
+            use_upstream_id: false,
+            target_states: None,
+        };
+
         // set state required.
-        let osf = vec![new_for_source_status_excluded("/B/from:1", "/B/to:1", &set).unwrap()];
+        let osf = vec![relation];
+        let osf = Some(osf);
 
         // condition satisfy
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_some(), true);
         instance.data.states = HashSet::new();
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_some(), true);
         instance.data.states.insert("three".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_some(), true);
 
         // condition does not satisfy
         instance.data.states.insert("one".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.states.insert("two".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.states.remove("one");
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
     }
 
@@ -207,28 +254,45 @@ mod selector_test {
 
         let mut instance = Instance::default();
 
+        let relation = Relation {
+            from: "/B/from:1".to_string(),
+            to: Meta::from_string("/B/to:1").unwrap(),
+            selector: Some(FlowSelector {
+                source_status_include: HashSet::new(),
+                source_status_exclude: HashSet::new(),
+                target_status_include: HashSet::new(),
+                target_status_exclude: HashSet::new(),
+                context_include: set,
+                context_exclude: HashSet::new(),
+            }),
+            executor: Executor::default(),
+            use_upstream_id: false,
+            target_states: None,
+        };
+
         // set state required.
-        let osf = vec![new_for_context_include("/B/from:1", "/B/to:1", &set).unwrap()];
+        let osf = vec![relation];
+        let osf = Some(osf);
 
         // condition does not satisfy.
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.context = HashMap::new();
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.context.insert("three".to_string(), "three".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.context.insert("one".to_string(), "one".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
 
         // condition satisfy
         instance.data.context.insert("two".to_string(), "two".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_some(), true);
         instance.data.context.insert("four".to_string(), "four".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_some(), true);
     }
 
@@ -240,37 +304,159 @@ mod selector_test {
 
         let mut instance = Instance::default();
 
+        let relation = Relation {
+            from: "/B/from:1".to_string(),
+            to: Meta::from_string("/B/to:1").unwrap(),
+            selector: Some(FlowSelector {
+                source_status_include: HashSet::new(),
+                source_status_exclude: HashSet::new(),
+                target_status_include: HashSet::new(),
+                target_status_exclude: HashSet::new(),
+                context_include: HashSet::new(),
+                context_exclude: set,
+            }),
+            executor: Executor::default(),
+            use_upstream_id: false,
+            target_states: None,
+        };
+
         // set state required.
-        let osf = vec![new_for_context_excluded("/B/from:1", "/B/to:1", &set).unwrap()];
+        let osf = vec![relation];
+        let osf = Some(osf);
 
         // condition satisfy
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_some(), true);
         instance.data.context = HashMap::new();
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_some(), true);
         instance.data.context.insert("three".to_string(), "three".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_some(), true);
 
         // condition does not satisfy
         instance.data.context.insert("one".to_string(), "one".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.context.insert("two".to_string(), "two".to_string());
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
         instance.data.context.remove("one");
-        let option = Mission::filter_relations(&instance, &osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true);
     }
 
-    pub fn new_for_source_status_needed(from: &str, to: &str, set: &HashSet<String>) -> Result<Relation> {
-        Ok(Relation {
-            from: from.to_string(),
-            to: Meta::from_string(to)?,
+    #[test]
+    fn target_state_include_test() {
+        let mut set = HashSet::<String>::new();
+        set.insert("one".to_string());
+        set.insert("two".to_string());
+
+        let instance = Instance::default();
+
+        let relation = Relation {
+            from: "/B/from:1".to_string(),
+            to: Meta::from_string("/B/to:1").unwrap(),
             selector: Some(FlowSelector {
-                source_status_include: set.clone(),
+                source_status_include: HashSet::new(),
+                source_status_exclude: HashSet::new(),
+                target_status_include: set,
+                target_status_exclude: HashSet::new(),
+                context_include: HashSet::new(),
+                context_exclude: HashSet::new(),
+            }),
+            executor: Executor::default(),
+            use_upstream_id: false,
+            target_states: None,
+        };
+        // set state required.
+        let osf = Some(vec![relation]);
+
+        let option = Mission::get_by_instance(&instance, &osf);
+        assert_eq!(option.unwrap()[0].states_demand.as_ref().unwrap().last_states_include.len(), 2);
+    }
+
+    #[test]
+    fn target_state_exclude_test() {
+        let mut set = HashSet::<String>::new();
+        set.insert("one".to_string());
+        set.insert("two".to_string());
+
+        let instance = Instance::default();
+
+        let relation = Relation {
+            from: "/B/from:1".to_string(),
+            to: Meta::from_string("/B/to:1").unwrap(),
+            selector: Some(FlowSelector {
+                source_status_include: HashSet::new(),
+                source_status_exclude: HashSet::new(),
+                target_status_include: HashSet::new(),
+                target_status_exclude: set,
+                context_include: HashSet::new(),
+                context_exclude: HashSet::new(),
+            }),
+            executor: Executor::default(),
+            use_upstream_id: false,
+            target_states: None,
+        };
+        // set state required.
+        let osf = Some(vec![relation]);
+
+        let option = Mission::get_by_instance(&instance, &osf);
+        assert_eq!(option.unwrap()[0].states_demand.as_ref().unwrap().last_states_exclude.len(), 2);
+    }
+
+    #[test]
+    fn target_state_test() {
+        let mut set = HashSet::<String>::new();
+        set.insert("one".to_string());
+        set.insert("two".to_string());
+
+        let instance = Instance::default();
+
+        let relation = Relation {
+            from: "/B/from:1".to_string(),
+            to: Meta::from_string("/B/to:1").unwrap(),
+            selector: Some(FlowSelector {
+                source_status_include: HashSet::new(),
+                source_status_exclude: HashSet::new(),
+                target_status_include: set.clone(),
+                target_status_exclude: set,
+                context_include: HashSet::new(),
+                context_exclude: HashSet::new(),
+            }),
+            executor: Executor::default(),
+            use_upstream_id: false,
+            target_states: Some(TargetState {
+                add: Some(vec!["hello".to_string()]),
+                remove: None,
+            }),
+        };
+        // set state required.
+        let osf = Some(vec![relation]);
+
+        let option = Mission::get_by_instance(&instance, &osf);
+        let demand = option.unwrap();
+        let mission = &demand[0];
+        let demand = mission.states_demand.as_ref().unwrap();
+        assert_eq!(demand.last_states_include.len(), 2);
+        assert_eq!(demand.last_states_exclude.len(), 2);
+        assert_eq!(demand.target_states.is_some(), true);
+    }
+
+    #[test]
+    fn target_all_test() {
+        let mut set = HashSet::<String>::new();
+        set.insert("one".to_string());
+        set.insert("two".to_string());
+
+        let instance = Instance::default();
+
+        let relation = Relation {
+            from: "/B/from:1".to_string(),
+            to: Meta::from_string("/B/to:1").unwrap(),
+            selector: Some(FlowSelector {
+                source_status_include: HashSet::new(),
                 source_status_exclude: HashSet::new(),
                 target_status_include: HashSet::new(),
                 target_status_exclude: HashSet::new(),
@@ -279,64 +465,19 @@ mod selector_test {
             }),
             executor: Executor::default(),
             use_upstream_id: false,
-            target_states: None,
-        })
-    }
-
-    pub fn new_for_context_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<Relation> {
-        Ok(Relation {
-            from: from.to_string(),
-            to: Meta::from_string(to)?,
-            selector: Some(FlowSelector {
-                source_status_include: HashSet::new(),
-                source_status_exclude: HashSet::new(),
-                target_status_include: HashSet::new(),
-                target_status_exclude: HashSet::new(),
-                context_include: HashSet::new(),
-                context_exclude: set.clone(),
+            target_states: Some(TargetState {
+                add: Some(vec!["hello".to_string()]),
+                remove: None,
             }),
-            executor: Executor::default(),
-            use_upstream_id: false,
-            target_states: None,
-        })
-    }
+        };
+        // set state required.
+        let osf = Some(vec![relation]);
 
-    pub fn new_for_source_status_excluded(from: &str, to: &str, set: &HashSet<String>) -> Result<Relation> {
-        Ok(Relation {
-            from: from.to_string(),
-            to: Meta::from_string(to)?,
-            selector: Some(FlowSelector {
-                source_status_include: HashSet::new(),
-                source_status_exclude: set.clone(),
-                target_status_include: HashSet::new(),
-                target_status_exclude: HashSet::new(),
-                context_include: HashSet::new(),
-                context_exclude: HashSet::new(),
-            }),
-            executor: Executor::default(),
-            use_upstream_id: false,
-            target_states: None,
-        })
-    }
-
-    pub fn new_for_context_include(from: &str, to: &str, set: &HashSet<String>) -> Result<Relation> {
-        Ok(Relation {
-            from: from.to_string(),
-            to: Meta::from_string(to)?,
-            selector: Some(FlowSelector {
-                source_status_include: HashSet::new(),
-                source_status_exclude: HashSet::new(),
-                target_status_include: HashSet::new(),
-                target_status_exclude: HashSet::new(),
-                context_include: set.clone(),
-                context_exclude: HashSet::new(),
-            }),
-            executor: Executor::default(),
-            use_upstream_id: false,
-            target_states: None,
-        })
+        let option = Mission::get_by_instance(&instance, &osf);
+        assert_eq!(option.unwrap()[0].states_demand.as_ref().unwrap().target_states.is_some(), true);
     }
 }
+
 
 #[cfg(test)]
 mod other_test {
@@ -348,7 +489,8 @@ mod other_test {
     fn input_cfg_is_empty() {
         let instance = Instance::default();
         let osf: Vec<Relation> = Vec::new();
-        let option = Mission::filter_relations(&instance, &osf);
+        let osf = Some(osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.is_none(), true)
     }
 
@@ -356,7 +498,8 @@ mod other_test {
     fn no_selector_but_only_executor() {
         let instance = Instance::default();
         let osf = vec![new_for_local_executor("/B/from:1", "/B/to:1", "local").unwrap()];
-        let option = Mission::filter_relations(&instance, &osf);
+        let osf = Some(osf);
+        let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.unwrap().len(), 1)
     }
 

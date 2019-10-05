@@ -7,9 +7,9 @@ pub use self::instance::*;
 pub use self::relation_dao::*;
 pub use self::plan::*;
 pub use self::task::*;
-pub use self::meta::*;
+pub use self::meta_dao::*;
 
-mod meta;
+mod meta_dao;
 mod instance;
 mod error;
 mod task;
