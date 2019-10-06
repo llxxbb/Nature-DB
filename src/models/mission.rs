@@ -82,8 +82,8 @@ impl Mission {
                         None => None,
                         Some(demand) => {
                             let last_demand = StateDemand {
-                                last_states_include: demand.target_status_include.clone(),
-                                last_states_exclude: demand.target_status_exclude.clone(),
+                                last_states_include: demand.target_state_include.clone(),
+                                last_states_exclude: demand.target_state_exclude.clone(),
                                 target_states: None,
                             };
                             Some(last_demand)
@@ -128,12 +128,12 @@ impl Mission {
     }
 
     fn source_status_check(status: &HashSet<String>, selector: &FlowSelector) -> bool {
-        for exclude in &selector.source_status_exclude {
+        for exclude in &selector.source_state_exclude {
             if status.contains(exclude) {
                 return false;
             }
         }
-        for include in &selector.source_status_include {
+        for include in &selector.source_state_include {
             if !status.contains(include) {
                 return false;
             }
@@ -158,10 +158,10 @@ mod demand_test {
             from: "/B/from:1".to_string(),
             to: Meta::from_string("/B/to:1").unwrap(),
             selector: Some(FlowSelector {
-                source_status_include: set,
-                source_status_exclude: HashSet::new(),
-                target_status_include: HashSet::new(),
-                target_status_exclude: HashSet::new(),
+                source_state_include: set,
+                source_state_exclude: HashSet::new(),
+                target_state_include: HashSet::new(),
+                target_state_exclude: HashSet::new(),
                 context_include: HashSet::new(),
                 context_exclude: HashSet::new(),
             }),
@@ -208,10 +208,10 @@ mod demand_test {
             from: "/B/from:1".to_string(),
             to: Meta::from_string("/B/to:1").unwrap(),
             selector: Some(FlowSelector {
-                source_status_include: HashSet::new(),
-                source_status_exclude: set,
-                target_status_include: HashSet::new(),
-                target_status_exclude: HashSet::new(),
+                source_state_include: HashSet::new(),
+                source_state_exclude: set,
+                target_state_include: HashSet::new(),
+                target_state_exclude: HashSet::new(),
                 context_include: HashSet::new(),
                 context_exclude: HashSet::new(),
             }),
@@ -258,10 +258,10 @@ mod demand_test {
             from: "/B/from:1".to_string(),
             to: Meta::from_string("/B/to:1").unwrap(),
             selector: Some(FlowSelector {
-                source_status_include: HashSet::new(),
-                source_status_exclude: HashSet::new(),
-                target_status_include: HashSet::new(),
-                target_status_exclude: HashSet::new(),
+                source_state_include: HashSet::new(),
+                source_state_exclude: HashSet::new(),
+                target_state_include: HashSet::new(),
+                target_state_exclude: HashSet::new(),
                 context_include: set,
                 context_exclude: HashSet::new(),
             }),
@@ -308,10 +308,10 @@ mod demand_test {
             from: "/B/from:1".to_string(),
             to: Meta::from_string("/B/to:1").unwrap(),
             selector: Some(FlowSelector {
-                source_status_include: HashSet::new(),
-                source_status_exclude: HashSet::new(),
-                target_status_include: HashSet::new(),
-                target_status_exclude: HashSet::new(),
+                source_state_include: HashSet::new(),
+                source_state_exclude: HashSet::new(),
+                target_state_include: HashSet::new(),
+                target_state_exclude: HashSet::new(),
                 context_include: HashSet::new(),
                 context_exclude: set,
             }),
@@ -358,10 +358,10 @@ mod demand_test {
             from: "/B/from:1".to_string(),
             to: Meta::from_string("/B/to:1").unwrap(),
             selector: Some(FlowSelector {
-                source_status_include: HashSet::new(),
-                source_status_exclude: HashSet::new(),
-                target_status_include: set,
-                target_status_exclude: HashSet::new(),
+                source_state_include: HashSet::new(),
+                source_state_exclude: HashSet::new(),
+                target_state_include: set,
+                target_state_exclude: HashSet::new(),
                 context_include: HashSet::new(),
                 context_exclude: HashSet::new(),
             }),
@@ -388,10 +388,10 @@ mod demand_test {
             from: "/B/from:1".to_string(),
             to: Meta::from_string("/B/to:1").unwrap(),
             selector: Some(FlowSelector {
-                source_status_include: HashSet::new(),
-                source_status_exclude: HashSet::new(),
-                target_status_include: HashSet::new(),
-                target_status_exclude: set,
+                source_state_include: HashSet::new(),
+                source_state_exclude: HashSet::new(),
+                target_state_include: HashSet::new(),
+                target_state_exclude: set,
                 context_include: HashSet::new(),
                 context_exclude: HashSet::new(),
             }),
@@ -418,10 +418,10 @@ mod demand_test {
             from: "/B/from:1".to_string(),
             to: Meta::from_string("/B/to:1").unwrap(),
             selector: Some(FlowSelector {
-                source_status_include: HashSet::new(),
-                source_status_exclude: HashSet::new(),
-                target_status_include: set.clone(),
-                target_status_exclude: set,
+                source_state_include: HashSet::new(),
+                source_state_exclude: HashSet::new(),
+                target_state_include: set.clone(),
+                target_state_exclude: set,
                 context_include: HashSet::new(),
                 context_exclude: HashSet::new(),
             }),
@@ -456,10 +456,10 @@ mod demand_test {
             from: "/B/from:1".to_string(),
             to: Meta::from_string("/B/to:1").unwrap(),
             selector: Some(FlowSelector {
-                source_status_include: HashSet::new(),
-                source_status_exclude: HashSet::new(),
-                target_status_include: HashSet::new(),
-                target_status_exclude: HashSet::new(),
+                source_state_include: HashSet::new(),
+                source_state_exclude: HashSet::new(),
+                target_state_include: HashSet::new(),
+                target_state_exclude: HashSet::new(),
                 context_include: HashSet::new(),
                 context_exclude: HashSet::new(),
             }),
