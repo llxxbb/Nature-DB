@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use diesel::prelude::*;
 
-use crate::{CONN, CONNNECTION, MetaCacheGetter, OneStepFlowSettings, Relation};
+use crate::{CONN, CONNNECTION, MetaCacheGetter, RelationSettings, Relation};
 use crate::raw_models::RawRelation;
 
 use super::*;
@@ -99,7 +99,7 @@ impl RelationDaoImpl {
         let one = RawRelation::new(
             from,
             to,
-            &OneStepFlowSettings {
+            &RelationSettings {
                 selector: None,
                 executor: vec![Executor {
                     protocol: Protocol::from_str(protocol)?,

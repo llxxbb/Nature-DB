@@ -3,7 +3,7 @@ use nature_common::{Executor, TargetState};
 use crate::FlowSelector;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
-pub struct OneStepFlowSettings {
+pub struct RelationSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub selector: Option<FlowSelector>,
@@ -29,7 +29,7 @@ mod test {
 
     #[test]
     fn none_for_selector_one_step_flow_settings() {
-        let setting = OneStepFlowSettings {
+        let setting = RelationSettings {
             selector: None,
             executor: vec![],
             use_upstream_id: false,
@@ -38,13 +38,13 @@ mod test {
         let result = serde_json::to_string(&setting).unwrap();
         let res_str = r#"{"executor":[]}"#;
         assert_eq!(result, res_str);
-        let res_obj: OneStepFlowSettings = serde_json::from_str(res_str).unwrap();
+        let res_obj: RelationSettings = serde_json::from_str(res_str).unwrap();
         assert_eq!(res_obj, setting);
     }
 
     #[test]
     fn string_to_setting_no_selector() {
-        let setting = OneStepFlowSettings {
+        let setting = RelationSettings {
             selector: None,
             executor: vec![Executor {
                 protocol: Protocol::LocalRust,
@@ -58,7 +58,7 @@ mod test {
         let result = serde_json::to_string(&setting).unwrap();
         let res_str = r#"{"executor":[{"protocol":"LocalRust","url":"nature_demo.dll:order_new","proportion":1}],"use_upstream_id":true,"target_states":{"add":["new"]}}"#;
         assert_eq!(result, res_str);
-        let res_obj: OneStepFlowSettings = serde_json::from_str(res_str).unwrap();
+        let res_obj: RelationSettings = serde_json::from_str(res_str).unwrap();
         assert_eq!(res_obj, setting);
     }
 }

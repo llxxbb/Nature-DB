@@ -8,7 +8,7 @@ use rand::{Rng, thread_rng};
 
 use nature_common::{Executor, Meta, NatureError, Result, TargetState};
 
-use crate::{FlowSelector, MetaCacheGetter, MetaGetter, OneStepFlowSettings, RawRelation};
+use crate::{FlowSelector, MetaCacheGetter, MetaGetter, RelationSettings, RawRelation};
 
 /// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
@@ -30,7 +30,7 @@ impl Iterator for Relation {
 
 impl Relation {
     pub fn from_raw(val: RawRelation, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter) -> Result<Vec<Relation>> {
-        let settings = serde_json::from_str::<OneStepFlowSettings>(&val.settings)?;
+        let settings = serde_json::from_str::<RelationSettings>(&val.settings)?;
         let selector = &settings.selector;
         let mut group = String::new();
         let id = uuid::Uuid::new_v4().to_string();
@@ -66,7 +66,7 @@ impl Relation {
         Ok(rtn)
     }
 
-    fn check_converter(meta_to: &str, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter, settings: &OneStepFlowSettings) -> Result<Meta> {
+    fn check_converter(meta_to: &str, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter, settings: &RelationSettings) -> Result<Meta> {
         let m_to = meta_cache_getter(meta_to, meta_getter)?;
         if let Some(ts) = &settings.target_states {
             if let Some(x) = &ts.add {
@@ -151,7 +151,7 @@ mod test_from_raw {
 
     #[test]
     fn one_group_is_ok() {
-        let settings = OneStepFlowSettings {
+        let settings = RelationSettings {
             selector: None,
             executor: vec![
                 Executor {
@@ -176,7 +176,7 @@ mod test_from_raw {
 
     #[test]
     fn multiple_group_is_illegal() {
-        let settings = OneStepFlowSettings {
+        let settings = RelationSettings {
             selector: None,
             executor: vec![
                 Executor {
