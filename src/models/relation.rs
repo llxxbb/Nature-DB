@@ -8,7 +8,7 @@ use rand::{Rng, thread_rng};
 
 use nature_common::{Executor, Meta, NatureError, Result, TargetState};
 
-use crate::{FlowSelector, MetaCacheGetter, MetaGetter, RelationSettings, RawRelation};
+use crate::{FlowSelector, MetaCacheGetter, MetaGetter, RawRelation, RelationSettings};
 
 /// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
@@ -36,33 +36,40 @@ impl Relation {
         let id = uuid::Uuid::new_v4().to_string();
         // check group: only one group is allowed.
         let mut group_check = true;
-        settings.executor.iter().for_each(|e| {
-            if group.is_empty() {
-                group = e.group.clone();
+        if let Some(e) = &settings.executor {
+            e.iter().for_each(|e| {
                 if group.is_empty() {
-                    group = id.clone()
+                    group = e.group.clone();
+                    if group.is_empty() {
+                        group = id.clone()
+                    }
+                } else if group != e.group {
+                    group_check = false;
                 }
-            } else if group != e.group {
-                group_check = false;
-            }
-        });
+            });
+        }
         if !group_check {
             return Err(NatureError::VerifyError("in one setting all executor's group must be same.".to_string()));
         }
         let use_upstream_id = settings.use_upstream_id;
         let m_to = Relation::check_converter(&val.to_meta, meta_cache_getter, meta_getter, &settings)?;
-        let rtn = settings.executor.iter().map(|e| {
-            let mut e2 = e.clone();
-            e2.group = group.clone();
-            Relation {
-                from: val.from_meta.to_string(),
-                to: m_to.clone(),
-                selector: selector.clone(),
-                executor: e2,
-                use_upstream_id,
-                target_states: settings.target_states.clone(),
+        let rtn = match &settings.executor {
+            Some(e) => {
+                e.iter().map(|e| {
+                    let mut e2 = e.clone();
+                    e2.group = group.clone();
+                    Relation {
+                        from: val.from_meta.to_string(),
+                        to: m_to.clone(),
+                        selector: selector.clone(),
+                        executor: e2,
+                        use_upstream_id,
+                        target_states: settings.target_states.clone(),
+                    }
+                }).collect()
             }
-        }).collect();
+            None => vec![]
+        };
         Ok(rtn)
     }
 
@@ -153,14 +160,14 @@ mod test_from_raw {
     fn one_group_is_ok() {
         let settings = RelationSettings {
             selector: None,
-            executor: vec![
+            executor: Some(vec![
                 Executor {
                     protocol: Protocol::LocalRust,
                     url: "url_one".to_string(),
                     group: "grp_one".to_string(),
                     proportion: 100,
                 },
-            ],
+            ]),
             use_upstream_id: false,
             target_states: None,
         };
@@ -178,7 +185,7 @@ mod test_from_raw {
     fn multiple_group_is_illegal() {
         let settings = RelationSettings {
             selector: None,
-            executor: vec![
+            executor: Some(vec![
                 Executor {
                     protocol: Protocol::LocalRust,
                     url: "url_one".to_string(),
@@ -191,7 +198,7 @@ mod test_from_raw {
                     group: "url_two".to_string(),
                     proportion: 200,
                 },
-            ],
+            ]),
             use_upstream_id: false,
             target_states: None,
         };

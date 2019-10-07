@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use diesel::prelude::*;
 
-use crate::{CONN, CONNNECTION, MetaCacheGetter, RelationSettings, Relation};
+use crate::{CONN, CONNNECTION, MetaCacheGetter, Relation, RelationSettings};
 use crate::raw_models::RawRelation;
 
 use super::*;
@@ -101,12 +101,12 @@ impl RelationDaoImpl {
             to,
             &RelationSettings {
                 selector: None,
-                executor: vec![Executor {
+                executor: Some(vec![Executor {
                     protocol: Protocol::from_str(protocol)?,
                     url: url.to_string(),
                     group: "".to_string(),
                     proportion: 1,
-                }],
+                }]),
                 use_upstream_id: false,
                 target_states: None,
             },

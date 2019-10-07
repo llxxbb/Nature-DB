@@ -7,7 +7,9 @@ pub struct RelationSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub selector: Option<FlowSelector>,
-    pub executor: Vec<Executor>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub executor: Option<Vec<Executor>>,
     /// if the downstream is state meta, when `is_main` is set to true, the upstream's id will be used as downstream's id
     #[serde(skip_serializing_if = "is_false")]
     #[serde(default)]
@@ -33,7 +35,6 @@ mod test {
     fn selector_test() {
         let mut set = HashSet::<String>::new();
         set.insert("one".to_string());
-        set.insert("two".to_string());
 
         let setting = RelationSettings {
             selector: Some(FlowSelector {
@@ -44,12 +45,12 @@ mod test {
                 context_include: Default::default(),
                 context_exclude: Default::default(),
             }),
-            executor: vec![],
+            executor: None,
             use_upstream_id: false,
             target_states: None,
         };
         let result = serde_json::to_string(&setting).unwrap();
-        let res_str = r#"{"selector":{"source_status_include":["one","two"]},"executor":[]}"#;
+        let res_str = r#"{"selector":{"source_state_include":["one"]}}"#;
         assert_eq!(result, res_str);
         let res_obj: RelationSettings = serde_json::from_str(res_str).unwrap();
         assert_eq!(res_obj, setting);
@@ -59,12 +60,12 @@ mod test {
     fn empty_executor_test() {
         let setting = RelationSettings {
             selector: None,
-            executor: vec![],
+            executor: None,
             use_upstream_id: false,
             target_states: None,
         };
         let result = serde_json::to_string(&setting).unwrap();
-        let res_str = r#"{"executor":[]}"#;
+        let res_str = r#"{}"#;
         assert_eq!(result, res_str);
         let res_obj: RelationSettings = serde_json::from_str(res_str).unwrap();
         assert_eq!(res_obj, setting);
@@ -74,12 +75,12 @@ mod test {
     fn executor_test() {
         let setting = RelationSettings {
             selector: None,
-            executor: vec![Executor {
+            executor: Some(vec![Executor {
                 protocol: Protocol::LocalRust,
                 url: "nature_demo.dll:order_new".to_string(),
                 group: "".to_string(),
                 proportion: 1,
-            }],
+            }]),
             use_upstream_id: false,
             target_states: None,
         };
@@ -94,12 +95,12 @@ mod test {
     fn use_upstream_id() {
         let setting = RelationSettings {
             selector: None,
-            executor: vec![],
+            executor: None,
             use_upstream_id: true,
             target_states: None,
         };
         let result = serde_json::to_string(&setting).unwrap();
-        let res_str = r#"{"executor":[],"use_upstream_id":true}"#;
+        let res_str = r#"{"use_upstream_id":true}"#;
         assert_eq!(result, res_str);
         let res_obj: RelationSettings = serde_json::from_str(res_str).unwrap();
         assert_eq!(res_obj, setting);
@@ -109,12 +110,12 @@ mod test {
     fn target_state() {
         let setting = RelationSettings {
             selector: None,
-            executor: vec![],
+            executor: None,
             use_upstream_id: false,
             target_states: Some(TargetState { add: Some(vec!["new".to_string()]), remove: None }),
         };
         let result = serde_json::to_string(&setting).unwrap();
-        let res_str = r#"{"executor":[],"target_states":{"add":["new"]}}"#;
+        let res_str = r#"{"target_states":{"add":["new"]}}"#;
         assert_eq!(result, res_str);
         let res_obj: RelationSettings = serde_json::from_str(res_str).unwrap();
         assert_eq!(res_obj, setting);
