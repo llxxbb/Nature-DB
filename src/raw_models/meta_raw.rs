@@ -98,6 +98,7 @@ impl TryInto<Meta> for RawMeta {
         if rtn.state.is_some() {
             rtn.is_state = true;
         }
+        debug!("get meta:{}", rtn.get_string());
         Ok(rtn)
     }
 }

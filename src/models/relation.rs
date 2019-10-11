@@ -32,44 +32,40 @@ impl Relation {
     pub fn from_raw(val: RawRelation, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter) -> Result<Vec<Relation>> {
         let settings = serde_json::from_str::<RelationSettings>(&val.settings)?;
         let selector = &settings.selector;
+        let m_to = Relation::check_converter(&val.to_meta, meta_cache_getter, meta_getter, &settings)?;
         let mut group = String::new();
-        let id = uuid::Uuid::new_v4().to_string();
-        // check group: only one group is allowed.
-        let mut group_check = true;
+        let mut rtn: Vec<Relation> = vec![];
         if let Some(e) = &settings.executor {
-            e.iter().for_each(|e| {
+            let find = e.iter().find(|e| {
+                // check group: only one group is allowed.
                 if group.is_empty() {
                     group = e.group.clone();
                     if group.is_empty() {
-                        group = id.clone()
+                        group = uuid::Uuid::new_v4().to_string();
                     }
                 } else if group != e.group {
-                    group_check = false;
+                    return true;
                 }
+                // generate relation
+                let mut  e2 = (*e).clone();
+                e2.group = group.clone();
+                let r = Relation {
+                    from: val.from_meta.to_string(),
+                    to: m_to.clone(),
+                    selector: selector.clone(),
+                    executor: e2,
+                    use_upstream_id: settings.use_upstream_id,
+                    target_states: settings.target_states.clone(),
+                };
+                rtn.push(r);
+                // return find result
+                false
             });
-        }
-        if !group_check {
-            return Err(NatureError::VerifyError("in one setting all executor's group must be same.".to_string()));
-        }
-        let use_upstream_id = settings.use_upstream_id;
-        let m_to = Relation::check_converter(&val.to_meta, meta_cache_getter, meta_getter, &settings)?;
-        let rtn = match &settings.executor {
-            Some(e) => {
-                e.iter().map(|e| {
-                    let mut e2 = e.clone();
-                    e2.group = group.clone();
-                    Relation {
-                        from: val.from_meta.to_string(),
-                        to: m_to.clone(),
-                        selector: selector.clone(),
-                        executor: e2,
-                        use_upstream_id,
-                        target_states: settings.target_states.clone(),
-                    }
-                }).collect()
+            if find.is_some() {
+                return Err(NatureError::VerifyError("in one setting all executor's group must be same.".to_string()));
             }
-            None => vec![]
-        };
+        }
+        debug!("get relation for meta:{}", m_to.get_string());
         Ok(rtn)
     }
 
@@ -189,7 +185,7 @@ mod test_from_raw {
                 Executor {
                     protocol: Protocol::LocalRust,
                     url: "url_one".to_string(),
-                    group: "grp_one".to_string(),
+                    group: "".to_string(),
                     proportion: 100,
                 },
                 Executor {
@@ -203,8 +199,8 @@ mod test_from_raw {
             target_states: None,
         };
         let raw = RawRelation {
-            from_meta: "from".to_string(),
-            to_meta: "to".to_string(),
+            from_meta: "/B/from:1".to_string(),
+            to_meta: "/B/to:1".to_string(),
             settings: serde_json::to_string(&settings).unwrap(),
             flag: 1,
         };

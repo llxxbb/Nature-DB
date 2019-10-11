@@ -20,7 +20,6 @@ pub struct MetaCacheImpl;
 
 impl MetaCacheImpl {
     pub fn get(meta_str: &str, getter: MetaGetter) -> Result<Meta> {
-//        debug!("get `Meta` from cache for meta : {}", meta_str);
         if meta_str.is_empty() {
             let error = NatureError::VerifyError("[biz] can not be empty!".to_string());
             warn!("{}", error);
