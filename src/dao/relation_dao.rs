@@ -36,13 +36,11 @@ impl RelationDaoImpl {
                             multi.into_iter().for_each(|e| rtn.push(e))
                         }
                         Err(e) => {
-                            dbg!(&e);
                             warn!("raw to `one_step_flow` occur error : {:?}", e);
                         }
                     }
                 }
                 if rtn.is_empty() {
-                    dbg!(&rtn);
                     Ok(None)
                 } else {
                     Ok(Some(rtn))

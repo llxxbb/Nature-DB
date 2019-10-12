@@ -225,12 +225,12 @@ mod test {
             from: from.to_string(),
             to: Meta::from_string(to)?,
             selector: None,
-            executor: Executor {
+            executor: Some(Executor {
                 protocol: Protocol::LocalRust,
                 url: local_executor.to_string(),
                 group: group.to_string(),
                 proportion,
-            },
+            }),
             use_upstream_id: false,
             target_states: None,
         })

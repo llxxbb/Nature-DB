@@ -16,7 +16,8 @@ pub struct Relation {
     pub from: String,
     pub to: Meta,
     pub selector: Option<FlowSelector>,
-    pub executor: Executor,
+    pub executor: Option<Executor>,
+    pub weight: u32,
     pub use_upstream_id: bool,
     pub target_states: Option<TargetState>,
 }
@@ -30,7 +31,14 @@ impl Iterator for Relation {
 
 impl Relation {
     pub fn from_raw(val: RawRelation, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter) -> Result<Vec<Relation>> {
-        let settings = serde_json::from_str::<RelationSettings>(&val.settings)?;
+        let settings = match serde_json::from_str::<RelationSettings>(&val.settings) {
+            Ok(s) => s,
+            Err(e) => {
+                let msg = format!("{}'s setting format error: {:?}", val.get_string(), e);
+                warn!("{}", &msg);
+                return Err(NatureError::VerifyError(msg));
+            }
+        };
         let selector = &settings.selector;
         let m_to = Relation::check_converter(&val.to_meta, meta_cache_getter, meta_getter, &settings)?;
         let mut group = String::new();
@@ -47,13 +55,13 @@ impl Relation {
                     return true;
                 }
                 // generate relation
-                let mut  e2 = (*e).clone();
+                let mut e2 = (*e).clone();
                 e2.group = group.clone();
                 let r = Relation {
                     from: val.from_meta.to_string(),
                     to: m_to.clone(),
                     selector: selector.clone(),
-                    executor: e2,
+                    executor: Some(e2),
                     use_upstream_id: settings.use_upstream_id,
                     target_states: settings.target_states.clone(),
                 };
@@ -64,8 +72,22 @@ impl Relation {
             if find.is_some() {
                 return Err(NatureError::VerifyError("in one setting all executor's group must be same.".to_string()));
             }
+        } else {
+            if let Some(s) = m_to.setting {
+                if s.is_empty_content {
+                    let r = Relation {
+                        from: val.from_meta.to_string(),
+                        to: m_to.clone(),
+                        selector: selector.clone(),
+                        executor: None,
+                        use_upstream_id: settings.use_upstream_id,
+                        target_states: settings.target_states.clone(),
+                    };
+                    rtn.push(r);
+                }
+            }
         }
-        debug!("get relation for meta:{}", m_to.get_string());
+        debug!("load {}", val.get_string());
         Ok(rtn)
     }
 
@@ -94,12 +116,15 @@ impl Relation {
         let mut rtn: Vec<Relation> = Vec::new();
         let rnd = thread_rng().gen::<f32>();
         for m in relations {
-            match balances.get(&m.executor) {
-                Some(rng) => if rng.contains(&rnd) {
-                    rtn.push(m.clone());
-                },
+            match &m.executor {
+                Some(e) => match balances.get(e) {
+                    Some(rng) => if rng.contains(&rnd) {
+                        rtn.push(m.clone());
+                    },
+                    None => rtn.push(m.clone())
+                }
                 None => rtn.push(m.clone())
-            };
+            }
         }
         rtn
     }
@@ -109,8 +134,11 @@ impl Relation {
         let mut rtn: HashMap<Executor, Range<f32>> = HashMap::new();
         for group in groups.values() {
             // summarize the weight for one group
-            let sum = group.iter().fold(0u32, |sum, mapping| {
-                sum + mapping.executor.proportion
+            let sum = group.iter().fold(0u32, |sum, r| {
+                match r.executor {
+                    Some(e) => sum + e.proportion,
+                    None => sum + 1
+                }
             });
             if sum == 0 {
                 continue;
@@ -118,14 +146,14 @@ impl Relation {
             // give a certain range for every participants
             let mut begin = 0.0;
             let last = group.last().unwrap();
-            for m in group {
-                let w = m.executor.proportion as f32 / sum as f32;
+            for r in group {
+                let w = r.executor.proportion as f32 / sum as f32;
                 let end = begin + w;
-                if ptr::eq(m, last) {
+                if ptr::eq(r, last) {
                     // last must great 1
-                    rtn.insert(m.executor.clone(), begin..1.1);
+                    rtn.insert(r.executor.clone(), begin..1.1);
                 } else {
-                    rtn.insert(m.executor.clone(), begin..end);
+                    rtn.insert(r.executor.clone(), begin..end);
                 }
                 begin = end;
             }
@@ -151,6 +179,18 @@ mod test_from_raw {
     use crate::RawMeta;
 
     use super::*;
+
+    #[test]
+    fn setting_error_test() {
+        let raw = RawRelation {
+            from_meta: "/B/from:1".to_string(),
+            to_meta: "/B/to:1".to_string(),
+            settings: "dd".to_string(),
+            flag: 1,
+        };
+        let rtn = Relation::from_raw(raw, meta_cache, meta);
+        assert_eq!(rtn.err().unwrap().to_string().contains("relation[/B/from:1->/B/to:1]"), true);
+    }
 
     #[test]
     fn one_group_is_ok() {
