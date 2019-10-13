@@ -44,7 +44,6 @@ impl RelationCacheImpl {
                 (None, None)
             }
             Ok(Some(relations)) => {
-                debug!("Get relations of `Meta`: {}， number : {}", meta_from, relations.len());
                 let label_groups = Relation::get_label_groups(&relations);
                 let weight_cal = Relation::weight_calculate(&label_groups);
                 (Some(relations), Some(weight_cal))
@@ -225,12 +224,12 @@ mod test {
             from: from.to_string(),
             to: Meta::from_string(to)?,
             selector: None,
-            executor: Some(Executor {
+            executor: Executor {
                 protocol: Protocol::LocalRust,
                 url: local_executor.to_string(),
                 group: group.to_string(),
                 proportion,
-            }),
+            },
             use_upstream_id: false,
             target_states: None,
         })

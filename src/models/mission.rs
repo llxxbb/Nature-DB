@@ -8,7 +8,7 @@ use crate::{FlowSelector, Relation};
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct Mission {
     pub to: Meta,
-    pub executor: Option<Executor>,
+    pub executor: Executor,
     pub states_demand: Option<StateDemand>,
     pub use_upstream_id: bool,
 }
@@ -49,7 +49,7 @@ impl Mission {
             };
             let mission = Mission {
                 to: t,
-                executor: Some(d.fun.clone()),
+                executor: d.fun.clone(),
                 states_demand: None,
                 use_upstream_id: d.use_upstream_id,
             };
@@ -165,7 +165,7 @@ mod demand_test {
                 context_include: HashSet::new(),
                 context_exclude: HashSet::new(),
             }),
-            executor: None,
+            executor: Executor::default(),
             use_upstream_id: false,
             target_states: None,
         };
@@ -215,7 +215,7 @@ mod demand_test {
                 context_include: HashSet::new(),
                 context_exclude: HashSet::new(),
             }),
-            executor: None,
+            executor: Executor::default(),
             use_upstream_id: false,
             target_states: None,
         };
@@ -265,7 +265,7 @@ mod demand_test {
                 context_include: set,
                 context_exclude: HashSet::new(),
             }),
-            executor: None,
+            executor: Executor::default(),
             use_upstream_id: false,
             target_states: None,
         };
@@ -315,7 +315,7 @@ mod demand_test {
                 context_include: HashSet::new(),
                 context_exclude: set,
             }),
-            executor: None,
+            executor: Executor::default(),
             use_upstream_id: false,
             target_states: None,
         };
@@ -365,7 +365,7 @@ mod demand_test {
                 context_include: HashSet::new(),
                 context_exclude: HashSet::new(),
             }),
-            executor: None,
+            executor: Executor::default(),
             use_upstream_id: false,
             target_states: None,
         };
@@ -395,7 +395,7 @@ mod demand_test {
                 context_include: HashSet::new(),
                 context_exclude: HashSet::new(),
             }),
-            executor: None,
+            executor: Executor::default(),
             use_upstream_id: false,
             target_states: None,
         };
@@ -425,7 +425,7 @@ mod demand_test {
                 context_include: HashSet::new(),
                 context_exclude: HashSet::new(),
             }),
-            executor: None,
+            executor: Executor::default(),
             use_upstream_id: false,
             target_states: Some(TargetState {
                 add: Some(vec!["hello".to_string()]),
@@ -463,7 +463,7 @@ mod demand_test {
                 context_include: HashSet::new(),
                 context_exclude: HashSet::new(),
             }),
-            executor: None,
+            executor: Executor::default(),
             use_upstream_id: false,
             target_states: Some(TargetState {
                 add: Some(vec!["hello".to_string()]),
@@ -508,12 +508,12 @@ mod other_test {
             from: from.to_string(),
             to: Meta::from_string(to)?,
             selector: None,
-            executor: Some(Executor {
+            executor: Executor {
                 protocol: Protocol::LocalRust,
                 url: local_executor.to_string(),
                 group: "".to_string(),
                 proportion: 1,
-            }),
+            },
             use_upstream_id: false,
             target_states: None,
         })

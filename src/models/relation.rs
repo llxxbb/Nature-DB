@@ -6,7 +6,7 @@ use std::string::ToString;
 
 use rand::{Rng, thread_rng};
 
-use nature_common::{Executor, Meta, NatureError, Result, TargetState};
+use nature_common::{Executor, Meta, NatureError, Protocol, Result, TargetState};
 
 use crate::{FlowSelector, MetaCacheGetter, MetaGetter, RawRelation, RelationSettings};
 
@@ -16,8 +16,7 @@ pub struct Relation {
     pub from: String,
     pub to: Meta,
     pub selector: Option<FlowSelector>,
-    pub executor: Option<Executor>,
-    pub weight: u32,
+    pub executor: Executor,
     pub use_upstream_id: bool,
     pub target_states: Option<TargetState>,
 }
@@ -43,8 +42,14 @@ impl Relation {
         let m_to = Relation::check_converter(&val.to_meta, meta_cache_getter, meta_getter, &settings)?;
         let mut group = String::new();
         let mut rtn: Vec<Relation> = vec![];
+        let mut err: String = String::new();
         if let Some(e) = &settings.executor {
             let find = e.iter().find(|e| {
+                // check Protocol type
+                if e.protocol == Protocol::Auto {
+                    err = format!("{} Protocol::Auto can not be used by user. ", val.get_string());
+                    return true;
+                }
                 // check group: only one group is allowed.
                 if group.is_empty() {
                     group = e.group.clone();
@@ -52,6 +57,7 @@ impl Relation {
                         group = uuid::Uuid::new_v4().to_string();
                     }
                 } else if group != e.group {
+                    err = "in one setting all executor's group must be same.".to_string();
                     return true;
                 }
                 // generate relation
@@ -61,7 +67,7 @@ impl Relation {
                     from: val.from_meta.to_string(),
                     to: m_to.clone(),
                     selector: selector.clone(),
-                    executor: Some(e2),
+                    executor: e2,
                     use_upstream_id: settings.use_upstream_id,
                     target_states: settings.target_states.clone(),
                 };
@@ -70,16 +76,17 @@ impl Relation {
                 false
             });
             if find.is_some() {
-                return Err(NatureError::VerifyError("in one setting all executor's group must be same.".to_string()));
+                warn!("{}", &err);
+                return Err(NatureError::VerifyError(err));
             }
         } else {
-            if let Some(s) = m_to.setting {
+            if let Some(s) = &m_to.setting {
                 if s.is_empty_content {
                     let r = Relation {
                         from: val.from_meta.to_string(),
                         to: m_to.clone(),
                         selector: selector.clone(),
-                        executor: None,
+                        executor: Executor::new_auto(),
                         use_upstream_id: settings.use_upstream_id,
                         target_states: settings.target_states.clone(),
                     };
@@ -116,15 +123,12 @@ impl Relation {
         let mut rtn: Vec<Relation> = Vec::new();
         let rnd = thread_rng().gen::<f32>();
         for m in relations {
-            match &m.executor {
-                Some(e) => match balances.get(e) {
-                    Some(rng) => if rng.contains(&rnd) {
-                        rtn.push(m.clone());
-                    },
-                    None => rtn.push(m.clone())
-                }
+            match balances.get(&m.executor) {
+                Some(rng) => if rng.contains(&rnd) {
+                    rtn.push(m.clone());
+                },
                 None => rtn.push(m.clone())
-            }
+            };
         }
         rtn
     }
@@ -134,11 +138,8 @@ impl Relation {
         let mut rtn: HashMap<Executor, Range<f32>> = HashMap::new();
         for group in groups.values() {
             // summarize the weight for one group
-            let sum = group.iter().fold(0u32, |sum, r| {
-                match r.executor {
-                    Some(e) => sum + e.proportion,
-                    None => sum + 1
-                }
+            let sum = group.iter().fold(0u32, |sum, mapping| {
+                sum + mapping.executor.proportion
             });
             if sum == 0 {
                 continue;
@@ -146,14 +147,14 @@ impl Relation {
             // give a certain range for every participants
             let mut begin = 0.0;
             let last = group.last().unwrap();
-            for r in group {
-                let w = r.executor.proportion as f32 / sum as f32;
+            for m in group {
+                let w = m.executor.proportion as f32 / sum as f32;
                 let end = begin + w;
-                if ptr::eq(r, last) {
+                if ptr::eq(m, last) {
                     // last must great 1
-                    rtn.insert(r.executor.clone(), begin..1.1);
+                    rtn.insert(m.executor.clone(), begin..1.1);
                 } else {
-                    rtn.insert(r.executor.clone(), begin..end);
+                    rtn.insert(m.executor.clone(), begin..end);
                 }
                 begin = end;
             }
