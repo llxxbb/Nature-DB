@@ -1,9 +1,8 @@
-use std::collections::HashSet;
 use std::convert::TryInto;
 
 use chrono::prelude::*;
 
-use nature_common::{Meta, MetaSetting, NatureError, Result, State, States};
+use nature_common::{Meta, NatureError, State};
 
 use super::super::schema::meta;
 
@@ -54,12 +53,12 @@ impl From<Meta> for RawMeta {
             full_key: m.get_full_key(),
             description: None,
             version: m.version,
-            states: match m.state {
+            states: match m.get_states() {
                 None => None,
                 Some(x) => Some(State::states_to_string(&x, ","))
             },
             fields: None,
-            config: match m.setting {
+            config: match m.get_setting() {
                 None => "".to_string(),
                 Some(s) => serde_json::to_string(&s).unwrap(),
             },
@@ -77,10 +76,7 @@ impl TryInto<Meta> for RawMeta {
         if let Some(s) = &self.states {
             if !s.is_empty() {
                 match State::string_to_states(&s) {
-                    Ok((ss, _)) => {
-                        self.check_name(&ss)?;
-                        rtn.state = Some(ss);
-                    }
+                    Ok((ss, _)) => { let _ = rtn.set_states(Some(ss)); }
                     Err(e) => {
                         warn!("meta : {} init error: {:?}", &self.full_key, e);
                         return Err(e);
@@ -88,35 +84,16 @@ impl TryInto<Meta> for RawMeta {
                 }
             }
         }
-        if !self.config.is_empty() {
-            let setting: MetaSetting = serde_json::from_str(&self.config)?;
-            if setting.is_state {
-                rtn.is_state = true;
-            }
-            rtn.setting = Some(setting);
-        }
-        if rtn.state.is_some() {
-            rtn.is_state = true;
-        }
+        let _ = rtn.set_setting(&self.config);
         debug!("get meta:{}", rtn.get_string());
         Ok(rtn)
     }
 }
 
-impl RawMeta {
-    fn check_name(&self, s: &States) -> Result<()> {
-        let mut set: HashSet<String> = HashSet::new();
-        for one in s {
-            if !set.insert(one.get_name()) {
-                return Err(NatureError::VerifyError(format!("repeated state name: {:?}, for `Meta`: {:?}", one.get_name(), self.full_key)));
-            }
-        }
-        Ok(())
-    }
-}
-
 #[cfg(test)]
 mod test {
+    use nature_common::Result;
+
     use super::*;
 
     #[test]

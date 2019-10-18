@@ -80,7 +80,7 @@ impl Relation {
                 return Err(NatureError::VerifyError(err));
             }
         } else {
-            if let Some(s) = &m_to.setting {
+            if let Some(s) = &m_to.get_setting() {
                 if s.is_empty_content {
                     let r = Relation {
                         from: val.from_meta.to_string(),
