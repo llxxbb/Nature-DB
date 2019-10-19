@@ -21,7 +21,7 @@ pub struct StateDemand {
 }
 
 impl StateDemand {
-    pub fn check(&self, last: &HashSet<String>) -> Result<()> {
+    pub fn check_last(&self, last: &HashSet<String>) -> Result<()> {
         for s in &self.last_states_include {
             if !last.contains(s) {
                 return Err(NatureError::VerifyError(format!("must include status: {}", &s)));
