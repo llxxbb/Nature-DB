@@ -79,9 +79,19 @@ impl TaskDaoImpl {
     }
 
 
-    pub fn update_execute_time(_id: &[u8], _delay: i64) -> Result<()> {
-        // TODO
-        unimplemented!()
+    pub fn update_execute_time(record_id: &[u8], delay: i64, last_state: &Option<Instance>) -> Result<()> {
+        let version = match last_state {
+            Some(ins) => ins.state_version,
+            None => 0
+        };
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
+        let sql = format!("update task set execute_time = datetime('now', '+{} seconds'), last_state_version = {} where task_id = x'{}'", delay, version, vec_to_hex_string(&record_id));
+        println!("{}", &sql);
+        match diesel::sql_query(sql)
+            .execute(conn) {
+            Err(e) => Err(DbError::from(e)),
+            Ok(_) => Ok(())
+        }
     }
 
     /// increase one times and delay `delay` seconds
