@@ -24,22 +24,25 @@ impl InstanceDaoImpl {
     }
 
     /// check whether source stored earlier
-    pub fn is_exists(ins: &Instance) -> Result<bool> {
+    pub fn get_by_from(f_para: &ParaForIDAndFrom) -> Result<Option<Instance>> {
         use super::schema::instances::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = instances
-            .filter(instance_id.eq(ins.id.to_ne_bytes().to_vec()))
-            .filter(meta.eq(&ins.meta))
-            .filter(state_version.eq(ins.state_version))
+            .filter(instance_id.eq(u128_to_vec_u8(f_para.id))
+                .and(meta.eq(&f_para.meta))
+                .and(from_id.eq(u128_to_vec_u8(f_para.from_id)))
+                .and(from_meta.eq(&f_para.from_meta))
+                .and(from_state_version.eq(f_para.from_state_version))
+            )
             .order(state_version.desc())
             .limit(1)
             .load::<RawInstance>(conn);
         match def {
-            Ok(rs) => match rs.len() {
-                0 => Ok(false),
-                1 => Ok(true),
-                _ => Err(NatureError::SystemError("should less than 2 record return".to_string()))
-            },
+            Ok(rtn) => match rtn.len() {
+                0 => Ok(None),
+                1 => Ok(Some(rtn[0].to()?)),
+                _ => Err(NatureError::SystemError("should less than 2 record return".to_string())),
+            }
             Err(e) => Err(DbError::from(e))
         }
     }

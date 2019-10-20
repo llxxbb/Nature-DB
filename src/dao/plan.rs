@@ -45,11 +45,13 @@ impl StorePlanDaoImpl {
 }
 
 impl StorePlanDaoImpl {
-    #[allow(dead_code)]
-    fn delete(from_full_pall: &str) -> Result<usize> {
+    pub fn delete(from: &str, to: &str) -> Result<usize> {
         use self::schema::plan::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
-        let rtn = diesel::delete(plan.filter(upstream.eq(from_full_pall))).execute(conn);
+        let rtn = diesel::delete(plan.filter(
+            upstream.eq(from)
+                .and(downstream.eq(to))
+        )).execute(conn);
         match rtn {
             Ok(num) => Ok(num),
             Err(err) => Err(DbError::from(err)),
