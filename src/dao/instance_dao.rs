@@ -51,10 +51,11 @@ impl InstanceDaoImpl {
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let def = instances
             .filter(instance_id.eq(u128_to_vec_u8(f_para.id))
-                .and(meta.eq(&f_para.meta)
-                ))
+                .and(meta.eq(&f_para.meta))
+                .and(state_version.ge(f_para.state_version_from))
+            )
             .order(state_version.desc())
-            .limit(1)
+            .limit(f_para.limit as i64)
             .load::<RawInstance>(conn);
         match def {
             Ok(rtn) => match rtn.len() {
