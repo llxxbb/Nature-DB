@@ -52,6 +52,7 @@ table! {
         meta -> Text,
         data_type -> SmallInt,
         data -> Text,
+        last_state_version -> Integer,
         create_time -> Timestamp,
         execute_time -> Timestamp,
         retried_times -> SmallInt,
@@ -64,6 +65,7 @@ table! {
         meta -> Text,
         data_type -> SmallInt,
         data -> Text,
+        last_state_version -> Integer,
         create_time -> Timestamp,
         msg -> Text,
     }

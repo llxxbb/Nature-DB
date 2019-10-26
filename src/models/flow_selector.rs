@@ -4,16 +4,16 @@ use std::collections::HashSet;
 pub struct FlowSelector {
     #[serde(skip_serializing_if = "HashSet::is_empty")]
     #[serde(default)]
-    pub source_status_include: HashSet<String>,
+    pub source_state_include: HashSet<String>,
     #[serde(skip_serializing_if = "HashSet::is_empty")]
     #[serde(default)]
-    pub source_status_exclude: HashSet<String>,
+    pub source_state_exclude: HashSet<String>,
     #[serde(skip_serializing_if = "HashSet::is_empty")]
     #[serde(default)]
-    pub target_status_include: HashSet<String>,
+    pub target_state_include: HashSet<String>,
     #[serde(skip_serializing_if = "HashSet::is_empty")]
     #[serde(default)]
-    pub target_status_exclude: HashSet<String>,
+    pub target_state_exclude: HashSet<String>,
     #[serde(skip_serializing_if = "HashSet::is_empty")]
     #[serde(default)]
     pub context_include: HashSet<String>,
@@ -29,10 +29,10 @@ mod test {
     #[test]
     fn selector_serder_test() {
         let mut se = FlowSelector {
-            source_status_include: HashSet::new(),
-            source_status_exclude: HashSet::new(),
-            target_status_include: HashSet::new(),
-            target_status_exclude: HashSet::new(),
+            source_state_include: HashSet::new(),
+            source_state_exclude: HashSet::new(),
+            target_state_include: HashSet::new(),
+            target_state_exclude: HashSet::new(),
             context_include: HashSet::new(),
             context_exclude: HashSet::new(),
         };
@@ -41,7 +41,7 @@ mod test {
         assert_eq!(rtn.unwrap(), "{}");
 
         // test for some value
-        se.source_status_include.insert("aaa".to_string());
+        se.source_state_include.insert("aaa".to_string());
         let rtn = serde_json::to_string(&se).unwrap();
         assert_eq!(rtn, "{\"source_status_include\":[\"aaa\"]}");
 
@@ -49,6 +49,6 @@ mod test {
 
         let de: FlowSelector = serde_json::from_str(&rtn).unwrap();
         assert_eq!(de.context_exclude.is_empty(), true);
-        assert_eq!(de.source_status_include.len(), 1);
+        assert_eq!(de.source_state_include.len(), 1);
     }
 }

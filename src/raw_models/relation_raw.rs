@@ -2,7 +2,7 @@ use serde_json;
 
 use nature_common::*;
 
-use crate::OneStepFlowSettings;
+use crate::RelationSettings;
 use crate::schema::relation;
 
 #[derive(Debug)]
@@ -17,7 +17,7 @@ pub struct RawRelation {
 }
 
 impl RawRelation {
-    pub fn new(from: &str, to: &str, settings: &OneStepFlowSettings) -> Result<Self> {
+    pub fn new(from: &str, to: &str, settings: &RelationSettings) -> Result<Self> {
         let st = serde_json::to_string(settings)?;
         let rtn = RawRelation {
             from_meta: from.to_string(),
@@ -27,4 +27,21 @@ impl RawRelation {
         };
         Ok(rtn)
     }
+
+    pub fn get_string(&self) -> String {
+        format!("relation[{}->{}]", self.from_meta, self.to_meta)
+    }
 }
+
+#[cfg(test)]
+mod test{
+
+    use super::*;
+
+    #[test]
+    fn get_string_test(){
+        let result = RawRelation::new("a", "b", &RelationSettings::default()).unwrap();
+        assert_eq!(result.get_string(), "relation[a->b]")
+    }
+}
+

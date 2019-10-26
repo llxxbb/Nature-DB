@@ -6,9 +6,9 @@ use std::string::ToString;
 
 use rand::{Rng, thread_rng};
 
-use nature_common::{Executor, Meta, NatureError, Result, TargetState};
+use nature_common::{Executor, Meta, NatureError, Protocol, Result, TargetState};
 
-use crate::{FlowSelector, MetaCacheGetter, MetaGetter, OneStepFlowSettings, RawRelation};
+use crate::{FlowSelector, MetaCacheGetter, MetaGetter, RawRelation, RelationSettings};
 
 /// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
@@ -30,43 +30,75 @@ impl Iterator for Relation {
 
 impl Relation {
     pub fn from_raw(val: RawRelation, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter) -> Result<Vec<Relation>> {
-        let settings = serde_json::from_str::<OneStepFlowSettings>(&val.settings)?;
+        let settings = match serde_json::from_str::<RelationSettings>(&val.settings) {
+            Ok(s) => s,
+            Err(e) => {
+                let msg = format!("{}'s setting format error: {:?}", val.get_string(), e);
+                warn!("{}", &msg);
+                return Err(NatureError::VerifyError(msg));
+            }
+        };
         let selector = &settings.selector;
-        let mut group = String::new();
-        let id = uuid::Uuid::new_v4().to_string();
-        // check group: only one group is allowed.
-        let mut group_check = true;
-        settings.executor.iter().for_each(|e| {
-            if group.is_empty() {
-                group = e.group.clone();
-                if group.is_empty() {
-                    group = id.clone()
-                }
-            } else if group != e.group {
-                group_check = false;
-            }
-        });
-        if !group_check {
-            return Err(NatureError::VerifyError("in one setting all executor's group must be same.".to_string()));
-        }
-        let use_upstream_id = settings.use_upstream_id;
         let m_to = Relation::check_converter(&val.to_meta, meta_cache_getter, meta_getter, &settings)?;
-        let rtn = settings.executor.iter().map(|e| {
-            let mut e2 = e.clone();
-            e2.group = group.clone();
-            Relation {
-                from: val.from_meta.to_string(),
-                to: m_to.clone(),
-                selector: selector.clone(),
-                executor: e2,
-                use_upstream_id,
-                target_states: settings.target_states.clone(),
+        let mut group = String::new();
+        let mut rtn: Vec<Relation> = vec![];
+        let mut err: String = String::new();
+        if let Some(e) = &settings.executor {
+            let find = e.iter().find(|e| {
+                // check Protocol type
+                if e.protocol == Protocol::Auto {
+                    err = format!("{} Protocol::Auto can not be used by user. ", val.get_string());
+                    return true;
+                }
+                // check group: only one group is allowed.
+                if group.is_empty() {
+                    group = e.group.clone();
+                    if group.is_empty() {
+                        group = uuid::Uuid::new_v4().to_string();
+                    }
+                } else if group != e.group {
+                    err = "in one setting all executor's group must be same.".to_string();
+                    return true;
+                }
+                // generate relation
+                let mut e2 = (*e).clone();
+                e2.group = group.clone();
+                let r = Relation {
+                    from: val.from_meta.to_string(),
+                    to: m_to.clone(),
+                    selector: selector.clone(),
+                    executor: e2,
+                    use_upstream_id: settings.use_upstream_id,
+                    target_states: settings.target_states.clone(),
+                };
+                rtn.push(r);
+                // return find result
+                false
+            });
+            if find.is_some() {
+                warn!("{}", &err);
+                return Err(NatureError::VerifyError(err));
             }
-        }).collect();
+        } else {
+            if let Some(s) = &m_to.get_setting() {
+                if s.is_empty_content {
+                    let r = Relation {
+                        from: val.from_meta.to_string(),
+                        to: m_to.clone(),
+                        selector: selector.clone(),
+                        executor: Executor::new_auto(),
+                        use_upstream_id: settings.use_upstream_id,
+                        target_states: settings.target_states.clone(),
+                    };
+                    rtn.push(r);
+                }
+            }
+        }
+        debug!("load {}", val.get_string());
         Ok(rtn)
     }
 
-    fn check_converter(meta_to: &str, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter, settings: &OneStepFlowSettings) -> Result<Meta> {
+    fn check_converter(meta_to: &str, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter, settings: &RelationSettings) -> Result<Meta> {
         let m_to = meta_cache_getter(meta_to, meta_getter)?;
         if let Some(ts) = &settings.target_states {
             if let Some(x) = &ts.add {
@@ -150,17 +182,29 @@ mod test_from_raw {
     use super::*;
 
     #[test]
+    fn setting_error_test() {
+        let raw = RawRelation {
+            from_meta: "/B/from:1".to_string(),
+            to_meta: "/B/to:1".to_string(),
+            settings: "dd".to_string(),
+            flag: 1,
+        };
+        let rtn = Relation::from_raw(raw, meta_cache, meta);
+        assert_eq!(rtn.err().unwrap().to_string().contains("relation[/B/from:1->/B/to:1]"), true);
+    }
+
+    #[test]
     fn one_group_is_ok() {
-        let settings = OneStepFlowSettings {
+        let settings = RelationSettings {
             selector: None,
-            executor: vec![
+            executor: Some(vec![
                 Executor {
                     protocol: Protocol::LocalRust,
                     url: "url_one".to_string(),
                     group: "grp_one".to_string(),
                     proportion: 100,
                 },
-            ],
+            ]),
             use_upstream_id: false,
             target_states: None,
         };
@@ -176,13 +220,13 @@ mod test_from_raw {
 
     #[test]
     fn multiple_group_is_illegal() {
-        let settings = OneStepFlowSettings {
+        let settings = RelationSettings {
             selector: None,
-            executor: vec![
+            executor: Some(vec![
                 Executor {
                     protocol: Protocol::LocalRust,
                     url: "url_one".to_string(),
-                    group: "grp_one".to_string(),
+                    group: "".to_string(),
                     proportion: 100,
                 },
                 Executor {
@@ -191,13 +235,13 @@ mod test_from_raw {
                     group: "url_two".to_string(),
                     proportion: 200,
                 },
-            ],
+            ]),
             use_upstream_id: false,
             target_states: None,
         };
         let raw = RawRelation {
-            from_meta: "from".to_string(),
-            to_meta: "to".to_string(),
+            from_meta: "/B/from:1".to_string(),
+            to_meta: "/B/to:1".to_string(),
             settings: serde_json::to_string(&settings).unwrap(),
             flag: 1,
         };

@@ -44,7 +44,6 @@ impl RelationCacheImpl {
                 (None, None)
             }
             Ok(Some(relations)) => {
-                debug!("Get relations of `Meta`: {}， number : {}", meta_from, relations.len());
                 let label_groups = Relation::get_label_groups(&relations);
                 let weight_cal = Relation::weight_calculate(&label_groups);
                 (Some(relations), Some(weight_cal))

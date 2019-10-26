@@ -40,6 +40,7 @@ create TABLE `task` (
 	`meta`	VARCHAR ( 255 ) NOT NULL,
 	`data_type`	SMALLINT NOT NULL,
 	`data`	TEXT NOT NULL,
+	`last_state_version`    INTEGER NOT NULL,
 	`create_time`	DATETIME NOT NULL,
 	`execute_time`	DATETIME NOT NULL,
 	`retried_times`	SMALLINT NOT NULL,
@@ -51,6 +52,7 @@ create TABLE `task_error` (
 	`meta`	VARCHAR ( 255 ) NOT NULL,
 	`data_type`	SMALLINT NOT NULL,
 	`data`	TEXT NOT NULL,
+	`last_state_version`    INTEGER NOT NULL,
 	`create_time`	DATETIME NOT NULL,
 	`msg`	VARCHAR ( 255 ) NOT NULL,
 	PRIMARY KEY(`task_id`)

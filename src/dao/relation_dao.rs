@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use diesel::prelude::*;
 
-use crate::{CONN, CONNNECTION, MetaCacheGetter, OneStepFlowSettings, Relation};
+use crate::{CONN, CONNNECTION, MetaCacheGetter, Relation, RelationSettings};
 use crate::raw_models::RawRelation;
 
 use super::*;
@@ -36,13 +36,11 @@ impl RelationDaoImpl {
                             multi.into_iter().for_each(|e| rtn.push(e))
                         }
                         Err(e) => {
-                            dbg!(&e);
                             warn!("raw to `one_step_flow` occur error : {:?}", e);
                         }
                     }
                 }
                 if rtn.is_empty() {
-                    dbg!(&rtn);
                     Ok(None)
                 } else {
                     Ok(Some(rtn))
@@ -99,14 +97,14 @@ impl RelationDaoImpl {
         let one = RawRelation::new(
             from,
             to,
-            &OneStepFlowSettings {
+            &RelationSettings {
                 selector: None,
-                executor: vec![Executor {
+                executor: Some(vec![Executor {
                     protocol: Protocol::from_str(protocol)?,
                     url: url.to_string(),
                     group: "".to_string(),
                     proportion: 1,
-                }],
+                }]),
                 use_upstream_id: false,
                 target_states: None,
             },
