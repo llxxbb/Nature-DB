@@ -81,7 +81,7 @@ impl Relation {
             }
         } else {
             if let Some(s) = &m_to.get_setting() {
-                if s.is_empty_content {
+                if s.master.is_some() {
                     let r = Relation {
                         from: val.from_meta.to_string(),
                         to: m_to.clone(),
