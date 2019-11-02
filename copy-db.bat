@@ -1,1 +1,0 @@
-copy nature.sqlite ..\Nature
