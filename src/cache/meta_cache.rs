@@ -25,8 +25,8 @@ impl MetaCacheImpl {
             warn!("{}", error);
             return Err(error);
         }
-        let mut cache = CACHE.lock().unwrap();
         {   // An explicit scope to avoid cache.insert error
+            let mut cache = CACHE.lock().unwrap();
             if let Some(x) = cache.get(meta_str) {
                 return Ok(x.clone());
             };
@@ -39,9 +39,25 @@ impl MetaCacheImpl {
             }
             Some(def) => {
                 let meta: Meta = def.try_into()?;
+                let _ = Self::check_master(&meta, getter)?;
+                let mut cache = CACHE.lock().unwrap();
                 cache.insert(meta_str.to_string(), meta.clone());
                 Ok(meta)
             }
         }
     }
+
+    fn check_master(meta: &Meta, getter: MetaGetter) -> Result<()> {
+        match meta.get_setting() {
+            None => Ok(()),
+            Some(setting) => match setting.master {
+                None => Ok(()),
+                Some(master) => {
+                    let _ = Self::get(&master, getter)?;
+                    Ok(())
+                }
+            },
+        }
+    }
 }
+
