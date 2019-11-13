@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use lru_time_cache::LruCache;
 
-use nature_common::{Meta, NatureError, Result};
+use nature_common::{Meta, MetaType, NatureError, Result};
 
 use crate::MetaGetter;
 
@@ -33,9 +33,19 @@ impl MetaCacheImpl {
         };
         match getter(meta_str)? {
             None => {
-                let error = NatureError::VerifyError(format!("{} not defined", meta_str));
-                warn!("{}", error);
-                Err(error)
+                let m = Meta::from_string(meta_str)?;
+                match m.get_meta_type() {
+                    MetaType::Null => {
+                        let mut cache = CACHE.lock().unwrap();
+                        cache.insert(meta_str.to_string(), m.clone());
+                        Ok(m)
+                    }
+                    _ => {
+                        let error = NatureError::VerifyError(format!("{} not defined", meta_str));
+                        warn!("{}", error);
+                        Err(error)
+                    }
+                }
             }
             Some(def) => {
                 let meta: Meta = def.try_into()?;
