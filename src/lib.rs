@@ -36,6 +36,4 @@ mod models;
 #[cfg(feature = "mysql")]
 mod mysql;
 
-pub mod service;
-
 mod conn;
