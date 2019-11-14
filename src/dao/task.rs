@@ -85,12 +85,16 @@ impl TaskDaoImpl {
             None => 0
         };
         let conn: &CONNNECTION = &CONN.lock().unwrap();
-        let sql = format!("update task set execute_time = datetime('now', '+{} seconds'), last_state_version = {} where task_id = x'{}'", delay, version, vec_to_hex_string(&record_id));
-        println!("{}", &sql);
+        let sql = format!("update task set execute_time = datetime('now', '+{} seconds', 'localtime'), last_state_version = {} where task_id = x'{}'", delay, version, vec_to_hex_string(&record_id));
         match diesel::sql_query(sql)
             .execute(conn) {
-            Err(e) => Err(DbError::from(e)),
-            Ok(_) => Ok(())
+            Err(e) => {
+                warn!("Update delay error: {}", &e);
+                Err(DbError::from(e))
+            }
+            Ok(_) => {
+                Ok(())
+            }
         }
     }
 
