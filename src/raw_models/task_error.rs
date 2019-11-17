@@ -1,7 +1,9 @@
 use chrono::prelude::*;
-use crate::schema::task_error;
+
 use nature_common::NatureError;
+
 use crate::raw_models::RawTask;
+use crate::schema::task_error;
 
 #[derive(Debug)]
 #[derive(Insertable)]
@@ -11,6 +13,7 @@ pub struct RawTaskError {
     pub meta: String,
     pub data_type: i16,
     pub data: String,
+    pub last_state_version: i32,
     pub create_time: NaiveDateTime,
     pub msg: String,
 }
@@ -22,6 +25,7 @@ impl RawTaskError {
             meta: raw.meta.clone(),
             data_type: raw.data_type,
             data: raw.data.clone(),
+            last_state_version: raw.last_state_version,
             create_time: raw.create_time,
             msg: format!("{:?}", err),
         }

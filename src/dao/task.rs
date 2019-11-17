@@ -49,8 +49,11 @@ impl TaskDaoImpl {
             let rd = RawTaskError::from_raw(err, raw);
             diesel::insert_into(task_error::table).values(rd).execute(conn)
         };
-        match rtn {
-            Ok(num) => Ok(num),
+        let rtn = match rtn {
+            Ok(num) => {
+                let _ = Self::delete(&raw.task_id)?;
+                Ok(num)
+            }
             Err(Error::DatabaseError(kind, info)) => match kind {
                 DatabaseErrorKind::UniqueViolation => {
                     debug!("delete task already in task_error table");
@@ -65,7 +68,8 @@ impl TaskDaoImpl {
                 error!("insert task_error to db occurred error");
                 Err(DbError::from(e))
             }
-        }
+        };
+        rtn
     }
 
     pub fn get_overdue(seconds: &str) -> Result<Vec<RawTask>> {
