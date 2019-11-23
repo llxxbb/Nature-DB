@@ -8,6 +8,7 @@ table! {
         states -> Nullable<Text>,
         state_version -> Integer,
         from_meta -> Nullable<Text>,
+        from_para -> Nullable<Text>,
         from_id -> Nullable<Binary>,
         from_state_version -> Nullable<Integer>,
         execute_time -> Timestamp,
