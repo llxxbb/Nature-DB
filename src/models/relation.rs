@@ -19,6 +19,7 @@ pub struct Relation {
     pub executor: Executor,
     pub use_upstream_id: bool,
     pub target_states: Option<TargetState>,
+    pub delay: i32,
 }
 
 impl Iterator for Relation {
@@ -70,6 +71,7 @@ impl Relation {
                     executor: e2,
                     use_upstream_id: settings.use_upstream_id,
                     target_states: settings.target_states.clone(),
+                    delay: settings.delay,
                 };
                 rtn.push(r);
                 // return find result
@@ -81,7 +83,7 @@ impl Relation {
             }
         } else {
             if let Some(s) = &m_to.get_setting() {
-                if s.is_empty_content {
+                if s.master.is_some() {
                     let r = Relation {
                         from: val.from_meta.to_string(),
                         to: m_to.clone(),
@@ -89,6 +91,7 @@ impl Relation {
                         executor: Executor::new_auto(),
                         use_upstream_id: settings.use_upstream_id,
                         target_states: settings.target_states.clone(),
+                        delay: settings.delay,
                     };
                     rtn.push(r);
                 }
@@ -207,6 +210,7 @@ mod test_from_raw {
             ]),
             use_upstream_id: false,
             target_states: None,
+            delay: 0,
         };
         let raw = RawRelation {
             from_meta: "/B/from:1".to_string(),
@@ -238,6 +242,7 @@ mod test_from_raw {
             ]),
             use_upstream_id: false,
             target_states: None,
+            delay: 0,
         };
         let raw = RawRelation {
             from_meta: "/B/from:1".to_string(),

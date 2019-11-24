@@ -22,6 +22,7 @@ pub struct RawInstance {
     states: Option<String>,
     state_version: i32,
     from_meta: Option<String>,
+    from_para: Option<String>,
     from_id: Option<Vec<u8>>,
     from_state_version: Option<i32>,
     execute_time: NaiveDateTime,
@@ -36,6 +37,10 @@ impl RawInstance {
                 Some(FromInstance {
                     id: vec_to_u128(&self.from_id.as_ref().unwrap()),
                     meta: meta.to_string(),
+                    para: match &self.from_para {
+                        None => String::new(),
+                        Some(p) => p.to_string(),
+                    },
                     state_version: self.from_state_version.unwrap(),
                 })
             }
@@ -58,6 +63,7 @@ impl RawInstance {
                 states,
                 state_version: self.state_version,
                 from,
+                para: self.para.clone(),
             },
             execute_time: self.execute_time.timestamp_millis(),
             create_time: self.create_time.timestamp_millis(),
@@ -65,9 +71,9 @@ impl RawInstance {
     }
 
     pub fn new(instance: &Instance) -> Result<RawInstance> {
-        let (from_id, from_meta, from_state_version) = match instance.from {
-            None => (None, None, None),
-            Some(ref from) => (Some(u128_to_vec_u8(from.id)), Some(from.meta.to_string()), Some(from.state_version))
+        let (from_id, from_meta, from_para, from_state_version) = match instance.from {
+            None => (None, None, None, None),
+            Some(ref from) => (Some(u128_to_vec_u8(from.id)), Some(from.meta.to_string()), Some(from.para.to_string()), Some(from.state_version))
         };
         Ok(RawInstance {
             instance_id: instance.id.to_ne_bytes().to_vec(),
@@ -94,7 +100,8 @@ impl RawInstance {
             },
             state_version: instance.state_version,
             from_meta,
-            para: "".to_string(),
+            from_para,
+            para: instance.para.clone(),
             from_state_version,
             from_id,
             execute_time: Local.timestamp_millis(instance.execute_time).naive_local(),

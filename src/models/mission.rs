@@ -11,6 +11,7 @@ pub struct Mission {
     pub executor: Executor,
     pub states_demand: Option<StateDemand>,
     pub use_upstream_id: bool,
+    pub delay: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -52,6 +53,7 @@ impl Mission {
                 executor: d.fun.clone(),
                 states_demand: None,
                 use_upstream_id: d.use_upstream_id,
+                delay: d.delay,
             };
             missions.push(mission)
         }
@@ -102,6 +104,7 @@ impl Mission {
                     }
                 },
                 use_upstream_id: r.use_upstream_id,
+                delay: r.delay,
             };
             rtn.push(m);
         }
@@ -168,6 +171,7 @@ mod demand_test {
             executor: Executor::default(),
             use_upstream_id: false,
             target_states: None,
+            delay: 0,
         };
 
         // set status required.
@@ -218,6 +222,7 @@ mod demand_test {
             executor: Executor::default(),
             use_upstream_id: false,
             target_states: None,
+            delay: 0,
         };
 
         // set state required.
@@ -268,6 +273,7 @@ mod demand_test {
             executor: Executor::default(),
             use_upstream_id: false,
             target_states: None,
+            delay: 0,
         };
 
         // set state required.
@@ -318,6 +324,7 @@ mod demand_test {
             executor: Executor::default(),
             use_upstream_id: false,
             target_states: None,
+            delay: 0,
         };
 
         // set state required.
@@ -368,6 +375,7 @@ mod demand_test {
             executor: Executor::default(),
             use_upstream_id: false,
             target_states: None,
+            delay: 0,
         };
         // set state required.
         let osf = Some(vec![relation]);
@@ -398,6 +406,7 @@ mod demand_test {
             executor: Executor::default(),
             use_upstream_id: false,
             target_states: None,
+            delay: 0,
         };
         // set state required.
         let osf = Some(vec![relation]);
@@ -431,6 +440,7 @@ mod demand_test {
                 add: Some(vec!["hello".to_string()]),
                 remove: None,
             }),
+            delay: 0,
         };
         // set state required.
         let osf = Some(vec![relation]);
@@ -469,6 +479,7 @@ mod demand_test {
                 add: Some(vec!["hello".to_string()]),
                 remove: None,
             }),
+            delay: 0,
         };
         // set state required.
         let osf = Some(vec![relation]);
@@ -516,6 +527,7 @@ mod other_test {
             },
             use_upstream_id: false,
             target_states: None,
+            delay: 0,
         })
     }
 }

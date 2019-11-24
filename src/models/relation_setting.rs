@@ -1,4 +1,4 @@
-use nature_common::{Executor, TargetState};
+use nature_common::{Executor, is_false, is_zero, TargetState};
 
 use crate::FlowSelector;
 
@@ -17,10 +17,10 @@ pub struct RelationSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub target_states: Option<TargetState>,
-}
-
-fn is_false(val: &bool) -> bool {
-    !val.clone()
+    // delay seconds to execute the converter
+    #[serde(skip_serializing_if = "is_zero")]
+    #[serde(default)]
+    pub delay: i32,
 }
 
 #[cfg(test)]
@@ -48,6 +48,7 @@ mod test {
             executor: None,
             use_upstream_id: false,
             target_states: None,
+            delay: 0,
         };
         let result = serde_json::to_string(&setting).unwrap();
         let res_str = r#"{"selector":{"source_state_include":["one"]}}"#;
@@ -63,6 +64,7 @@ mod test {
             executor: None,
             use_upstream_id: false,
             target_states: None,
+            delay: 0,
         };
         let result = serde_json::to_string(&setting).unwrap();
         let res_str = r#"{}"#;
@@ -83,9 +85,10 @@ mod test {
             }]),
             use_upstream_id: false,
             target_states: None,
+            delay: 0,
         };
         let result = serde_json::to_string(&setting).unwrap();
-        let res_str = r#"{"executor":[{"protocol":"LocalRust","url":"nature_demo.dll:order_new","proportion":1}]}"#;
+        let res_str = r#"{"executor":[{"protocol":"localRust","url":"nature_demo.dll:order_new"}]}"#;
         assert_eq!(result, res_str);
         let res_obj: RelationSettings = serde_json::from_str(res_str).unwrap();
         assert_eq!(res_obj, setting);
@@ -98,6 +101,7 @@ mod test {
             executor: None,
             use_upstream_id: true,
             target_states: None,
+            delay: 0,
         };
         let result = serde_json::to_string(&setting).unwrap();
         let res_str = r#"{"use_upstream_id":true}"#;
@@ -113,6 +117,7 @@ mod test {
             executor: None,
             use_upstream_id: false,
             target_states: Some(TargetState { add: Some(vec!["new".to_string()]), remove: None }),
+            delay: 0,
         };
         let result = serde_json::to_string(&setting).unwrap();
         let res_str = r#"{"target_states":{"add":["new"]}}"#;
@@ -120,4 +125,11 @@ mod test {
         let res_obj: RelationSettings = serde_json::from_str(res_str).unwrap();
         assert_eq!(res_obj, setting);
     }
+
+//    #[test]
+//    fn other(){
+//        let setting = r#"{“delay”:1,"selector":{"source_state_include":["dispatching"]}, "executor":[{"protocol":"localRust","url":"nature_demo_converter.dll:auto_sign"}]}"#;
+//        let obj : RelationSettings = serde_json::from_str(setting).unwrap();
+//        dbg!(obj);
+//    }
 }

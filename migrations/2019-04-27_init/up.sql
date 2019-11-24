@@ -28,6 +28,7 @@ create TABLE `instances` (
 	`states`	TEXT,
 	`state_version`	INTEGER NOT NULL,
 	`from_meta`	VARCHAR ( 255 ),
+	`from_para`	VARCHAR ( 255 ),
 	`from_id`	BINARY(16),
 	`from_state_version`	INTEGER,
 	`execute_time`	DATETIME NOT NULL,

@@ -1,6 +1,4 @@
-//! Define the data used all over the project, not only by `fg-service`
 #![allow(proc_macro_derive_resolution_fallback)]
-#![feature(custom_attribute)]
 #![feature(rustc_private)]
 
 extern crate chrono;
@@ -37,7 +35,5 @@ mod raw_models;
 mod models;
 #[cfg(feature = "mysql")]
 mod mysql;
-
-pub mod service;
 
 mod conn;
