@@ -1,18 +1,17 @@
 use diesel::prelude::*;
 use diesel::result::*;
 
-use crate::{CONN, CONNNECTION};
+use nature_common::{Instance, NatureError, Result, vec_to_hex_string, vec_to_u128};
+
+use crate::{CONN, CONNNECTION, DbError};
+use crate::dao::schema::task::dsl::*;
 use crate::raw_models::{RawTask, RawTaskError};
-
-use super::*;
-
-use self::schema::task::dsl::*;
 
 pub struct TaskDaoImpl;
 
 impl TaskDaoImpl {
     pub fn insert(raw: &RawTask) -> Result<usize> {
-        use self::schema::task;
+        use crate::dao::schema::task;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::insert_into(task::table).values(raw).execute(conn);
         match rtn {
@@ -28,7 +27,7 @@ impl TaskDaoImpl {
             },
             Err(e) => {
                 error!("insert task error: {:?}", e);
-                Err(DbError::from_with_msg(e, &format!("mata : {}, id : {}", &raw.meta, id_tool::vec_to_u128(&raw.task_id))))
+                Err(DbError::from_with_msg(e, &format!("mata : {}, id : {}", &raw.meta, vec_to_u128(&raw.task_id))))
             }
         }
     }
@@ -43,7 +42,7 @@ impl TaskDaoImpl {
     }
 
     pub fn raw_to_error(err: &NatureError, raw: &RawTask) -> Result<usize> {
-        use self::schema::task_error;
+        use crate::dao::schema::task_error;
         let rtn = {
             let conn: &CONNNECTION = &CONN.lock().unwrap();
             let rd = RawTaskError::from_raw(err, raw);

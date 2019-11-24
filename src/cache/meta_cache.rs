@@ -40,6 +40,11 @@ impl MetaCacheImpl {
                         cache.insert(meta_str.to_string(), m.clone());
                         Ok(m)
                     }
+                    MetaType::Dynamic => {
+                        let mut cache = CACHE.lock().unwrap();
+                        cache.insert(meta_str.to_string(), m.clone());
+                        Ok(m)
+                    }
                     _ => {
                         let error = NatureError::VerifyError(format!("{} not defined", meta_str));
                         warn!("{}", error);

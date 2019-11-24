@@ -232,6 +232,7 @@ mod test {
             },
             use_upstream_id: false,
             target_states: None,
+            delay: 0
         })
     }
 }
