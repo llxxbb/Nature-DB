@@ -125,4 +125,11 @@ mod test {
         let res_obj: RelationSettings = serde_json::from_str(res_str).unwrap();
         assert_eq!(res_obj, setting);
     }
+
+//    #[test]
+//    fn other(){
+//        let setting = r#"{“delay”:1,"selector":{"source_state_include":["dispatching"]}, "executor":[{"protocol":"localRust","url":"nature_demo_converter.dll:auto_sign"}]}"#;
+//        let obj : RelationSettings = serde_json::from_str(setting).unwrap();
+//        dbg!(obj);
+//    }
 }
