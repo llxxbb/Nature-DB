@@ -45,23 +45,8 @@ impl MetaCacheImpl {
                         cache.insert(meta_str.to_string(), m.clone());
                         Ok(m)
                     }
-                    MetaType::Parallel => {
-                        let mut cache = CACHE.lock().unwrap();
-                        cache.insert(meta_str.to_string(), m.clone());
-                        match m.get_setting() {
-                            None => Ok(m),
-                            Some(setting) => {
-                                match setting.multi_meta {
-                                    None => Ok(m),
-                                    Some(multi) => {
-                                        // TODO
-
-                                        Ok(m)
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    MetaType::Parallel => cache_sub_metas(meta_str, m),
+                    MetaType::Serial => cache_sub_metas(meta_str, m),
                     _ => {
                         let error = NatureError::VerifyError(format!("{} not defined", meta_str));
                         warn!("{}", error);
@@ -71,25 +56,81 @@ impl MetaCacheImpl {
             }
             Some(def) => {
                 let meta: Meta = def.try_into()?;
-                let _ = Self::check_master(&meta, getter)?;
+                let _ = check_master(&meta, getter)?;
                 let mut cache = CACHE.lock().unwrap();
                 cache.insert(meta_str.to_string(), meta.clone());
                 Ok(meta)
             }
         }
     }
+}
 
-    fn check_master(meta: &Meta, getter: MetaGetter) -> Result<()> {
-        match meta.get_setting() {
-            None => Ok(()),
-            Some(setting) => match setting.master {
-                None => Ok(()),
-                Some(master) => {
-                    let _ = Self::get(&master, getter)?;
-                    Ok(())
+fn cache_sub_metas(meta_str: &str, m: Meta) -> Result<Meta> {
+    let mut cache = CACHE.lock().unwrap();
+    cache.insert(meta_str.to_string(), m.clone());
+    match m.get_setting() {
+        None => Ok(m),
+        Some(setting) => {
+            match setting.multi_meta {
+                None => Ok(m),
+                Some(multi) => {
+                    let s_meta = multi.get_metas(&m)?;
+                    s_meta.into_iter().for_each(|one| {
+                        let key = one.meta_string();
+                        cache.insert(key, one); });
+                    Ok(m)
                 }
-            },
+            }
         }
     }
 }
 
+fn check_master(meta: &Meta, getter: MetaGetter) -> Result<()> {
+    match meta.get_setting() {
+        None => Ok(()),
+        Some(setting) => match setting.master {
+            None => Ok(()),
+            Some(master) => {
+                let _ = MetaCacheImpl::get(&master, getter)?;
+                Ok(())
+            }
+        },
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use nature_common::{MetaSetting, MultiMetaSetting};
+
+    use super::*;
+
+    #[test]
+    fn cache_sub_meta_test() {
+        let setting = MetaSetting {
+            is_state: false,
+            master: None,
+            multi_meta: Some(MultiMetaSetting {
+                prefix: "p".to_string(),
+                version: 1,
+                keys: vec!["a".to_string(), "b".to_string()],
+                meta_type: Default::default(),
+            }),
+            conflict_avoid: false,
+        };
+        let mut m = Meta::from_string("/B/test:3").unwrap();
+        let _ = m.set_setting(&serde_json::to_string(&setting).unwrap());
+        {
+            let mut c = CACHE.lock().unwrap();
+            c.clear();
+        }
+        let rtn = cache_sub_metas("test", m).unwrap();
+        assert_eq!(rtn.meta_string(), "/B/test:3");
+        let mut c = CACHE.lock().unwrap();
+        let x = c.get("test");
+        assert_eq!(x.is_some(), true);
+        let x = c.get("/B/p/a:1");
+        assert_eq!(x.is_some(), true);
+        let x = c.get("/B/p/b:1");
+        assert_eq!(x.is_some(), true);
+    }
+}
