@@ -59,7 +59,7 @@ impl MetaDaoImpl {
     }
 
     pub fn delete(meta_def: &Meta) -> Result<usize> {
-        Self::delete_by_full_key(&meta_def.get_full_key(), meta_def.version)
+        Self::delete_by_full_key(&meta_def.get_full_key(), meta_def.version as i32)
     }
 
     pub fn delete_by_full_key(full_key_f: &str, version_f: i32) -> Result<usize> {

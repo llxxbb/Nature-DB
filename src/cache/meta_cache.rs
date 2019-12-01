@@ -45,6 +45,23 @@ impl MetaCacheImpl {
                         cache.insert(meta_str.to_string(), m.clone());
                         Ok(m)
                     }
+                    MetaType::Parallel => {
+                        let mut cache = CACHE.lock().unwrap();
+                        cache.insert(meta_str.to_string(), m.clone());
+                        match m.get_setting() {
+                            None => Ok(m),
+                            Some(setting) => {
+                                match setting.multi_meta {
+                                    None => Ok(m),
+                                    Some(multi) => {
+                                        // TODO
+
+                                        Ok(m)
+                                    }
+                                }
+                            }
+                        }
+                    }
                     _ => {
                         let error = NatureError::VerifyError(format!("{} not defined", meta_str));
                         warn!("{}", error);

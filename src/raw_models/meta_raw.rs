@@ -52,7 +52,7 @@ impl From<Meta> for RawMeta {
         RawMeta {
             full_key: m.get_full_key(),
             description: None,
-            version: m.version,
+            version: m.version as i32,
             states: match m.get_states() {
                 None => None,
                 Some(x) => Some(State::states_to_string(&x, ","))
@@ -72,7 +72,7 @@ impl TryInto<Meta> for RawMeta {
     type Error = NatureError;
 
     fn try_into(self) -> std::result::Result<Meta, Self::Error> {
-        let mut rtn = Meta::from_full_key(&self.full_key, self.version)?;
+        let mut rtn = Meta::from_full_key(&self.full_key, self.version as u32)?;
         if let Some(s) = &self.states {
             if !s.is_empty() {
                 match State::string_to_states(&s) {
