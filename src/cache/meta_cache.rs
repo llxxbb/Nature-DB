@@ -74,10 +74,11 @@ fn cache_sub_metas(meta_str: &str, m: Meta) -> Result<Meta> {
             match setting.multi_meta {
                 None => Ok(m),
                 Some(multi) => {
-                    let s_meta = multi.get_metas(&m)?;
+                    let s_meta = multi.get_metas();
                     s_meta.into_iter().for_each(|one| {
                         let key = one.meta_string();
-                        cache.insert(key, one); });
+                        cache.insert(key, one);
+                    });
                     Ok(m)
                 }
             }
@@ -106,15 +107,11 @@ mod test {
 
     #[test]
     fn cache_sub_meta_test() {
+        let multi_meta = MultiMetaSetting::new("/P/parent", "p", 1, vec!["a".to_string(), "b".to_string()], Default::default());
         let setting = MetaSetting {
             is_state: false,
             master: None,
-            multi_meta: Some(MultiMetaSetting {
-                prefix: "p".to_string(),
-                version: 1,
-                keys: vec!["a".to_string(), "b".to_string()],
-                meta_type: Default::default(),
-            }),
+            multi_meta: Some(multi_meta.unwrap()),
             conflict_avoid: false,
         };
         let mut m = Meta::from_string("/B/test:3").unwrap();
