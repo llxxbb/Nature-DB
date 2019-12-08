@@ -1,6 +1,7 @@
 -- Your SQL goes here
 create TABLE `meta` (
-	`full_key`	VARCHAR ( 255 ) NOT NULL,
+	`meta_type`	VARCHAR ( 10 ) NOT NULL,
+	`meta_key`	VARCHAR ( 255 ) NOT NULL,
 	`description`	VARCHAR ( 1023 ),
 	`version`	INTEGER NOT NULL,
 	`states`	VARCHAR ( 1023 ),
@@ -8,7 +9,7 @@ create TABLE `meta` (
 	`config`    VARCHAR(2048) DEFAULT '{}' NOT NULL,
 	`flag`      INTEGER DEFAULT 1 NOT NULL,
 	`create_time`	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	PRIMARY KEY(`full_key`,`version`)
+	PRIMARY KEY(`meta_type`,`meta_key`,`version`)
 );
 
 create TABLE `relation` (

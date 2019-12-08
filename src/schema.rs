@@ -17,8 +17,9 @@ table! {
 }
 
 table! {
-    meta (full_key, version) {
-        full_key -> Text,
+    meta (meta_type, meta_key, version) {
+        meta_type -> Text,
+        meta_key -> Text,
         description -> Nullable<Text>,
         version -> Integer,
         states -> Nullable<Text>,

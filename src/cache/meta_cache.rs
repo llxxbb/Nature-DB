@@ -45,7 +45,7 @@ impl MetaCacheImpl {
                         cache.insert(meta_str.to_string(), m.clone());
                         Ok(m)
                     }
-                    MetaType::Parallel => cache_sub_metas(meta_str, m),
+                    MetaType::Multi => cache_sub_metas(meta_str, m),
                     MetaType::Serial => cache_sub_metas(meta_str, m),
                     _ => {
                         let error = NatureError::VerifyError(format!("{} not defined", meta_str));
@@ -107,27 +107,27 @@ mod test {
 
     #[test]
     fn cache_sub_meta_test() {
-        let multi_meta = MultiMetaSetting::new("/P/parent", "p", 1, vec!["a".to_string(), "b".to_string()], Default::default());
+        let multi_meta = MultiMetaSetting::new("/M/parent", "p", 1, vec!["a".to_string(), "b".to_string()], Default::default());
         let setting = MetaSetting {
             is_state: false,
             master: None,
             multi_meta: Some(multi_meta.unwrap()),
             conflict_avoid: false,
         };
-        let mut m = Meta::from_string("/B/test:3").unwrap();
+        let mut m = Meta::from_string("B:test:3").unwrap();
         let _ = m.set_setting(&serde_json::to_string(&setting).unwrap());
         {
             let mut c = CACHE.lock().unwrap();
             c.clear();
         }
         let rtn = cache_sub_metas("test", m).unwrap();
-        assert_eq!(rtn.meta_string(), "/B/test:3");
+        assert_eq!(rtn.meta_string(), "B:test:3");
         let mut c = CACHE.lock().unwrap();
         let x = c.get("test");
         assert_eq!(x.is_some(), true);
-        let x = c.get("/B/p/a:1");
+        let x = c.get("B:p/a:1");
         assert_eq!(x.is_some(), true);
-        let x = c.get("/B/p/b:1");
+        let x = c.get("B:p/b:1");
         assert_eq!(x.is_some(), true);
     }
 }
