@@ -1,11 +1,11 @@
-use nature_common::NatureError;
 use std::convert::TryFrom;
+
+use nature_common::NatureError;
 
 pub enum TaskType {
     Store = 1,
     Convert = 2,
-    ParallelBatch = 11,
-    QueueBatch = 12,
+    Batch = 11,
 }
 
 impl TryFrom<i16> for TaskType {
@@ -15,8 +15,7 @@ impl TryFrom<i16> for TaskType {
         match value {
             1 => Ok(TaskType::Store),
             2 => Ok(TaskType::Convert),
-            11 => Ok(TaskType::ParallelBatch),
-            12 => Ok(TaskType::QueueBatch),
+            11 => Ok(TaskType::Batch),
             _ => Err(NatureError::VerifyError(format!("undefined [{}] for `TaskType`", value)))
         }
     }
