@@ -46,7 +46,6 @@ impl MetaCacheImpl {
                         Ok(m)
                     }
                     MetaType::Multi => cache_sub_metas(meta_str, m),
-                    MetaType::Serial => cache_sub_metas(meta_str, m),
                     _ => {
                         let error = NatureError::VerifyError(format!("{} not defined", meta_str));
                         warn!("{}", error);
