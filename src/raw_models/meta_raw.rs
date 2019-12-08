@@ -72,7 +72,7 @@ impl TryInto<Meta> for RawMeta {
         if let Some(s) = &self.states {
             if !s.is_empty() {
                 match State::string_to_states(&s) {
-                    Ok((ss, _)) => { let _ = rtn.set_states(Some(ss)); }
+                    Ok((ss, _)) => rtn.set_states(Some(ss))?,
                     Err(e) => {
                         warn!("meta : {}:{}:{} init error: {:?}", &self.meta_type, &self.meta_key, self.version, e);
                         return Err(e);
@@ -97,11 +97,11 @@ mod test {
         // error full_key
         let meta = RawMeta::default();
         let result: Result<Meta> = meta.try_into();
-        assert_eq!(result.err().unwrap(), NatureError::VerifyError("illegal format for `full_key` : ".to_string()));
+        assert_eq!(result.err().unwrap(), NatureError::VerifyError("key length can't be zero".to_string()));
 
         let meta = RawMeta::from(Meta::from_string("B:hello:1").unwrap());
         let result: Meta = meta.try_into().unwrap();
-        assert_eq!(result.get_full_key(), "B:hello")
+        assert_eq!(result.meta_string(), "B:hello:1")
     }
 
     #[test]
@@ -114,7 +114,7 @@ mod test {
         let mut meta = RawMeta::from(Meta::from_string("B:hello:1").unwrap());
         meta.states = Some("b,b".to_string());
         let result: Result<Meta> = meta.try_into();
-        assert_eq!(result.err().unwrap(), NatureError::VerifyError("repeated state name: \"b\", for `Meta`: \"B:hello\"".to_string()));
+        assert_eq!(result.err().unwrap(), NatureError::VerifyError("repeated state name: [b]".to_string()));
 
         let mut meta = RawMeta::from(Meta::from_string("B:hello:1").unwrap());
         meta.states = Some("".to_string());

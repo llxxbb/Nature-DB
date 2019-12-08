@@ -154,12 +154,12 @@ mod test {
         assert_eq!(rtn.unwrap().len(), 1);
 
         // update flag
-        let _ = RelationDaoImpl::update_flag("/B/from:1", "/B/to:1", 0);
+        let _ = RelationDaoImpl::update_flag("B:from:1", "B:to:1", 0);
         let rtn = RelationDaoImpl::get_relations(meta, meta_cache, MetaDaoImpl::get).unwrap();
         assert_eq!(rtn, None);
 
         // delete after test
-        let _ = RelationDaoImpl::delete_by_biz("/B/from:1", "/B/to:1");
+        let _ = RelationDaoImpl::delete_by_biz("B:from:1", "B:to:1");
     }
 
     fn meta_cache(m: &str, _: MetaGetter) -> Result<Meta> {

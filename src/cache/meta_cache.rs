@@ -107,7 +107,7 @@ mod test {
 
     #[test]
     fn cache_sub_meta_test() {
-        let multi_meta = MultiMetaSetting::new("/M/parent", "p", 1, vec!["a".to_string(), "b".to_string()], Default::default());
+        let multi_meta = MultiMetaSetting::new("M:parent", "p", 1, vec!["a".to_string(), "b".to_string()], Default::default());
         let setting = MetaSetting {
             is_state: false,
             master: None,
