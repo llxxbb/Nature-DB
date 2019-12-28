@@ -187,13 +187,13 @@ mod test_from_raw {
     #[test]
     fn setting_error_test() {
         let raw = RawRelation {
-            from_meta: "/B/from:1".to_string(),
-            to_meta: "/B/to:1".to_string(),
+            from_meta: "B:from:1".to_string(),
+            to_meta: "B:to:1".to_string(),
             settings: "dd".to_string(),
             flag: 1,
         };
         let rtn = Relation::from_raw(raw, meta_cache, meta);
-        assert_eq!(rtn.err().unwrap().to_string().contains("relation[/B/from:1->/B/to:1]"), true);
+        assert_eq!(rtn.err().unwrap().to_string().contains("relation[B:from:1->B:to:1]"), true);
     }
 
     #[test]
@@ -213,8 +213,8 @@ mod test_from_raw {
             delay: 0,
         };
         let raw = RawRelation {
-            from_meta: "/B/from:1".to_string(),
-            to_meta: "/B/to:1".to_string(),
+            from_meta: "B:from:1".to_string(),
+            to_meta: "B:to:1".to_string(),
             settings: serde_json::to_string(&settings).unwrap(),
             flag: 1,
         };
@@ -245,8 +245,8 @@ mod test_from_raw {
             delay: 0,
         };
         let raw = RawRelation {
-            from_meta: "/B/from:1".to_string(),
-            to_meta: "/B/to:1".to_string(),
+            from_meta: "B:from:1".to_string(),
+            to_meta: "B:to:1".to_string(),
             settings: serde_json::to_string(&settings).unwrap(),
             flag: 1,
         };
