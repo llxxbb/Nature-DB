@@ -158,8 +158,8 @@ mod demand_test {
         let mut instance = Instance::default();
 
         let relation = Relation {
-            from: "/B/from:1".to_string(),
-            to: Meta::from_string("/B/to:1").unwrap(),
+            from: "B:from:1".to_string(),
+            to: Meta::from_string("B:to:1").unwrap(),
             selector: Some(FlowSelector {
                 source_state_include: set,
                 source_state_exclude: HashSet::new(),
@@ -209,8 +209,8 @@ mod demand_test {
         let mut instance = Instance::default();
 
         let relation = Relation {
-            from: "/B/from:1".to_string(),
-            to: Meta::from_string("/B/to:1").unwrap(),
+            from: "B:from:1".to_string(),
+            to: Meta::from_string("B:to:1").unwrap(),
             selector: Some(FlowSelector {
                 source_state_include: HashSet::new(),
                 source_state_exclude: set,
@@ -260,8 +260,8 @@ mod demand_test {
         let mut instance = Instance::default();
 
         let relation = Relation {
-            from: "/B/from:1".to_string(),
-            to: Meta::from_string("/B/to:1").unwrap(),
+            from: "B:from:1".to_string(),
+            to: Meta::from_string("B:to:1").unwrap(),
             selector: Some(FlowSelector {
                 source_state_include: HashSet::new(),
                 source_state_exclude: HashSet::new(),
@@ -311,8 +311,8 @@ mod demand_test {
         let mut instance = Instance::default();
 
         let relation = Relation {
-            from: "/B/from:1".to_string(),
-            to: Meta::from_string("/B/to:1").unwrap(),
+            from: "B:from:1".to_string(),
+            to: Meta::from_string("B:to:1").unwrap(),
             selector: Some(FlowSelector {
                 source_state_include: HashSet::new(),
                 source_state_exclude: HashSet::new(),
@@ -362,8 +362,8 @@ mod demand_test {
         let instance = Instance::default();
 
         let relation = Relation {
-            from: "/B/from:1".to_string(),
-            to: Meta::from_string("/B/to:1").unwrap(),
+            from: "B:from:1".to_string(),
+            to: Meta::from_string("B:to:1").unwrap(),
             selector: Some(FlowSelector {
                 source_state_include: HashSet::new(),
                 source_state_exclude: HashSet::new(),
@@ -393,8 +393,8 @@ mod demand_test {
         let instance = Instance::default();
 
         let relation = Relation {
-            from: "/B/from:1".to_string(),
-            to: Meta::from_string("/B/to:1").unwrap(),
+            from: "B:from:1".to_string(),
+            to: Meta::from_string("B:to:1").unwrap(),
             selector: Some(FlowSelector {
                 source_state_include: HashSet::new(),
                 source_state_exclude: HashSet::new(),
@@ -424,8 +424,8 @@ mod demand_test {
         let instance = Instance::default();
 
         let relation = Relation {
-            from: "/B/from:1".to_string(),
-            to: Meta::from_string("/B/to:1").unwrap(),
+            from: "B:from:1".to_string(),
+            to: Meta::from_string("B:to:1").unwrap(),
             selector: Some(FlowSelector {
                 source_state_include: HashSet::new(),
                 source_state_exclude: HashSet::new(),
@@ -463,8 +463,8 @@ mod demand_test {
         let instance = Instance::default();
 
         let relation = Relation {
-            from: "/B/from:1".to_string(),
-            to: Meta::from_string("/B/to:1").unwrap(),
+            from: "B:from:1".to_string(),
+            to: Meta::from_string("B:to:1").unwrap(),
             selector: Some(FlowSelector {
                 source_state_include: HashSet::new(),
                 source_state_exclude: HashSet::new(),
@@ -508,7 +508,7 @@ mod other_test {
     #[test]
     fn no_selector_but_only_executor() {
         let instance = Instance::default();
-        let osf = vec![new_for_local_executor("/B/from:1", "/B/to:1", "local").unwrap()];
+        let osf = vec![new_for_local_executor("B:from:1", "B:to:1", "local").unwrap()];
         let osf = Some(osf);
         let option = Mission::get_by_instance(&instance, &osf);
         assert_eq!(option.unwrap().len(), 1)

@@ -141,25 +141,25 @@ mod test {
         let _ = setup_logger();
 
         // clear before test
-        let _ = RelationDaoImpl::delete_by_biz("/B/from:1", "/B/to:1");
+        let _ = RelationDaoImpl::delete_by_biz("B:from:1", "B:to:1");
 
         // get null
-        let meta = "/B/from:1";
+        let meta = "B:from:1";
         let rtn = RelationDaoImpl::get_relations(meta, MetaCacheImpl::get, MetaDaoImpl::get).unwrap();
         assert_eq!(rtn, None);
 
         // insert
-        let _ = RelationDaoImpl::insert_by_biz("/B/from:1", "/B/to:1", "url", "http");
+        let _ = RelationDaoImpl::insert_by_biz("B:from:1", "B:to:1", "url", "http");
         let rtn = RelationDaoImpl::get_relations(meta, meta_cache, MetaDaoImpl::get).unwrap();
         assert_eq!(rtn.unwrap().len(), 1);
 
         // update flag
-        let _ = RelationDaoImpl::update_flag("/B/from:1", "/B/to:1", 0);
+        let _ = RelationDaoImpl::update_flag("B:from:1", "B:to:1", 0);
         let rtn = RelationDaoImpl::get_relations(meta, meta_cache, MetaDaoImpl::get).unwrap();
         assert_eq!(rtn, None);
 
         // delete after test
-        let _ = RelationDaoImpl::delete_by_biz("/B/from:1", "/B/to:1");
+        let _ = RelationDaoImpl::delete_by_biz("B:from:1", "B:to:1");
     }
 
     fn meta_cache(m: &str, _: MetaGetter) -> Result<Meta> {

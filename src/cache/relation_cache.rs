@@ -89,7 +89,7 @@ mod test {
 
         #[test]
         fn get_error() {
-            let from = "/B/error:1";
+            let from = "B:error:1";
 
             // this will call mocker
             let result = RelationCacheImpl::get(&from, rtn_err, meta_cache, meta);
@@ -102,7 +102,7 @@ mod test {
         /// test cache also
         #[test]
         fn get_none() {
-            let from = "/B/none:1";
+            let from = "B:none:1";
             // this will call mocker
             let result = RelationCacheImpl::get(&from, rtn_none, meta_cache, meta);
             assert_eq!(result.is_ok(), true);
@@ -124,11 +124,11 @@ mod test {
         #[test]
         fn only_one_group_for_a_given_target() {
             let _ = setup_logger();
-            let from = "/B/only_one_group_for_a_given_target:1";
+            let from = "B:only_one_group_for_a_given_target:1";
 
             fn rtn_one(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
                 Ok(Some(vec![
-                    new_for_local_executor_with_group_and_proportion("/B/oneFrom:1", "/B/oneTo:1", "exe_0", "one", 10).unwrap(),
+                    new_for_local_executor_with_group_and_proportion("B:oneFrom:1", "B:oneTo:1", "exe_0", "one", 10).unwrap(),
                 ]))
             }
 
@@ -144,12 +144,12 @@ mod test {
 
         #[test]
         fn same_group_different_target() {
-            let from = "/B/same_group_different_target:1";
+            let from = "B:same_group_different_target:1";
 
             fn rtn_some(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
                 Ok(Some(vec![
-                    new_for_local_executor_with_group_and_proportion("/B/diffTarget:1", "/B/targetA:1", "exe_5", "sameGroup", 2).unwrap(),
-                    new_for_local_executor_with_group_and_proportion("/B/diffTarget:1", "/B/targetB:1", "exe_6", "sameGroup", 8).unwrap(),
+                    new_for_local_executor_with_group_and_proportion("B:diffTarget:1", "B:targetA:1", "exe_5", "sameGroup", 2).unwrap(),
+                    new_for_local_executor_with_group_and_proportion("B:diffTarget:1", "B:targetB:1", "exe_6", "sameGroup", 8).unwrap(),
                 ]))
             }
 
@@ -166,12 +166,12 @@ mod test {
         #[test]
         fn same_target_same_group() {
             let _ = setup_logger();
-            let from = "/B/same_target_same_group:1";
+            let from = "B:same_target_same_group:1";
 
             fn rtn_some(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
                 Ok(Some(vec![
-                    new_for_local_executor_with_group_and_proportion("/B/sameTarget:1", "/B/sameGroup:1", "exe_3", "same_group", 5).unwrap(),
-                    new_for_local_executor_with_group_and_proportion("/B/sameTarget:1", "/B/sameGroup:1", "exe_4", "same_group", 10).unwrap(),
+                    new_for_local_executor_with_group_and_proportion("B:sameTarget:1", "B:sameGroup:1", "exe_3", "same_group", 5).unwrap(),
+                    new_for_local_executor_with_group_and_proportion("B:sameTarget:1", "B:sameGroup:1", "exe_4", "same_group", 10).unwrap(),
                 ]))
             }
 
@@ -188,12 +188,12 @@ mod test {
         #[test]
         fn weight_test() {
             let _ = setup_logger();
-            let from = "/B/weight_test:1";
+            let from = "B:weight_test:1";
 
             fn rtn_some(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
                 Ok(Some(vec![
-                    new_for_local_executor_with_group_and_proportion("/B/weight_from:1", "/B/to_1:1", "exe_1", "grp", 1).unwrap(),
-                    new_for_local_executor_with_group_and_proportion("/B/weight_from:1", "/B/to_2:1", "exe_2", "grp", 9).unwrap(),
+                    new_for_local_executor_with_group_and_proportion("B:weight_from:1", "B:to_1:1", "exe_1", "grp", 1).unwrap(),
+                    new_for_local_executor_with_group_and_proportion("B:weight_from:1", "B:to_2:1", "exe_2", "grp", 9).unwrap(),
                 ]))
             }
 
@@ -203,11 +203,11 @@ mod test {
             for _i in 0..1000 {
                 let result = RelationCacheImpl::get(&from, rtn_some, meta_cache, meta);
                 let result = &result.unwrap().unwrap()[0];
-                match result.to.get_full_key().as_ref() {
-                    "/B/to_1" => {
+                match result.to.meta_string().as_ref() {
+                    "B:to_1:1" => {
                         exe_1_cnt = exe_1_cnt + 1;
                     }
-                    "/B/to_2" => {
+                    "B:to_2:1" => {
                         exe_2_cnt = exe_2_cnt + 1;
                     }
                     _ => ()
@@ -232,7 +232,7 @@ mod test {
             },
             use_upstream_id: false,
             target_states: None,
-            delay: 0
+            delay: 0,
         })
     }
 }

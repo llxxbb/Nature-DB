@@ -1,6 +1,6 @@
 use diesel::prelude::*;
 
-use nature_common::{Meta, MetaString, NatureError, Result};
+use nature_common::{Meta, NatureError, Result};
 
 use crate::{CONN, CONNNECTION, DbError};
 use crate::raw_models::RawMeta;
@@ -14,9 +14,10 @@ impl MetaDaoImpl {
     pub fn get(meta_str: &str) -> Result<Option<RawMeta>> {
         use self::schema::meta::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
-        let (fk, ver) = MetaString::make_tuple_from_str(meta_str)?;
-        let def = meta.filter(full_key.eq(&fk))
-            .filter(version.eq(ver))
+        let m = Meta::from_string(meta_str)?;
+        let def = meta.filter(meta_type.eq(&m.get_meta_type().get_prefix()))
+            .filter(meta_key.eq(m.get_key()))
+            .filter(version.eq(m.version as i32))
             .filter(flag.eq(1))
             .load::<RawMeta>(conn);
         match def {
@@ -44,12 +45,14 @@ impl MetaDaoImpl {
         }
     }
 
-    pub fn update_flag(full_key_f: &str, version_f: i32, flag_f: i32) -> Result<usize> {
+    pub fn update_flag(meta_str: &str, flag_f: i32) -> Result<usize> {
         use self::schema::meta::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
+        let m = Meta::from_string(meta_str)?;
         let rtn = diesel::update(
-            meta.filter(full_key.eq(full_key_f))
-                .filter(version.eq(version_f)))
+            meta.filter(meta_type.eq(m.get_meta_type().get_prefix()))
+                .filter(meta_key.eq(m.get_key()))
+                .filter(version.eq(m.version as i32)))
             .set(flag.eq(flag_f))
             .execute(conn);
         match rtn {
@@ -58,28 +61,18 @@ impl MetaDaoImpl {
         }
     }
 
-    pub fn delete(meta_def: &Meta) -> Result<usize> {
-        Self::delete_by_full_key(&meta_def.get_full_key(), meta_def.version)
-    }
-
-    pub fn delete_by_full_key(full_key_f: &str, version_f: i32) -> Result<usize> {
+    pub fn delete(m: &Meta) -> Result<usize> {
         use self::schema::meta::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
-        let rtn = diesel::delete(meta.filter(full_key.eq(full_key_f)).filter(version.eq(version_f)))
+        let rtn = diesel::delete(
+            meta.filter(meta_type.eq(m.get_meta_type().get_prefix()))
+                .filter(meta_key.eq(m.get_key()))
+                .filter(version.eq(m.version as i32)))
             .execute(conn);
         match rtn {
             Ok(x) => Ok(x),
             Err(err) => Err(DbError::from(err))
         }
-    }
-}
-
-impl MetaDaoImpl {
-    pub fn new_by_key(key: &str) -> Result<usize> {
-        let mut define = RawMeta::default();
-        define.version = 1;
-        define.full_key = MetaString::full_key(key)?;
-        MetaDaoImpl::insert(&define)
     }
 }
 
@@ -98,7 +91,7 @@ mod test {
         // prepare data to insert
         env::set_var("DATABASE_URL", CONN_STR);
         let define = RawMeta {
-            full_key: "/B/test".to_string(),
+            meta_type: "B".to_string(),
             description: Some("description".to_string()),
             version: 100,
             states: Some("status".to_string()),
@@ -106,12 +99,13 @@ mod test {
             config: "{}".to_string(),
             flag: 1,
             create_time: Local::now().naive_local(),
+            meta_key: "test".to_string(),
         };
-        let meta = "/B/test:100";
-
+        let meta = "B:test:100";
+        let m = Meta::from_string(meta).unwrap();
         // delete if it exists
-        if let Ok(Some(_)) = MetaDaoImpl::get("/B/test:100") {
-            let _ = MetaDaoImpl::delete_by_full_key("/B/test", 100);
+        if let Ok(Some(_)) = MetaDaoImpl::get("B:test:100") {
+            let _ = MetaDaoImpl::delete(&m);
         }
 
         // insert
@@ -131,11 +125,11 @@ mod test {
         assert_eq!(row, define);
 
         // change flag
-        let _ = MetaDaoImpl::update_flag("/B/test", 100, 0);
+        let _ = MetaDaoImpl::update_flag("B:test:100", 0);
         let row = MetaDaoImpl::get(&meta).unwrap();
         assert_eq!(row, None);
 
         // delete it
-        let _ = MetaDaoImpl::delete_by_full_key("/B/test", 100);
+        let _ = MetaDaoImpl::delete(&m);
     }
 }
