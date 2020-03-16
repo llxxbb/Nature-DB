@@ -128,7 +128,7 @@ mod test {
 
 //    #[test]
 //    fn other(){
-//        let setting = r#"{“delay”:1,"selector":{"source_state_include":["dispatching"]}, "executor":[{"protocol":"localRust","url":"nature_demo_converter.dll:auto_sign"}]}"#;
+//        let setting = r#"{“delay”:1,"selector":{"source_state_include":["dispatching"]}, "executor":[{"protocol":"localRust","url":"nature_demo_executor.dll:auto_sign"}]}"#;
 //        let obj : RelationSettings = serde_json::from_str(setting).unwrap();
 //        dbg!(obj);
 //    }
