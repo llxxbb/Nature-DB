@@ -142,7 +142,7 @@ impl Relation {
         for group in groups.values() {
             // summarize the weight for one group
             let sum = group.iter().fold(0u32, |sum, mapping| {
-                sum + mapping.executor.proportion
+                sum + mapping.executor.weight
             });
             if sum == 0 {
                 continue;
@@ -151,7 +151,7 @@ impl Relation {
             let mut begin = 0.0;
             let last = group.last().unwrap();
             for m in group {
-                let w = m.executor.proportion as f32 / sum as f32;
+                let w = m.executor.weight as f32 / sum as f32;
                 let end = begin + w;
                 if ptr::eq(m, last) {
                     // last must great 1
@@ -205,7 +205,7 @@ mod test_from_raw {
                     protocol: Protocol::LocalRust,
                     url: "url_one".to_string(),
                     group: "grp_one".to_string(),
-                    proportion: 100,
+                    weight: 100,
                 },
             ]),
             use_upstream_id: false,
@@ -231,13 +231,13 @@ mod test_from_raw {
                     protocol: Protocol::LocalRust,
                     url: "url_one".to_string(),
                     group: "".to_string(),
-                    proportion: 100,
+                    weight: 100,
                 },
                 Executor {
                     protocol: Protocol::LocalRust,
                     url: "url_two".to_string(),
                     group: "url_two".to_string(),
-                    proportion: 200,
+                    weight: 200,
                 },
             ]),
             use_upstream_id: false,

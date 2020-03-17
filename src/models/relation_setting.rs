@@ -81,7 +81,7 @@ mod test {
                 protocol: Protocol::LocalRust,
                 url: "nature_demo.dll:order_new".to_string(),
                 group: "".to_string(),
-                proportion: 1,
+                weight: 1,
             }]),
             use_upstream_id: false,
             target_states: None,
