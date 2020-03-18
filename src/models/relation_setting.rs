@@ -36,7 +36,7 @@ mod test {
         let mut set = HashSet::<String>::new();
         set.insert("one".to_string());
         let mut fs = FlowSelector::default();
-        fs.source_state_include = set;
+        fs.source_state_all = set;
 
         let setting = RelationSettings {
             selector: Some(fs),
