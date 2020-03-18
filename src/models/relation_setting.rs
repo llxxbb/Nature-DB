@@ -35,16 +35,11 @@ mod test {
     fn selector_test() {
         let mut set = HashSet::<String>::new();
         set.insert("one".to_string());
+        let mut fs = FlowSelector::default();
+        fs.source_state_include = set;
 
         let setting = RelationSettings {
-            selector: Some(FlowSelector {
-                source_state_include: set,
-                source_state_exclude: Default::default(),
-                target_state_include: Default::default(),
-                target_state_exclude: Default::default(),
-                context_include: Default::default(),
-                context_exclude: Default::default(),
-            }),
+            selector: Some(fs),
             executor: None,
             use_upstream_id: false,
             target_states: None,
@@ -125,11 +120,4 @@ mod test {
         let res_obj: RelationSettings = serde_json::from_str(res_str).unwrap();
         assert_eq!(res_obj, setting);
     }
-
-//    #[test]
-//    fn other(){
-//        let setting = r#"{“delay”:1,"selector":{"source_state_include":["dispatching"]}, "executor":[{"protocol":"localRust","url":"nature_demo_executor.dll:auto_sign"}]}"#;
-//        let obj : RelationSettings = serde_json::from_str(setting).unwrap();
-//        dbg!(obj);
-//    }
 }

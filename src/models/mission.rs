@@ -157,17 +157,13 @@ mod demand_test {
 
         let mut instance = Instance::default();
 
+        let mut fs = FlowSelector::default();
+        fs.source_state_include = set;
+
         let relation = Relation {
             from: "B:from:1".to_string(),
             to: Meta::from_string("B:to:1").unwrap(),
-            selector: Some(FlowSelector {
-                source_state_include: set,
-                source_state_exclude: HashSet::new(),
-                target_state_include: HashSet::new(),
-                target_state_exclude: HashSet::new(),
-                context_include: HashSet::new(),
-                context_exclude: HashSet::new(),
-            }),
+            selector: Some(fs),
             executor: Executor::default(),
             use_upstream_id: false,
             target_states: None,
@@ -208,17 +204,13 @@ mod demand_test {
 
         let mut instance = Instance::default();
 
+        let mut fs = FlowSelector::default();
+        fs.source_state_exclude = set;
+
         let relation = Relation {
             from: "B:from:1".to_string(),
             to: Meta::from_string("B:to:1").unwrap(),
-            selector: Some(FlowSelector {
-                source_state_include: HashSet::new(),
-                source_state_exclude: set,
-                target_state_include: HashSet::new(),
-                target_state_exclude: HashSet::new(),
-                context_include: HashSet::new(),
-                context_exclude: HashSet::new(),
-            }),
+            selector: Some(fs),
             executor: Executor::default(),
             use_upstream_id: false,
             target_states: None,
@@ -259,17 +251,13 @@ mod demand_test {
 
         let mut instance = Instance::default();
 
+        let mut fs = FlowSelector::default();
+        fs.context_include = set;
+
         let relation = Relation {
             from: "B:from:1".to_string(),
             to: Meta::from_string("B:to:1").unwrap(),
-            selector: Some(FlowSelector {
-                source_state_include: HashSet::new(),
-                source_state_exclude: HashSet::new(),
-                target_state_include: HashSet::new(),
-                target_state_exclude: HashSet::new(),
-                context_include: set,
-                context_exclude: HashSet::new(),
-            }),
+            selector: Some(fs),
             executor: Executor::default(),
             use_upstream_id: false,
             target_states: None,
@@ -310,17 +298,13 @@ mod demand_test {
 
         let mut instance = Instance::default();
 
+        let mut fs = FlowSelector::default();
+        fs.context_exclude = set;
+
         let relation = Relation {
             from: "B:from:1".to_string(),
             to: Meta::from_string("B:to:1").unwrap(),
-            selector: Some(FlowSelector {
-                source_state_include: HashSet::new(),
-                source_state_exclude: HashSet::new(),
-                target_state_include: HashSet::new(),
-                target_state_exclude: HashSet::new(),
-                context_include: HashSet::new(),
-                context_exclude: set,
-            }),
+            selector: Some(fs),
             executor: Executor::default(),
             use_upstream_id: false,
             target_states: None,
@@ -361,17 +345,13 @@ mod demand_test {
 
         let instance = Instance::default();
 
+        let mut fs = FlowSelector::default();
+        fs.target_state_include = set;
+
         let relation = Relation {
             from: "B:from:1".to_string(),
             to: Meta::from_string("B:to:1").unwrap(),
-            selector: Some(FlowSelector {
-                source_state_include: HashSet::new(),
-                source_state_exclude: HashSet::new(),
-                target_state_include: set,
-                target_state_exclude: HashSet::new(),
-                context_include: HashSet::new(),
-                context_exclude: HashSet::new(),
-            }),
+            selector: Some(fs),
             executor: Executor::default(),
             use_upstream_id: false,
             target_states: None,
@@ -392,17 +372,13 @@ mod demand_test {
 
         let instance = Instance::default();
 
+        let mut fs = FlowSelector::default();
+        fs.target_state_exclude = set;
+
         let relation = Relation {
             from: "B:from:1".to_string(),
             to: Meta::from_string("B:to:1").unwrap(),
-            selector: Some(FlowSelector {
-                source_state_include: HashSet::new(),
-                source_state_exclude: HashSet::new(),
-                target_state_include: HashSet::new(),
-                target_state_exclude: set,
-                context_include: HashSet::new(),
-                context_exclude: HashSet::new(),
-            }),
+            selector: Some(fs),
             executor: Executor::default(),
             use_upstream_id: false,
             target_states: None,
@@ -423,17 +399,14 @@ mod demand_test {
 
         let instance = Instance::default();
 
+        let mut fs = FlowSelector::default();
+        fs.target_state_include = set.clone();
+        fs.target_state_exclude = set;
+
         let relation = Relation {
             from: "B:from:1".to_string(),
             to: Meta::from_string("B:to:1").unwrap(),
-            selector: Some(FlowSelector {
-                source_state_include: HashSet::new(),
-                source_state_exclude: HashSet::new(),
-                target_state_include: set.clone(),
-                target_state_exclude: set,
-                context_include: HashSet::new(),
-                context_exclude: HashSet::new(),
-            }),
+            selector: Some(fs),
             executor: Executor::default(),
             use_upstream_id: false,
             target_states: Some(TargetState {
@@ -465,14 +438,7 @@ mod demand_test {
         let relation = Relation {
             from: "B:from:1".to_string(),
             to: Meta::from_string("B:to:1").unwrap(),
-            selector: Some(FlowSelector {
-                source_state_include: HashSet::new(),
-                source_state_exclude: HashSet::new(),
-                target_state_include: HashSet::new(),
-                target_state_exclude: HashSet::new(),
-                context_include: HashSet::new(),
-                context_exclude: HashSet::new(),
-            }),
+            selector: Some(FlowSelector::default()),
             executor: Executor::default(),
             use_upstream_id: false,
             target_states: Some(TargetState {

@@ -13,6 +13,7 @@ table! {
         from_state_version -> Nullable<Integer>,
         execute_time -> Timestamp,
         create_time -> Timestamp,
+        sys_context -> Nullable<Text>,
     }
 }
 

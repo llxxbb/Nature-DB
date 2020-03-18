@@ -7,10 +7,16 @@ pub struct FlowSelector {
     pub source_state_include: HashSet<String>,
     #[serde(skip_serializing_if = "HashSet::is_empty")]
     #[serde(default)]
+    pub source_state_include_any: HashSet<String>,
+    #[serde(skip_serializing_if = "HashSet::is_empty")]
+    #[serde(default)]
     pub source_state_exclude: HashSet<String>,
     #[serde(skip_serializing_if = "HashSet::is_empty")]
     #[serde(default)]
     pub target_state_include: HashSet<String>,
+    #[serde(skip_serializing_if = "HashSet::is_empty")]
+    #[serde(default)]
+    pub target_state_include_any: HashSet<String>,
     #[serde(skip_serializing_if = "HashSet::is_empty")]
     #[serde(default)]
     pub target_state_exclude: HashSet<String>,
@@ -19,7 +25,19 @@ pub struct FlowSelector {
     pub context_include: HashSet<String>,
     #[serde(skip_serializing_if = "HashSet::is_empty")]
     #[serde(default)]
+    pub context_include_any: HashSet<String>,
+    #[serde(skip_serializing_if = "HashSet::is_empty")]
+    #[serde(default)]
     pub context_exclude: HashSet<String>,
+    #[serde(skip_serializing_if = "HashSet::is_empty")]
+    #[serde(default)]
+    pub sys_context_include: HashSet<String>,
+    #[serde(skip_serializing_if = "HashSet::is_empty")]
+    #[serde(default)]
+    pub sys_context_include_any: HashSet<String>,
+    #[serde(skip_serializing_if = "HashSet::is_empty")]
+    #[serde(default)]
+    pub sys_context_exclude: HashSet<String>,
 }
 
 #[cfg(test)]
@@ -30,11 +48,17 @@ mod test {
     fn selector_serder_test() {
         let mut se = FlowSelector {
             source_state_include: HashSet::new(),
+            source_state_include_any: Default::default(),
             source_state_exclude: HashSet::new(),
             target_state_include: HashSet::new(),
+            target_state_include_any: Default::default(),
             target_state_exclude: HashSet::new(),
             context_include: HashSet::new(),
+            context_include_any: Default::default(),
             context_exclude: HashSet::new(),
+            sys_context_include: Default::default(),
+            sys_context_include_any: Default::default(),
+            sys_context_exclude: Default::default(),
         };
         // test for null
         let rtn = serde_json::to_string(&se);
