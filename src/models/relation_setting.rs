@@ -36,7 +36,7 @@ mod test {
         let mut set = HashSet::<String>::new();
         set.insert("one".to_string());
         let mut fs = FlowSelector::default();
-        fs.source_state_all = set;
+        fs.state_all = set;
 
         let setting = RelationSettings {
             selector: Some(fs),
@@ -111,7 +111,7 @@ mod test {
             selector: None,
             executor: None,
             use_upstream_id: false,
-            target_states: Some(TargetState { add: Some(vec!["new".to_string()]), remove: None }),
+            target_states: Some(TargetState { add: Some(vec!["new".to_string()]), remove: None, need_all: Default::default(), need_any: Default::default(), need_none: Default::default() }),
             delay: 0,
         };
         let result = serde_json::to_string(&setting).unwrap();
