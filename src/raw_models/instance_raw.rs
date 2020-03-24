@@ -90,7 +90,7 @@ impl RawInstance {
                 }
                 instance.content.clone()
             },
-            context: Self::context_to_raw(&instance.sys_context, "context")?,
+            context: Self::context_to_raw(&instance.context, "context")?,
             states: match instance.states.len() {
                 0 => None,
                 _ => Some(serde_json::to_string(&instance.states)?)

@@ -29,10 +29,12 @@ diesel = { version = "1.4", default-features = false, features = ["sqlite","chro
 r2d2 = "0.8"
 r2d2-diesel = "1.0"
 
+# log
 log = "0.4"
+fern = "0.5"        # Simple, efficient logging
 
 [features]
-default = ["sqlite"]
+default = ["mysql"]
 mysql = []
 sqlite = []
 

@@ -46,7 +46,7 @@ mod test {
             delay: 0,
         };
         let result = serde_json::to_string(&setting).unwrap();
-        let res_str = r#"{"selector":{"source_state_include":["one"]}}"#;
+        let res_str = r#"{"selector":{"state_all":["one"]}}"#;
         assert_eq!(result, res_str);
         let res_obj: RelationSettings = serde_json::from_str(res_str).unwrap();
         assert_eq!(res_obj, setting);

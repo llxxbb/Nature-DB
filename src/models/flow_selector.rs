@@ -56,7 +56,7 @@ mod test {
         // test for some value
         se.state_all.insert("aaa".to_string());
         let rtn = serde_json::to_string(&se).unwrap();
-        assert_eq!(rtn, "{\"source_status_include\":[\"aaa\"]}");
+        assert_eq!(rtn, "{\"state_all\":[\"aaa\"]}");
 
         // deserialize
 

@@ -65,6 +65,7 @@ impl Mission {
                 use_upstream_id: r.use_upstream_id,
                 delay: r.delay,
             };
+            debug!("instance meta: {}, selected relation is {}", instance.meta, r.relation_string());
             rtn.push(m);
         }
         match rtn.len() {

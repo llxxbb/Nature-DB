@@ -174,6 +174,10 @@ impl Relation {
         }
         labels
     }
+
+    pub fn relation_string(&self) -> String {
+        format!("{}->{}", self.from, self.to.meta_string()).to_owned()
+    }
 }
 
 #[cfg(test)]

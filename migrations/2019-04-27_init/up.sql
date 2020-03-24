@@ -34,6 +34,7 @@ create TABLE `instances` (
 	`from_state_version`	INTEGER,
 	`execute_time`	DATETIME NOT NULL,
 	`create_time`	DATETIME NOT NULL,
+	`sys_context`	TEXT,
 	PRIMARY KEY(`meta`,`para`,`instance_id`,`state_version`)
 );
 

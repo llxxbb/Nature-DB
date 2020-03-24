@@ -1,17 +1,18 @@
+use chrono::{Duration, Local};
 use diesel::prelude::*;
 use diesel::result::*;
 
 use nature_common::{Instance, NatureError, Result, vec_to_hex_string, vec_to_u128};
 
 use crate::{CONN, CONNNECTION, DbError};
-use crate::dao::schema::task::dsl::*;
 use crate::raw_models::{RawTask, RawTaskError};
+use crate::schema::task::dsl::*;
 
 pub struct TaskDaoImpl;
 
 impl TaskDaoImpl {
     pub fn insert(raw: &RawTask) -> Result<usize> {
-        use crate::dao::schema::task;
+        use crate::schema::task;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::insert_into(task::table).values(raw).execute(conn);
         match rtn {
@@ -42,7 +43,7 @@ impl TaskDaoImpl {
     }
 
     pub fn raw_to_error(err: &NatureError, raw: &RawTask) -> Result<usize> {
-        use crate::dao::schema::task_error;
+        use crate::schema::task_error;
         let rtn = {
             let conn: &CONNNECTION = &CONN.lock().unwrap();
             let rd = RawTaskError::from_raw(err, raw);
@@ -71,9 +72,11 @@ impl TaskDaoImpl {
         rtn
     }
 
-    pub fn get_overdue(seconds: &str) -> Result<Vec<RawTask>> {
+    pub fn get_overdue(delay: i64, lim: i64) -> Result<Vec<RawTask>> {
+        use crate::schema::task::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
-        let rtn = diesel::sql_query(format!("select * from task where execute_time < datetime('now','localtime','-{} seconds') limit 100", seconds))
+        let rtn = task.filter(execute_time.lt(Local::now().checked_add_signed(Duration::seconds(delay)).unwrap().naive_local()))
+            .limit(lim)
             .load::<RawTask>(conn);
         match rtn {
             Ok(rtn) => Ok(rtn),
@@ -83,13 +86,18 @@ impl TaskDaoImpl {
 
 
     pub fn update_execute_time(record_id: &[u8], delay: i64, last_state: &Option<Instance>) -> Result<()> {
+        // use crate::schema::task::dsl::*;
         let version = match last_state {
             Some(ins) => ins.state_version,
             None => 0
         };
         let conn: &CONNNECTION = &CONN.lock().unwrap();
-        let sql = format!("update task set execute_time = datetime('now', '+{} seconds', 'localtime'), last_state_version = {} where task_id = x'{}'", delay, version, vec_to_hex_string(&record_id));
-        match diesel::sql_query(sql)
+        // let sql = format!("update task set execute_time = datetime('now', '+{} seconds', 'localtime'), last_state_version = {} where task_id = x'{}'", delay, version, vec_to_hex_string(&record_id));
+        // match diesel::sql_query(sql)
+        let time = Local::now().checked_add_signed(Duration::seconds(delay)).unwrap().naive_local();
+        match diesel::update(task)
+            .set((execute_time.eq(time), last_state_version.eq(version)))
+            .filter(task_id.eq(record_id))
             .execute(conn) {
             Err(e) => {
                 warn!("Update delay error: {}", &e);
@@ -104,7 +112,7 @@ impl TaskDaoImpl {
     /// increase one times and delay `delay` seconds
     pub fn increase_times_and_delay(record_id: &[u8], delay: i32) -> Result<usize> {
         let conn: &CONNNECTION = &CONN.lock().unwrap();
-        let sql = format!("update task set retried_times = retried_times + 1, execute_time = datetime('now', '+{} seconds') where task_id = x'{}'", delay, vec_to_hex_string(&record_id));
+        let sql = format!("update task set retried_times = retried_times + 1, execute_time = datetime('now', '+{} seconds', 'localtime') where task_id = x'{}'", delay, vec_to_hex_string(&record_id));
         println!("{}", &sql);
         match diesel::sql_query(sql)
             .execute(conn) {

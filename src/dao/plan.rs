@@ -8,11 +8,11 @@ use super::*;
 pub struct StorePlanDaoImpl;
 
 impl StorePlanDaoImpl {
-    pub fn save(plan: &RawPlanInfo) -> Result<()> {
+    pub fn save(p: &RawPlanInfo) -> Result<()> {
         use self::schema::plan;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::insert_into(plan::table)
-            .values(plan)
+            .values(p)
             .execute(conn);
         match rtn {
             Ok(x) => match x {
@@ -22,14 +22,17 @@ impl StorePlanDaoImpl {
                     num
                 ))),
             },
-            Err(e) => Err(DbError::from_with_msg(e, &format!("upstream : {}, downstream : {}", plan.upstream, plan.downstream))),
+            Err(e) => Err(DbError::from_with_msg(e, &format!("upstream : {}, downstream : {}", p.upstream, p.downstream))),
         }
     }
 
-    pub fn get(key: &str) -> Result<Option<RawPlanInfo>> {
+    pub fn get(u: &str, d: &str) -> Result<Option<RawPlanInfo>> {
         use super::schema::plan::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
-        let def = match plan.filter(upstream.eq(&key)).load::<RawPlanInfo>(conn) {
+        let def = match plan
+            .filter(upstream.eq(&u))
+            .filter(downstream.eq(&d))
+            .load::<RawPlanInfo>(conn) {
             Ok(rows) => rows,
             Err(e) => return Err(DbError::from(e)),
         };
