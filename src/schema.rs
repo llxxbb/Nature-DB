@@ -52,10 +52,11 @@ table! {
 table! {
     task (task_id) {
         task_id -> Binary,
-        meta -> Varchar,
-        data_type -> Smallint,
+        task_key -> Varchar,
+        task_type -> Tinyint,
+        task_for -> Varchar,
+        task_state -> Tinyint,
         data -> Text,
-        last_state_version -> Integer,
         create_time -> Datetime,
         execute_time -> Datetime,
         retried_times -> Smallint,
@@ -65,10 +66,10 @@ table! {
 table! {
     task_error (task_id) {
         task_id -> Binary,
-        meta -> Varchar,
-        data_type -> Smallint,
+        task_key -> Varchar,
+        task_type -> Tinyint,
+        task_for -> Varchar,
         data -> Text,
-        last_state_version -> Integer,
         create_time -> Datetime,
         msg -> Varchar,
     }

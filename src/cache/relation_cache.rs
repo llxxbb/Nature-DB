@@ -30,9 +30,9 @@ impl RelationCacheImpl {
             Ok(None)
         } else {
             let vec = Relation::weight_filter(&relations.unwrap(), &balances.unwrap());
-            for r in &vec {
-                debug!("relation can be used fro `Meta`: {}， relation : {}", meta_from, r.relation_string());
-            }
+            // for r in &vec {
+            //     debug!("relation can be used for `Meta`: {}， relation : {}", meta_from, r.relation_string());
+            // }
             Ok(Some(vec))
         }
     }

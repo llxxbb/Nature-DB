@@ -2,7 +2,7 @@ use chrono::{Duration, Local};
 use diesel::prelude::*;
 use diesel::result::*;
 
-use nature_common::{Instance, NatureError, Result, vec_to_hex_string, vec_to_u128};
+use nature_common::{NatureError, Result, vec_to_hex_string};
 
 use crate::{CONN, CONNNECTION, DbError};
 use crate::raw_models::{RawTask, RawTaskError};
@@ -28,7 +28,7 @@ impl TaskDaoImpl {
             },
             Err(e) => {
                 error!("insert task error: {:?}", e);
-                Err(DbError::from_with_msg(e, &format!("mata : {}, id : {}", &raw.meta, vec_to_u128(&raw.task_id))))
+                Err(DbError::from_with_msg(e, &raw.task_string()))
             }
         }
     }
@@ -85,18 +85,11 @@ impl TaskDaoImpl {
     }
 
 
-    pub fn update_execute_time(record_id: &[u8], delay: i64, last_state: &Option<Instance>) -> Result<()> {
-        // use crate::schema::task::dsl::*;
-        let version = match last_state {
-            Some(ins) => ins.state_version,
-            None => 0
-        };
+    pub fn update_execute_time(record_id: &[u8], delay: i64) -> Result<()> {
         let conn: &CONNNECTION = &CONN.lock().unwrap();
-        // let sql = format!("update task set execute_time = datetime('now', '+{} seconds', 'localtime'), last_state_version = {} where task_id = x'{}'", delay, version, vec_to_hex_string(&record_id));
-        // match diesel::sql_query(sql)
         let time = Local::now().checked_add_signed(Duration::seconds(delay)).unwrap().naive_local();
         match diesel::update(task)
-            .set((execute_time.eq(time), last_state_version.eq(version)))
+            .set(execute_time.eq(time))
             .filter(task_id.eq(record_id))
             .execute(conn) {
             Err(e) => {

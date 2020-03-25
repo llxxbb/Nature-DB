@@ -10,10 +10,10 @@ use crate::schema::task_error;
 #[table_name = "task_error"]
 pub struct RawTaskError {
     pub task_id: Vec<u8>,
-    pub meta: String,
-    pub data_type: i16,
+    pub task_key: String,
+    pub task_type: i8,
+    pub task_for: String,
     pub data: String,
-    pub last_state_version: i32,
     pub create_time: NaiveDateTime,
     pub msg: String,
 }
@@ -22,12 +22,12 @@ impl RawTaskError {
     pub fn from_raw(err: &NatureError, raw: &RawTask) -> Self {
         RawTaskError {
             task_id: raw.task_id.clone(),
-            meta: raw.meta.clone(),
-            data_type: raw.data_type,
+            task_key: raw.task_key.clone(),
+            task_type: raw.task_type,
             data: raw.data.clone(),
-            last_state_version: raw.last_state_version,
             create_time: raw.create_time,
             msg: format!("{:?}", err),
+            task_for: "".to_string(),
         }
     }
 }
