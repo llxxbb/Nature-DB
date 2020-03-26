@@ -33,9 +33,31 @@ impl InstanceDaoImpl {
                 .and(from_id.eq(u128_to_vec_u8(f_para.from_id)))
                 .and(from_meta.eq(&f_para.from_meta))
                 .and(from_state_version.eq(f_para.from_state_version))
+                .and(from_para.eq(&f_para.from_para))
             )
             .order(state_version.desc())
             .limit(1)
+            .load::<RawInstance>(conn);
+        match def {
+            Ok(rtn) => match rtn.len() {
+                0 => Ok(None),
+                1 => Ok(Some(rtn[0].to()?)),
+                _ => Err(NatureError::SystemError("should less than 2 record return".to_string())),
+            }
+            Err(e) => Err(DbError::from(e))
+        }
+    }
+
+    pub fn get_last_state(f_para: &ParaForQueryByID) -> Result<Option<Instance>> {
+        use super::schema::instances::dsl::*;
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
+        let def = instances
+            .filter(instance_id.eq(u128_to_vec_u8(f_para.id))
+                .and(meta.eq(&f_para.meta))
+                .and(para.eq(&f_para.para))
+            )
+            .order(state_version.desc())
+            .limit(f_para.limit as i64)
             .load::<RawInstance>(conn);
         match def {
             Ok(rtn) => match rtn.len() {
@@ -52,10 +74,9 @@ impl InstanceDaoImpl {
         let def = instances
             .filter(instance_id.eq(u128_to_vec_u8(f_para.id))
                 .and(meta.eq(&f_para.meta))
-                .and(state_version.ge(f_para.state_version_from))
+                .and(state_version.ge(f_para.state_version))
+                .and(para.eq(&f_para.para))
             )
-            .order(state_version.desc())
-            .limit(f_para.limit as i64)
             .load::<RawInstance>(conn);
         match def {
             Ok(rtn) => match rtn.len() {

@@ -1,6 +1,6 @@
 [package]
 name = "nature_db"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["XueBin Li <llxxbb@yeah.net>"]
 edition = "2018"
 workspace = "../Nature"
@@ -11,7 +11,7 @@ license = "MIT"
 
 [dependencies]
 
-nature_common = {path = "../Nature-Common", version = "0.0.2"}
+nature_common = {path = "../Nature-Common", version = "0.0.3"}
 
 rand = "0.6"
 chrono = { version = "0.4", features = ["serde"] }
@@ -29,10 +29,12 @@ diesel = { version = "1.4", default-features = false, features = ["sqlite","chro
 r2d2 = "0.8"
 r2d2-diesel = "1.0"
 
+# log
 log = "0.4"
+fern = "0.5"        # Simple, efficient logging
 
 [features]
-default = ["sqlite"]
+default = ["mysql"]
 mysql = []
 sqlite = []
 

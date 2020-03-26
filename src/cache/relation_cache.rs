@@ -30,7 +30,9 @@ impl RelationCacheImpl {
             Ok(None)
         } else {
             let vec = Relation::weight_filter(&relations.unwrap(), &balances.unwrap());
-            debug!("Available relations of `Meta`: {}， number : {:?}", meta_from, vec.len());
+            // for r in &vec {
+            //     debug!("relation can be used for `Meta`: {}， relation : {}", meta_from, r.relation_string());
+            // }
             Ok(Some(vec))
         }
     }
@@ -128,7 +130,7 @@ mod test {
 
             fn rtn_one(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
                 Ok(Some(vec![
-                    new_for_local_executor_with_group_and_proportion("B:oneFrom:1", "B:oneTo:1", "exe_0", "one", 10).unwrap(),
+                    new_for_local_executor_with_group_and_weight("B:oneFrom:1", "B:oneTo:1", "exe_0", "one", 10).unwrap(),
                 ]))
             }
 
@@ -148,8 +150,8 @@ mod test {
 
             fn rtn_some(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
                 Ok(Some(vec![
-                    new_for_local_executor_with_group_and_proportion("B:diffTarget:1", "B:targetA:1", "exe_5", "sameGroup", 2).unwrap(),
-                    new_for_local_executor_with_group_and_proportion("B:diffTarget:1", "B:targetB:1", "exe_6", "sameGroup", 8).unwrap(),
+                    new_for_local_executor_with_group_and_weight("B:diffTarget:1", "B:targetA:1", "exe_5", "sameGroup", 2).unwrap(),
+                    new_for_local_executor_with_group_and_weight("B:diffTarget:1", "B:targetB:1", "exe_6", "sameGroup", 8).unwrap(),
                 ]))
             }
 
@@ -170,8 +172,8 @@ mod test {
 
             fn rtn_some(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
                 Ok(Some(vec![
-                    new_for_local_executor_with_group_and_proportion("B:sameTarget:1", "B:sameGroup:1", "exe_3", "same_group", 5).unwrap(),
-                    new_for_local_executor_with_group_and_proportion("B:sameTarget:1", "B:sameGroup:1", "exe_4", "same_group", 10).unwrap(),
+                    new_for_local_executor_with_group_and_weight("B:sameTarget:1", "B:sameGroup:1", "exe_3", "same_group", 5).unwrap(),
+                    new_for_local_executor_with_group_and_weight("B:sameTarget:1", "B:sameGroup:1", "exe_4", "same_group", 10).unwrap(),
                 ]))
             }
 
@@ -192,8 +194,8 @@ mod test {
 
             fn rtn_some(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
                 Ok(Some(vec![
-                    new_for_local_executor_with_group_and_proportion("B:weight_from:1", "B:to_1:1", "exe_1", "grp", 1).unwrap(),
-                    new_for_local_executor_with_group_and_proportion("B:weight_from:1", "B:to_2:1", "exe_2", "grp", 9).unwrap(),
+                    new_for_local_executor_with_group_and_weight("B:weight_from:1", "B:to_1:1", "exe_1", "grp", 1).unwrap(),
+                    new_for_local_executor_with_group_and_weight("B:weight_from:1", "B:to_2:1", "exe_2", "grp", 9).unwrap(),
                 ]))
             }
 
@@ -219,7 +221,7 @@ mod test {
         }
     }
 
-    fn new_for_local_executor_with_group_and_proportion(from: &str, to: &str, local_executor: &str, group: &str, proportion: u32) -> Result<Relation> {
+    fn new_for_local_executor_with_group_and_weight(from: &str, to: &str, local_executor: &str, group: &str, weight: u32) -> Result<Relation> {
         Ok(Relation {
             from: from.to_string(),
             to: Meta::from_string(to)?,
@@ -228,7 +230,7 @@ mod test {
                 protocol: Protocol::LocalRust,
                 url: local_executor.to_string(),
                 group: group.to_string(),
-                proportion,
+                weight,
             },
             use_upstream_id: false,
             target_states: None,

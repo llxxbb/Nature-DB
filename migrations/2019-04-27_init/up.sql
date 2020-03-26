@@ -6,7 +6,7 @@ create TABLE `meta` (
 	`version`	INTEGER NOT NULL,
 	`states`	VARCHAR ( 1023 ),
 	`fields`	VARCHAR ( 1023 ),
-	`config`    VARCHAR(2048) DEFAULT '{}' NOT NULL,
+	`config`    VARCHAR(2047) DEFAULT '{}' NOT NULL,
 	`flag`      INTEGER DEFAULT 1 NOT NULL,
 	`create_time`	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY(`meta_type`,`meta_key`,`version`)
@@ -34,29 +34,33 @@ create TABLE `instances` (
 	`from_state_version`	INTEGER,
 	`execute_time`	DATETIME NOT NULL,
 	`create_time`	DATETIME NOT NULL,
+	`sys_context`	TEXT,
 	PRIMARY KEY(`meta`,`para`,`instance_id`,`state_version`)
 );
 
 create TABLE `task` (
 	`task_id`	BINARY(16) NOT NULL,
-	`meta`	VARCHAR ( 255 ) NOT NULL,
-	`data_type`	SMALLINT NOT NULL,
+	`task_key`	VARCHAR ( 511 ) NOT NULL,
+	`task_type`	TINYINT NOT NULL,
+	`task_for`	VARCHAR ( 255 ) NOT NULL,
+	`task_state`	TINYINT NOT NULL,
 	`data`	TEXT NOT NULL,
-	`last_state_version`    INTEGER NOT NULL,
 	`create_time`	DATETIME NOT NULL,
 	`execute_time`	DATETIME NOT NULL,
 	`retried_times`	SMALLINT NOT NULL,
+	UNIQUE KEY `task_un` (`task_key`,`task_type`,`task_for`),
 	PRIMARY KEY(`task_id`)
 );
 
 create TABLE `task_error` (
 	`task_id`	BINARY(16) NOT NULL,
-	`meta`	VARCHAR ( 255 ) NOT NULL,
-	`data_type`	SMALLINT NOT NULL,
+	`task_key`	VARCHAR ( 511 ) NOT NULL,
+	`task_type`	TINYINT NOT NULL,
+	`task_for`	VARCHAR ( 255 ) NOT NULL,
 	`data`	TEXT NOT NULL,
-	`last_state_version`    INTEGER NOT NULL,
 	`create_time`	DATETIME NOT NULL,
 	`msg`	VARCHAR ( 255 ) NOT NULL,
+	UNIQUE KEY `task_un` (`task_key`,`task_type`,`task_for`),
 	PRIMARY KEY(`task_id`)
 );
 

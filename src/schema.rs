@@ -1,49 +1,50 @@
 table! {
-    instances (instance_id, meta, para, state_version) {
+    instances (meta, para, instance_id, state_version) {
         instance_id -> Binary,
-        meta -> Text,
-        para -> Text,
-        content -> Text,
+        meta -> Varchar,
+        para -> Varchar,
+        content -> Varchar,
         context -> Nullable<Text>,
         states -> Nullable<Text>,
         state_version -> Integer,
-        from_meta -> Nullable<Text>,
-        from_para -> Nullable<Text>,
+        from_meta -> Nullable<Varchar>,
+        from_para -> Nullable<Varchar>,
         from_id -> Nullable<Binary>,
         from_state_version -> Nullable<Integer>,
-        execute_time -> Timestamp,
-        create_time -> Timestamp,
+        execute_time -> Datetime,
+        create_time -> Datetime,
+        sys_context -> Nullable<Text>,
     }
 }
 
 table! {
     meta (meta_type, meta_key, version) {
-        meta_type -> Text,
-        meta_key -> Text,
-        description -> Nullable<Text>,
+        meta_type -> Varchar,
+        meta_key -> Varchar,
+        description -> Nullable<Varchar>,
         version -> Integer,
-        states -> Nullable<Text>,
-        fields -> Nullable<Text>,
-        config -> Text,
+        states -> Nullable<Varchar>,
+        fields -> Nullable<Varchar>,
+        config -> Varchar,
         flag -> Integer,
-        create_time -> Timestamp,
+        create_time -> Datetime,
     }
 }
 
 table! {
     plan (upstream, downstream) {
-        upstream -> Text,
-        downstream -> Text,
+        upstream -> Varchar,
+        downstream -> Varchar,
         content -> Text,
-        create_time -> Timestamp,
+        create_time -> Datetime,
     }
 }
 
 table! {
     relation (from_meta, to_meta) {
-        from_meta -> Text,
-        to_meta -> Text,
-        settings -> Text,
+        from_meta -> Varchar,
+        to_meta -> Varchar,
+        settings -> Varchar,
         flag -> Integer,
     }
 }
@@ -51,25 +52,26 @@ table! {
 table! {
     task (task_id) {
         task_id -> Binary,
-        meta -> Text,
-        data_type -> SmallInt,
+        task_key -> Varchar,
+        task_type -> Tinyint,
+        task_for -> Varchar,
+        task_state -> Tinyint,
         data -> Text,
-        last_state_version -> Integer,
-        create_time -> Timestamp,
-        execute_time -> Timestamp,
-        retried_times -> SmallInt,
+        create_time -> Datetime,
+        execute_time -> Datetime,
+        retried_times -> Smallint,
     }
 }
 
 table! {
     task_error (task_id) {
         task_id -> Binary,
-        meta -> Text,
-        data_type -> SmallInt,
+        task_key -> Varchar,
+        task_type -> Tinyint,
+        task_for -> Varchar,
         data -> Text,
-        last_state_version -> Integer,
-        create_time -> Timestamp,
-        msg -> Text,
+        create_time -> Datetime,
+        msg -> Varchar,
     }
 }
 

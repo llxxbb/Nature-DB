@@ -8,10 +8,10 @@ pub enum TaskType {
     Batch = 11,
 }
 
-impl TryFrom<i16> for TaskType {
+impl TryFrom<i8> for TaskType {
     type Error = NatureError;
 
-    fn try_from(value: i16) -> Result<Self, Self::Error> {
+    fn try_from(value: i8) -> Result<Self, Self::Error> {
         match value {
             1 => Ok(TaskType::Store),
             2 => Ok(TaskType::Convert),

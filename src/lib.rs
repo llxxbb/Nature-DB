@@ -4,6 +4,7 @@
 extern crate chrono;
 #[macro_use]
 extern crate diesel;
+extern crate fern;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]

@@ -27,6 +27,7 @@ pub struct RawInstance {
     from_state_version: Option<i32>,
     execute_time: NaiveDateTime,
     create_time: NaiveDateTime,
+    sys_context: Option<String>,
 }
 
 impl RawInstance {
@@ -50,6 +51,10 @@ impl RawInstance {
             None => HashMap::new(),
             Some(ref s) => serde_json::from_str::<HashMap<String, String>>(s)?
         };
+        let sys_context = match self.sys_context {
+            None => HashMap::new(),
+            Some(ref s) => serde_json::from_str::<HashMap<String, String>>(s)?
+        };
         let states = match self.states {
             None => HashSet::new(),
             Some(ref s) => serde_json::from_str::<HashSet<String>>(s)?
@@ -60,6 +65,7 @@ impl RawInstance {
                 meta: self.meta.clone(),
                 content: self.content.clone(),
                 context,
+                sys_context,
                 states,
                 state_version: self.state_version,
                 from,
@@ -84,16 +90,7 @@ impl RawInstance {
                 }
                 instance.content.clone()
             },
-            context: {
-                let ctx_len = instance.context.len();
-                if ctx_len > *INSTANCE_CONTEXT_MAX_LENGTH.deref() {
-                    return Err(NatureError::SystemError("context's length can' be over : ".to_owned() + &INSTANCE_CONTEXT_MAX_LENGTH.to_string()));
-                }
-                match ctx_len {
-                    0 => None,
-                    _ => Some(serde_json::to_string(&instance.context)?)
-                }
-            },
+            context: Self::context_to_raw(&instance.context, "context")?,
             states: match instance.states.len() {
                 0 => None,
                 _ => Some(serde_json::to_string(&instance.states)?)
@@ -106,6 +103,19 @@ impl RawInstance {
             from_id,
             execute_time: Local.timestamp_millis(instance.execute_time).naive_local(),
             create_time: Local.timestamp_millis(instance.create_time).naive_local(),
+            sys_context: Self::context_to_raw(&instance.sys_context, "sys_context")?,
         })
+    }
+
+    fn context_to_raw(context: &HashMap<String, String>, which: &str) -> Result<Option<String>> {
+        let ctx_len = context.len();
+        if ctx_len > *INSTANCE_CONTEXT_MAX_LENGTH.deref() {
+            let msg = format!("{}'s length can' be over : {}", which, INSTANCE_CONTEXT_MAX_LENGTH.to_string());
+            return Err(NatureError::SystemError(msg));
+        }
+        match ctx_len {
+            0 => Ok(None),
+            _ => Ok(Some(serde_json::to_string(context)?))
+        }
     }
 }
