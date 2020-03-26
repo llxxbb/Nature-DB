@@ -76,6 +76,7 @@ impl TaskDaoImpl {
         use crate::schema::task::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = task.filter(execute_time.lt(Local::now().checked_add_signed(Duration::seconds(delay)).unwrap().naive_local()))
+            .filter(task_state.eq(0))
             .limit(lim)
             .load::<RawTask>(conn);
         match rtn {
@@ -83,7 +84,6 @@ impl TaskDaoImpl {
             Err(e) => Err(DbError::from(e))
         }
     }
-
 
     pub fn update_execute_time(record_id: &[u8], delay: i64) -> Result<()> {
         let conn: &CONNNECTION = &CONN.lock().unwrap();
@@ -99,6 +99,20 @@ impl TaskDaoImpl {
             Ok(_) => {
                 Ok(())
             }
+        }
+    }
+
+    pub fn finish_task(record_id: &[u8]) -> Result<usize> {
+        let conn: &CONNNECTION = &CONN.lock().unwrap();
+        match diesel::update(task)
+            .set(task_state.eq(1))
+            .filter(task_id.eq(record_id))
+            .execute(conn) {
+            Err(e) => {
+                warn!("Update task status error: {}", &e);
+                Err(DbError::from(e))
+            }
+            Ok(i) => Ok(i)
         }
     }
 
