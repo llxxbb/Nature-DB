@@ -1,5 +1,5 @@
 table! {
-    instances (meta, para, instance_id, state_version) {
+    instances (meta, instance_id, para, state_version) {
         instance_id -> Binary,
         meta -> Varchar,
         para -> Varchar,
@@ -7,10 +7,10 @@ table! {
         context -> Nullable<Text>,
         states -> Nullable<Text>,
         state_version -> Integer,
-        from_meta -> Nullable<Varchar>,
-        from_para -> Nullable<Varchar>,
-        from_id -> Nullable<Binary>,
-        from_state_version -> Nullable<Integer>,
+        from_meta -> Varchar,
+        from_para -> Varchar,
+        from_id -> Binary,
+        from_state_version -> Integer,
         execute_time -> Datetime,
         create_time -> Datetime,
         sys_context -> Nullable<Text>,
@@ -27,15 +27,6 @@ table! {
         fields -> Nullable<Varchar>,
         config -> Varchar,
         flag -> Integer,
-        create_time -> Datetime,
-    }
-}
-
-table! {
-    plan (upstream, downstream) {
-        upstream -> Varchar,
-        downstream -> Varchar,
-        content -> Text,
         create_time -> Datetime,
     }
 }
@@ -78,7 +69,6 @@ table! {
 allow_tables_to_appear_in_same_query!(
     instances,
     meta,
-    plan,
     relation,
     task,
     task_error,

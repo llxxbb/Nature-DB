@@ -122,6 +122,7 @@ impl TaskDaoImpl {
         match diesel::update(task)
             .set(task_state.eq(1))
             .filter(task_id.eq(record_id))
+            .filter(task_state.eq(0))
             .execute(conn) {
             Err(e) => {
                 warn!("Update task status error: {}", &e);

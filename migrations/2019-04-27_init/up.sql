@@ -20,22 +20,23 @@ create TABLE `relation` (
 	PRIMARY KEY(`from_meta`,`to_meta`)
 );
 
-create TABLE `instances` (
-	`instance_id`	BINARY(16) NOT NULL,
-	`meta`	VARCHAR ( 255 ) NOT NULL,
-	`para`	VARCHAR ( 255 ) NOT NULL,
-	`content`	VARCHAR ( 1023 ) NOT NULL,
-	`context`	TEXT,
-	`states`	TEXT,
-	`state_version`	INTEGER NOT NULL,
-	`from_meta`	VARCHAR ( 255 ),
-	`from_para`	VARCHAR ( 255 ),
-	`from_id`	BINARY(16),
-	`from_state_version`	INTEGER,
-	`execute_time`	DATETIME NOT NULL,
-	`create_time`	DATETIME NOT NULL,
-	`sys_context`	TEXT,
-	PRIMARY KEY(`meta`,`para`,`instance_id`,`state_version`)
+CREATE TABLE `instances` (
+  `instance_id` binary(16) NOT NULL,
+  `meta` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `para` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `content` varchar(1023) CHARACTER SET latin1 NOT NULL,
+  `context` text CHARACTER SET latin1 DEFAULT NULL,
+  `states` text CHARACTER SET latin1 DEFAULT NULL,
+  `state_version` int(11) NOT NULL,
+  `from_meta` varchar(255) CHARACTER SET latin1 NOT NULL DEFAULT '',
+  `from_para` varchar(255) CHARACTER SET latin1 NOT NULL DEFAULT '',
+  `from_id` binary(16) NOT NULL DEFAULT '0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0',
+  `from_state_version` int(11) NOT NULL DEFAULT 0,
+  `execute_time` datetime NOT NULL,
+  `create_time` datetime NOT NULL,
+  `sys_context` text CHARACTER SET latin1 DEFAULT NULL,
+  UNIQUE KEY `instance_un` (`meta`,`instance_id`,`para`,`from_meta`,`from_id`,`from_para`,`from_state_version`),
+  PRIMARY KEY (`meta`,`instance_id`,`para`,`state_version`)
 );
 
 create TABLE `task` (
@@ -62,12 +63,4 @@ create TABLE `task_error` (
 	`msg`	VARCHAR ( 255 ) NOT NULL,
 	UNIQUE KEY `task_un` (`task_key`,`task_type`,`task_for`),
 	PRIMARY KEY(`task_id`)
-);
-
-create TABLE `plan` (
-	`upstream`	VARCHAR ( 511 ) NOT NULL,
-	`downstream`	VARCHAR ( 255 ) NOT NULL,
-	`content`	TEXT NOT NULL,
-	`create_time`	DATETIME NOT NULL,
-	PRIMARY KEY(`upstream`,`downstream`)
 );
