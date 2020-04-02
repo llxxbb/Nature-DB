@@ -74,7 +74,7 @@ impl InstanceDaoImpl {
         let def = instances
             .filter(instance_id.eq(u128_to_vec_u8(f_para.id))
                 .and(meta.eq(&f_para.meta))
-                .and(state_version.ge(f_para.state_version))
+                .and(state_version.eq(f_para.state_version))
                 .and(para.eq(&f_para.para))
             )
             .load::<RawInstance>(conn);
@@ -82,7 +82,9 @@ impl InstanceDaoImpl {
             Ok(rtn) => match rtn.len() {
                 0 => Ok(None),
                 1 => Ok(Some(rtn[0].to()?)),
-                _ => Err(NatureError::SystemError("should less than 2 record return".to_string())),
+                _ => {
+                    Err(NatureError::SystemError("should less than 2 record return".to_string()))
+                },
             }
             Err(e) => Err(DbError::from(e))
         }
