@@ -30,7 +30,7 @@ impl Iterator for Relation {
 }
 
 impl Relation {
-    pub fn from_raw(val: RawRelation, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter) -> Result<Vec<Relation>> {
+    pub fn from_raw(val: RawRelation, meta_cache_getter: MetaCacheGetter, meta_getter: &MetaGetter) -> Result<Vec<Relation>> {
         let settings = match serde_json::from_str::<RelationSettings>(&val.settings) {
             Ok(s) => s,
             Err(e) => {
@@ -101,8 +101,8 @@ impl Relation {
         Ok(rtn)
     }
 
-    fn check_converter(meta_to: &str, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter, settings: &RelationSettings) -> Result<Meta> {
-        let m_to = meta_cache_getter(meta_to, meta_getter)?;
+    fn check_converter(meta_to: &str, meta_cache_getter: MetaCacheGetter, meta_getter: &MetaGetter, settings: &RelationSettings) -> Result<Meta> {
+        let m_to = meta_cache_getter(meta_to, &meta_getter)?;
         if let Some(ts) = &settings.target_states {
             if let Some(x) = &ts.add {
                 Relation::check_state(&m_to, x)?
@@ -196,7 +196,8 @@ mod test_from_raw {
             settings: "dd".to_string(),
             flag: 1,
         };
-        let rtn = Relation::from_raw(raw, meta_cache, meta);
+        let mg: MetaGetter = meta;
+        let rtn = Relation::from_raw(raw, meta_cache, &mg);
         assert_eq!(rtn.err().unwrap().to_string().contains("relation[B:from:1->B:to:1]"), true);
     }
 
@@ -222,7 +223,8 @@ mod test_from_raw {
             settings: serde_json::to_string(&settings).unwrap(),
             flag: 1,
         };
-        let rtn = Relation::from_raw(raw, meta_cache, meta);
+        let mg: MetaGetter = meta;
+        let rtn = Relation::from_raw(raw, meta_cache, &mg);
         assert_eq!(rtn.is_ok(), true);
     }
 
@@ -254,11 +256,12 @@ mod test_from_raw {
             settings: serde_json::to_string(&settings).unwrap(),
             flag: 1,
         };
-        let rtn = Relation::from_raw(raw, meta_cache, meta);
+        let mg: MetaGetter = meta;
+        let rtn = Relation::from_raw(raw, meta_cache, &mg);
         assert_eq!(rtn, Err(NatureError::VerifyError("in one setting all executor's group must be same.".to_string())));
     }
 
-    fn meta_cache(m: &str, _: MetaGetter) -> Result<Meta> {
+    fn meta_cache(m: &str, _: &MetaGetter) -> Result<Meta> {
         Meta::from_string(m)
     }
 

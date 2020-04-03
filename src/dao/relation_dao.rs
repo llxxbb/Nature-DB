@@ -10,10 +10,10 @@ use super::*;
 pub struct RelationDaoImpl;
 
 pub type RelationResult = Result<Option<Vec<Relation>>>;
-pub type RelationGetter = fn(&str, MetaCacheGetter, MetaGetter) -> RelationResult;
+pub type RelationGetter = fn(&str, MetaCacheGetter, &MetaGetter) -> RelationResult;
 
 impl RelationDaoImpl {
-    pub fn get_relations(from: &str, meta_cache_getter: MetaCacheGetter, meta_getter: MetaGetter) -> RelationResult {
+    pub fn get_relations(from: &str, meta_cache_getter: MetaCacheGetter, meta_getter: &MetaGetter) -> RelationResult {
         use self::schema::relation::dsl::*;
         let rtn = { // {} used to release conn
             let conn: &CONNNECTION = &CONN.lock().unwrap();
@@ -145,24 +145,24 @@ mod test {
 
         // get null
         let meta = "B:from:1";
-        let rtn = RelationDaoImpl::get_relations(meta, MetaCacheImpl::get, MetaDaoImpl::get).unwrap();
+        let rtn = RelationDaoImpl::get_relations(meta, MetaCacheImpl::get, MG).unwrap();
         assert_eq!(rtn, None);
 
         // insert
         let _ = RelationDaoImpl::insert_by_biz("B:from:1", "B:to:1", "url", "http");
-        let rtn = RelationDaoImpl::get_relations(meta, meta_cache, MetaDaoImpl::get).unwrap();
+        let rtn = RelationDaoImpl::get_relations(meta, meta_cache, MG).unwrap();
         assert_eq!(rtn.unwrap().len(), 1);
 
         // update flag
         let _ = RelationDaoImpl::update_flag("B:from:1", "B:to:1", 0);
-        let rtn = RelationDaoImpl::get_relations(meta, meta_cache, MetaDaoImpl::get).unwrap();
+        let rtn = RelationDaoImpl::get_relations(meta, meta_cache, MG).unwrap();
         assert_eq!(rtn, None);
 
         // delete after test
         let _ = RelationDaoImpl::delete_by_biz("B:from:1", "B:to:1");
     }
 
-    fn meta_cache(m: &str, _: MetaGetter) -> Result<Meta> {
+    fn meta_cache(m: &str, _: &MetaGetter) -> Result<Meta> {
         Meta::from_string(m)
     }
 }

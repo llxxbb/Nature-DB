@@ -8,6 +8,8 @@ use crate::schema;
 
 pub type MetaGetter = fn(&str) -> Result<Option<RawMeta>>;
 
+pub static MG: &MetaGetter = &(MetaDaoImpl::get as MetaGetter);
+
 pub struct MetaDaoImpl;
 
 impl MetaDaoImpl {

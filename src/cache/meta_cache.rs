@@ -14,12 +14,12 @@ lazy_static! {
     static ref CACHE: Mutex<LruCache<String, Meta>> = Mutex::new(LruCache::<String, Meta>::with_expiry_duration(Duration::from_secs(3600)));
 }
 
-pub type MetaCacheGetter = fn(&str, MetaGetter) -> Result<Meta>;
+pub type MetaCacheGetter = fn(&str, &MetaGetter) -> Result<Meta>;
 
 pub struct MetaCacheImpl;
 
 impl MetaCacheImpl {
-    pub fn get(meta_str: &str, getter: MetaGetter) -> Result<Meta> {
+    pub fn get(meta_str: &str, getter: &MetaGetter) -> Result<Meta> {
         if meta_str.is_empty() {
             let error = NatureError::VerifyError("[biz] can not be empty!".to_string());
             warn!("{}", error);
@@ -45,7 +45,6 @@ impl MetaCacheImpl {
                         cache.insert(meta_str.to_string(), m.clone());
                         Ok(m)
                     }
-                    MetaType::Multi => cache_sub_metas(meta_str, m),
                     _ => {
                         let error = NatureError::VerifyError(format!("{} not defined", meta_str));
                         warn!("{}", error);
@@ -55,37 +54,46 @@ impl MetaCacheImpl {
             }
             Some(def) => {
                 let meta: Meta = def.try_into()?;
-                let _ = check_master(&meta, getter)?;
-                let mut cache = CACHE.lock().unwrap();
-                cache.insert(meta_str.to_string(), meta.clone());
-                Ok(meta)
-            }
-        }
-    }
-}
-
-fn cache_sub_metas(meta_str: &str, m: Meta) -> Result<Meta> {
-    let mut cache = CACHE.lock().unwrap();
-    cache.insert(meta_str.to_string(), m.clone());
-    match m.get_setting() {
-        None => Ok(m),
-        Some(setting) => {
-            match setting.multi_meta {
-                None => Ok(m),
-                Some(multi) => {
-                    let s_meta = multi.get_metas();
-                    s_meta.into_iter().for_each(|one| {
-                        let key = one.meta_string();
-                        cache.insert(key, one);
-                    });
-                    Ok(m)
+                match meta.get_meta_type() {
+                    MetaType::Multi => {
+                        let _ = cache_sub_metas(meta_str, &meta, getter);
+                        Ok(meta)
+                    }
+                    _ => {
+                        let _ = verify_and_load_master(&meta, getter)?;
+                        let mut cache = CACHE.lock().unwrap();
+                        cache.insert(meta_str.to_string(), meta.clone());
+                        Ok(meta)
+                    }
                 }
             }
         }
     }
 }
 
-fn check_master(meta: &Meta, getter: MetaGetter) -> Result<()> {
+fn cache_sub_metas(meta_str: &str, m: &Meta, getter: &MetaGetter) -> Result<()> {
+    {
+        // unlock the cache
+        let mut cache = CACHE.lock().unwrap();
+        cache.insert(meta_str.to_string(), m.clone());
+    }
+    match m.get_setting() {
+        None => Err(NatureError::VerifyError("Multi-Meta must define sub-metas".to_string())),
+        Some(setting) => {
+            match setting.multi_meta.len() {
+                0 => Err(NatureError::VerifyError("sub-meta number should great than 0".to_string())),
+                _n => {
+                    setting.multi_meta.into_iter().for_each(|one| {
+                        let _rtn = MetaCacheImpl::get(&one, getter);
+                    });
+                    Ok(())
+                }
+            }
+        }
+    }
+}
+
+fn verify_and_load_master(meta: &Meta, getter: &MetaGetter) -> Result<()> {
     match meta.get_setting() {
         None => Ok(()),
         Some(setting) => match setting.master {
@@ -100,17 +108,18 @@ fn check_master(meta: &Meta, getter: MetaGetter) -> Result<()> {
 
 #[cfg(test)]
 mod test {
-    use nature_common::{MetaSetting, MultiMetaSetting};
+    use nature_common::MetaSetting;
+
+    use crate::RawMeta;
 
     use super::*;
 
     #[test]
     fn cache_sub_meta_test() {
-        let multi_meta = MultiMetaSetting::new("M:parent", "p", 1, vec!["a".to_string(), "b".to_string()], Default::default());
         let setting = MetaSetting {
             is_state: false,
             master: None,
-            multi_meta: Some(multi_meta.unwrap()),
+            multi_meta: vec!["B:p/a:1".to_owned(), "B:p/b:1".to_owned()],
             conflict_avoid: false,
         };
         let mut m = Meta::from_string("B:test:3").unwrap();
@@ -119,14 +128,32 @@ mod test {
             let mut c = CACHE.lock().unwrap();
             c.clear();
         }
-        let rtn = cache_sub_metas("test", m).unwrap();
-        assert_eq!(rtn.meta_string(), "B:test:3");
-        let mut c = CACHE.lock().unwrap();
-        let x = c.get("test");
-        assert_eq!(x.is_some(), true);
-        let x = c.get("B:p/a:1");
-        assert_eq!(x.is_some(), true);
-        let x = c.get("B:p/b:1");
-        assert_eq!(x.is_some(), true);
+        {
+            let mut c = CACHE.lock().unwrap();
+            let x = c.get("test");
+            assert_eq!(x.is_some(), false);
+            let x = c.get("B:p/a:1");
+            assert_eq!(x.is_some(), false);
+            let x = c.get("B:p/b:1");
+            assert_eq!(x.is_some(), false);
+        }
+        let _rtn = cache_sub_metas("test", &m, &(get as MetaGetter)).unwrap();
+        {
+            let mut c = CACHE.lock().unwrap();
+            let x = c.get("test");
+            assert_eq!(x.is_some(), true);
+            let x = c.get("B:p/a:1");
+            assert_eq!(x.is_some(), true);
+            let x = c.get("B:p/b:1");
+            assert_eq!(x.is_some(), true);
+        }
+    }
+
+    fn get(_meta_str: &str) -> Result<Option<RawMeta>> {
+        Ok(Some({
+            let mut rtn = RawMeta::default();
+            rtn.meta_key = "lxb".to_string();
+            rtn
+        }))
     }
 }

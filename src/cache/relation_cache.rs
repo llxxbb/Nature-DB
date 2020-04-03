@@ -18,12 +18,12 @@ lazy_static! {
     static ref CACHE_MAPPING: CACHE = Mutex::new(LruCache::<String, ITEM>::with_expiry_duration(Duration::from_secs(3600)));
 }
 
-pub type RelationCacheGetter = fn(&str, RelationGetter, MetaCacheGetter, MetaGetter) -> RelationResult;
+pub type RelationCacheGetter = fn(&str, RelationGetter, MetaCacheGetter, &MetaGetter) -> RelationResult;
 
 pub struct RelationCacheImpl;
 
 impl RelationCacheImpl {
-    pub fn get(meta_from: &str, getter: RelationGetter, meta_cache: MetaCacheGetter, meta: MetaGetter) -> RelationResult {
+    pub fn get(meta_from: &str, getter: RelationGetter, meta_cache: MetaCacheGetter, meta: &MetaGetter) -> RelationResult {
         let (relations, balances) = Self::get_balanced(meta_from, getter, meta_cache, meta)?;
         if relations.is_none() {
             debug!("No relations of `Meta`: {}", meta_from);
@@ -36,7 +36,7 @@ impl RelationCacheImpl {
             Ok(Some(vec))
         }
     }
-    fn get_balanced(meta_from: &str, getter: RelationGetter, meta_cache: MetaCacheGetter, meta: MetaGetter) -> Result<ITEM> {
+    fn get_balanced(meta_from: &str, getter: RelationGetter, meta_cache: MetaCacheGetter, meta: &MetaGetter) -> Result<ITEM> {
         let mut cache = CACHE_MAPPING.lock().unwrap();
         if let Some(balances) = cache.get(meta_from) {
             return Ok(balances.clone());
@@ -66,19 +66,19 @@ mod test {
 
     use super::*;
 
-    fn rtn_err(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
+    fn rtn_err(_: &str, _: MetaCacheGetter, _: &MetaGetter) -> RelationResult {
         Err(NatureError::EnvironmentError("can't connect".to_string()))
     }
 
-    fn rtn_err2(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
+    fn rtn_err2(_: &str, _: MetaCacheGetter, _: &MetaGetter) -> RelationResult {
         Err(NatureError::EnvironmentError("another error".to_string()))
     }
 
-    fn rtn_none(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
+    fn rtn_none(_: &str, _: MetaCacheGetter, _: &MetaGetter) -> RelationResult {
         Ok(None)
     }
 
-    fn meta_cache(meta_str: &str, _: MetaGetter) -> Result<Meta> {
+    fn meta_cache(meta_str: &str, _: &MetaGetter) -> Result<Meta> {
         Ok(Meta::from_string(meta_str)?)
     }
 
@@ -92,26 +92,28 @@ mod test {
         #[test]
         fn get_error() {
             let from = "B:error:1";
+            let mg: &MetaGetter = &(meta as MetaGetter);
 
             // this will call mocker
-            let result = RelationCacheImpl::get(&from, rtn_err, meta_cache, meta);
+            let result = RelationCacheImpl::get(&from, rtn_err, meta_cache, mg);
             assert_eq!(result, Err(NatureError::EnvironmentError("can't connect".to_string())));
             // error can't be catched
-            let result = RelationCacheImpl::get(&from, rtn_err2, meta_cache, meta);
+            let result = RelationCacheImpl::get(&from, rtn_err2, meta_cache, mg);
             assert_eq!(result, Err(NatureError::EnvironmentError("another error".to_string())));
         }
 
         /// test cache also
         #[test]
         fn get_none() {
+            let mg: &MetaGetter = &(meta as MetaGetter);
             let from = "B:none:1";
             // this will call mocker
-            let result = RelationCacheImpl::get(&from, rtn_none, meta_cache, meta);
+            let result = RelationCacheImpl::get(&from, rtn_none, meta_cache, mg);
             assert_eq!(result.is_ok(), true);
             let result = result.unwrap();
             assert_eq!(result, None);
             // and the repeated call will not call mocker but get from cache
-            let result = RelationCacheImpl::get(&from, rtn_err, meta_cache, meta);
+            let result = RelationCacheImpl::get(&from, rtn_err, meta_cache, mg);
             assert_eq!(result.is_ok(), true);
             let result = result.unwrap();
             assert_eq!(result, None);
@@ -128,18 +130,19 @@ mod test {
             let _ = setup_logger();
             let from = "B:only_one_group_for_a_given_target:1";
 
-            fn rtn_one(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
+            fn rtn_one(_: &str, _: MetaCacheGetter, _: &MetaGetter) -> RelationResult {
                 Ok(Some(vec![
                     new_for_local_executor_with_group_and_weight("B:oneFrom:1", "B:oneTo:1", "exe_0", "one", 10).unwrap(),
                 ]))
             }
+            let mg: &MetaGetter = &(meta as MetaGetter);
 
             // this will call mocker
-            let result = RelationCacheImpl::get(&from, rtn_one, meta_cache, meta);
+            let result = RelationCacheImpl::get(&from, rtn_one, meta_cache, mg);
             let result = result.unwrap().unwrap();
             assert_eq!(result.len(), 1);
             // and the repeated call will not call mocker but get from cache
-            let result = RelationCacheImpl::get(&from, rtn_none, meta_cache, meta);
+            let result = RelationCacheImpl::get(&from, rtn_none, meta_cache, mg);
             let result = result.unwrap().unwrap();
             assert_eq!(result.len(), 1);
         }
@@ -148,19 +151,20 @@ mod test {
         fn same_group_different_target() {
             let from = "B:same_group_different_target:1";
 
-            fn rtn_some(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
+            fn rtn_some(_: &str, _: MetaCacheGetter, _: &MetaGetter) -> RelationResult {
                 Ok(Some(vec![
                     new_for_local_executor_with_group_and_weight("B:diffTarget:1", "B:targetA:1", "exe_5", "sameGroup", 2).unwrap(),
                     new_for_local_executor_with_group_and_weight("B:diffTarget:1", "B:targetB:1", "exe_6", "sameGroup", 8).unwrap(),
                 ]))
             }
+            let mg: &MetaGetter = &(meta as MetaGetter);
 
             // this will call mocker
-            let result = RelationCacheImpl::get(&from, rtn_some, meta_cache, meta);
+            let result = RelationCacheImpl::get(&from, rtn_some, meta_cache, mg);
             let result = result.unwrap().unwrap();
             assert_eq!(result.len(), 1);
             // and the repeated call will not call mocker but get from cache
-            let result = RelationCacheImpl::get(&from, rtn_none, meta_cache, meta);
+            let result = RelationCacheImpl::get(&from, rtn_none, meta_cache, mg);
             let result = result.unwrap().unwrap();
             assert_eq!(result.len(), 1);
         }
@@ -170,19 +174,20 @@ mod test {
             let _ = setup_logger();
             let from = "B:same_target_same_group:1";
 
-            fn rtn_some(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
+            fn rtn_some(_: &str, _: MetaCacheGetter, _: &MetaGetter) -> RelationResult {
                 Ok(Some(vec![
                     new_for_local_executor_with_group_and_weight("B:sameTarget:1", "B:sameGroup:1", "exe_3", "same_group", 5).unwrap(),
                     new_for_local_executor_with_group_and_weight("B:sameTarget:1", "B:sameGroup:1", "exe_4", "same_group", 10).unwrap(),
                 ]))
             }
+            let mg: &MetaGetter = &(meta as MetaGetter);
 
             // this will call mocker
-            let result = RelationCacheImpl::get(&from, rtn_some, meta_cache, meta);
+            let result = RelationCacheImpl::get(&from, rtn_some, meta_cache, mg);
             let result = result.unwrap().unwrap();
             assert_eq!(result.len(), 1);
             // and the repeated call will not call mocker but get from cache
-            let result = RelationCacheImpl::get(&from, rtn_none, meta_cache, meta);
+            let result = RelationCacheImpl::get(&from, rtn_none, meta_cache, mg);
             let result = result.unwrap().unwrap();
             assert_eq!(result.len(), 1);
         }
@@ -192,18 +197,19 @@ mod test {
             let _ = setup_logger();
             let from = "B:weight_test:1";
 
-            fn rtn_some(_: &str, _: MetaCacheGetter, _: MetaGetter) -> RelationResult {
+            fn rtn_some(_: &str, _: MetaCacheGetter, _: &MetaGetter) -> RelationResult {
                 Ok(Some(vec![
                     new_for_local_executor_with_group_and_weight("B:weight_from:1", "B:to_1:1", "exe_1", "grp", 1).unwrap(),
                     new_for_local_executor_with_group_and_weight("B:weight_from:1", "B:to_2:1", "exe_2", "grp", 9).unwrap(),
                 ]))
             }
+            let mg: &MetaGetter = &(meta as MetaGetter);
 
             let mut exe_1_cnt = 0;
             let mut exe_2_cnt = 0;
 
             for _i in 0..1000 {
-                let result = RelationCacheImpl::get(&from, rtn_some, meta_cache, meta);
+                let result = RelationCacheImpl::get(&from, rtn_some, meta_cache, mg);
                 let result = &result.unwrap().unwrap()[0];
                 match result.to.meta_string().as_ref() {
                     "B:to_1:1" => {
