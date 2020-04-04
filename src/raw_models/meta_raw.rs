@@ -55,7 +55,7 @@ impl From<Meta> for RawMeta {
             fields: None,
             config: match m.get_setting() {
                 None => "".to_string(),
-                Some(s) => serde_json::to_string(&s).unwrap(),
+                Some(s) => s.to_json().unwrap()
             },
             flag: 0,
             create_time: Local::now().naive_local(),

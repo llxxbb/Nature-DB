@@ -16,6 +16,8 @@ lazy_static! {
 
 pub type MetaCacheGetter = fn(&str, &MetaGetter) -> Result<Meta>;
 
+pub static MCG : MetaCacheGetter = MetaCacheImpl::get;
+
 pub struct MetaCacheImpl;
 
 impl MetaCacheImpl {
@@ -108,6 +110,8 @@ fn verify_and_load_master(meta: &Meta, getter: &MetaGetter) -> Result<()> {
 
 #[cfg(test)]
 mod test {
+    use std::collections::btree_set::BTreeSet;
+
     use nature_common::MetaSetting;
 
     use crate::RawMeta;
@@ -116,14 +120,17 @@ mod test {
 
     #[test]
     fn cache_sub_meta_test() {
+        let mut set: BTreeSet<String> = BTreeSet::new();
+        set.insert("B:p/a:1".to_owned());
+        set.insert("B:p/b:1".to_owned());
         let setting = MetaSetting {
             is_state: false,
             master: None,
-            multi_meta: vec!["B:p/a:1".to_owned(), "B:p/b:1".to_owned()],
+            multi_meta: set,
             conflict_avoid: false,
         };
         let mut m = Meta::from_string("B:test:3").unwrap();
-        let _ = m.set_setting(&serde_json::to_string(&setting).unwrap());
+        let _ = m.set_setting(&setting.to_json().unwrap());
         {
             let mut c = CACHE.lock().unwrap();
             c.clear();

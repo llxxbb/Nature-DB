@@ -29,17 +29,21 @@ pub struct RawTask {
 impl RawTask {
     pub fn new<T: Serialize + Debug>(task: &T, task_key: &str, task_type: i8, task_for: &str) -> Result<RawTask> {
         let json = serde_json::to_string(task)?;
+        Self::from_str(&json, task_key, task_type, task_for)
+    }
+
+    pub fn from_str(json: &str, task_key: &str, task_type: i8, task_for: &str) -> Result<RawTask> {
         if json.len() > *TASK_CONTENT_MAX_LENGTH.deref() {
             return Err(NatureError::SystemError("data's length can' be over : ".to_owned() + &TASK_CONTENT_MAX_LENGTH.to_string()));
         }
         let time = Local::now().naive_local();
         Ok(RawTask {
-            task_id: u128_to_vec_u8(generate_id(&task)?),
+            task_id: u128_to_vec_u8(generate_id(json)?),
             task_key: task_key.to_string(),
             task_type,
             task_for: task_for.to_string(),
             task_state: 0,
-            data: json,
+            data: json.to_string(),
             create_time: time,
             execute_time: time,
             retried_times: 0,

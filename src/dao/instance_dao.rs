@@ -7,6 +7,10 @@ use crate::raw_models::RawInstance;
 
 pub struct InstanceDaoImpl;
 
+pub type InstanceGetter = fn(&ParaForQueryByID) -> Result<Option<Instance>>;
+
+pub static INS_GETTER: InstanceGetter = InstanceDaoImpl::get_by_id;
+
 impl InstanceDaoImpl {
     pub fn insert(instance: &Instance) -> Result<usize> {
         use super::schema::instances;
@@ -84,7 +88,7 @@ impl InstanceDaoImpl {
                 1 => Ok(Some(rtn[0].to()?)),
                 _ => {
                     Err(NatureError::SystemError("should less than 2 record return".to_string()))
-                },
+                }
             }
             Err(e) => Err(DbError::from(e))
         }

@@ -1,17 +1,44 @@
-use nature_common::{DynamicConverter, Executor, Instance, Meta, MetaType, Result, TargetState};
+use nature_common::{DynamicConverter, Executor, Instance, is_false, is_zero, Meta, MetaType, Result, TargetState};
 
+use crate::{MetaCacheGetter, MetaGetter, Relation};
 use crate::flow_tool::ContextChecker;
 use crate::flow_tool::StateChecker;
-use crate::Relation;
 
 /// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct Mission {
     pub to: Meta,
     pub executor: Executor,
     pub states_demand: Option<TargetState>,
     pub use_upstream_id: bool,
     pub delay: i32,
+}
+
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct MissionRaw {
+    pub to: String,
+    pub executor: Executor,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub states_demand: Option<TargetState>,
+    #[serde(skip_serializing_if = "is_false")]
+    #[serde(default)]
+    pub use_upstream_id: bool,
+    #[serde(skip_serializing_if = "is_zero")]
+    #[serde(default)]
+    pub delay: i32,
+}
+
+impl From<Mission> for MissionRaw {
+    fn from(input: Mission) -> Self {
+        MissionRaw {
+            to: input.to.meta_string(),
+            executor: input.executor,
+            states_demand: input.states_demand,
+            use_upstream_id: input.use_upstream_id,
+            delay: input.delay,
+        }
+    }
 }
 
 
@@ -40,8 +67,8 @@ impl Mission {
     }
 
     /// Check the instance's context, sys_context and states whether satisfy the Selector request
-    pub fn get_by_instance(instance: &Instance, relations: &Option<Vec<Relation>>, ctx_chk: ContextChecker, sta_chk: StateChecker) -> Option<Vec<Mission>> {
-        if relations.is_none() { return None; }
+    pub fn get_by_instance(instance: &Instance, relations: &Option<Vec<Relation>>, ctx_chk: ContextChecker, sta_chk: StateChecker) -> Vec<Mission> {
+        if relations.is_none() { return vec![]; }
         let relations = relations.as_ref().unwrap();
         let mut rtn: Vec<Mission> = Vec::new();
         for r in relations {
@@ -68,12 +95,18 @@ impl Mission {
             // debug!("instance meta: {}, selected relation is {}", instance.meta, r.relation_string());
             rtn.push(m);
         }
-        match rtn.len() {
-            x  if x > 0 => {
-                Some(rtn)
-            }
-            _ => None
-        }
+        rtn
+    }
+
+    pub fn from_raw(raw: &MissionRaw, mc_g: MetaCacheGetter, m_g: &MetaGetter) -> Result<Self> {
+        let rtn = Mission {
+            to: mc_g(&raw.to, &m_g)?,
+            executor: raw.executor.clone(),
+            states_demand: raw.states_demand.clone(),
+            use_upstream_id: raw.use_upstream_id,
+            delay: raw.delay,
+        };
+        Ok(rtn)
     }
 }
 
@@ -93,10 +126,10 @@ mod test {
         let relations = Some(vec![relation]);
         let mut instance = Instance::default();
         let rtn = Mission::get_by_instance(&instance, &relations, context_check, state_check);
-        assert_eq!(rtn.is_some(), false);
+        assert_eq!(rtn.is_empty(), true);
         instance.states.insert("a".to_string());
         let rtn = Mission::get_by_instance(&instance, &relations, context_check, state_check);
-        assert_eq!(rtn.is_some(), true);
+        assert_eq!(rtn.is_empty(), false);
     }
 
     #[test]
@@ -108,10 +141,10 @@ mod test {
         let relations = Some(vec![relation]);
         let mut instance = Instance::default();
         let rtn = Mission::get_by_instance(&instance, &relations, context_check, state_check);
-        assert_eq!(rtn.is_some(), false);
+        assert_eq!(rtn.is_empty(), true);
         instance.sys_context.insert("a".to_string(), "x".to_string());
         let rtn = Mission::get_by_instance(&instance, &relations, context_check, state_check);
-        assert_eq!(rtn.is_some(), true);
+        assert_eq!(rtn.is_empty(), false);
     }
 
     #[test]
@@ -123,10 +156,10 @@ mod test {
         let relations = Some(vec![relation]);
         let mut instance = Instance::default();
         let rtn = Mission::get_by_instance(&instance, &relations, context_check, state_check);
-        assert_eq!(rtn.is_some(), false);
+        assert_eq!(rtn.is_empty(), true);
         instance.context.insert("a".to_string(), "x".to_string());
         let rtn = Mission::get_by_instance(&instance, &relations, context_check, state_check);
-        assert_eq!(rtn.is_some(), true);
+        assert_eq!(rtn.is_empty(), false);
     }
 
     #[test]
@@ -147,7 +180,7 @@ mod test {
         };
         let relations = Some(vec![relation]);
         let rtn = Mission::get_by_instance(&Instance::default(), &relations, context_check, state_check);
-        let rtn = &rtn.unwrap()[0];
+        let rtn = &rtn[0];
         assert_eq!(rtn.delay, 2);
         assert_eq!(rtn.executor, executor);
         assert_eq!(rtn.to, meta);
@@ -159,21 +192,20 @@ mod test {
     fn many_relations() {
         let relations = Some(vec![Relation::default(), Relation::default(), Relation::default()]);
         let rtn = Mission::get_by_instance(&Instance::default(), &relations, context_check, state_check);
-        assert_eq!(rtn.unwrap().len(), 3);
+        assert_eq!(rtn.len(), 3);
     }
 
     #[test]
     fn one_relation_but_no_selector() {
         let relations = Some(vec![Relation::default()]);
         let rtn = Mission::get_by_instance(&Instance::default(), &relations, context_check, state_check);
-        assert_eq!(rtn.is_some(), true);
-        assert_eq!(rtn.unwrap().len(), 1);
+        assert_eq!(rtn.len(), 1);
     }
 
     #[test]
     fn no_relation() {
         let rtn = Mission::get_by_instance(&Instance::default(), &None, context_check, state_check);
-        assert_eq!(rtn.is_none(), true);
+        assert_eq!(rtn.is_empty(), true);
     }
 }
 

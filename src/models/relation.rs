@@ -11,7 +11,7 @@ use nature_common::{Executor, Meta, NatureError, Protocol, Result, TargetState};
 use crate::{FlowSelector, MetaCacheGetter, MetaGetter, RawRelation, RelationSettings};
 
 /// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Relation {
     pub from: String,
     pub to: Meta,
