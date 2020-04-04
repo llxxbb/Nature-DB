@@ -41,6 +41,16 @@ impl From<Mission> for MissionRaw {
     }
 }
 
+impl MissionRaw {
+    pub fn to_json(&self) -> Result<String> {
+        let rtn = serde_json::to_string(self)?;
+        Ok(rtn)
+    }
+    pub fn from_json(json: &str) -> Result<Self> {
+        let rtn: Self = serde_json::from_str(json)?;
+        Ok(rtn)
+    }
+}
 
 pub type MissionFilter = fn(&Instance, &Vec<Relation>) -> Option<Vec<Mission>>;
 

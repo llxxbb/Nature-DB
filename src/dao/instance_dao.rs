@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use diesel::prelude::*;
 
 use nature_common::*;
@@ -7,9 +9,11 @@ use crate::raw_models::RawInstance;
 
 pub struct InstanceDaoImpl;
 
-pub type InstanceGetter = fn(&ParaForQueryByID) -> Result<Option<Instance>>;
+pub type InstanceParaGetter = fn(&ParaForQueryByID) -> Result<Option<Instance>>;
+pub type InstanceKeyGetter = fn(&str, &str) -> Result<Option<Instance>>;
 
-pub static INS_GETTER: InstanceGetter = InstanceDaoImpl::get_by_id;
+pub static INS_PARA_GETTER: InstanceParaGetter = InstanceDaoImpl::get_by_id;
+pub static INS_KEY_GETTER: InstanceKeyGetter = InstanceDaoImpl::get_by_key;
 
 impl InstanceDaoImpl {
     pub fn insert(instance: &Instance) -> Result<usize> {
@@ -72,6 +76,22 @@ impl InstanceDaoImpl {
             Err(e) => Err(DbError::from(e))
         }
     }
+
+    pub fn get_by_key(key: &str, spliter: &str) -> Result<Option<Instance>> {
+        let temp: Vec<&str> = key.split(spliter).collect();
+        if temp.len() != 4 {
+            return Err(NatureError::VerifyError("error key format for task".to_string()));
+        }
+        let para = ParaForQueryByID {
+            id: u128::from_str(temp[1].clone())?,
+            meta: temp[0].to_string(),
+            para: temp[2].to_string(),
+            state_version: i32::from_str(temp[3])?,
+            limit: 1,
+        };
+        Self::get_by_id(&para)
+    }
+
     pub fn get_by_id(f_para: &ParaForQueryByID) -> Result<Option<Instance>> {
         use super::schema::instances::dsl::*;
         let conn: &CONNNECTION = &CONN.lock().unwrap();
