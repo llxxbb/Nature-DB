@@ -104,6 +104,7 @@ impl RelationDaoImpl {
                     url: url.to_string(),
                     group: "".to_string(),
                     weight: 1,
+                    settings: "".to_string()
                 }]),
                 use_upstream_id: false,
                 target_states: None,

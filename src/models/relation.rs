@@ -211,6 +211,7 @@ mod test_from_raw {
                     url: "url_one".to_string(),
                     group: "grp_one".to_string(),
                     weight: 100,
+                    settings: "".to_string()
                 },
             ]),
             use_upstream_id: false,
@@ -238,12 +239,14 @@ mod test_from_raw {
                     url: "url_one".to_string(),
                     group: "".to_string(),
                     weight: 100,
+                    settings: "".to_string()
                 },
                 Executor {
                     protocol: Protocol::LocalRust,
                     url: "url_two".to_string(),
                     group: "url_two".to_string(),
                     weight: 200,
+                    settings: "".to_string()
                 },
             ]),
             use_upstream_id: false,

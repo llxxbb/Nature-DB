@@ -237,6 +237,7 @@ mod test {
                 url: local_executor.to_string(),
                 group: group.to_string(),
                 weight,
+                settings: "".to_string()
             },
             use_upstream_id: false,
             target_states: None,
