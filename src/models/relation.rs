@@ -44,8 +44,9 @@ impl Relation {
         let mut group = String::new();
         let mut rtn: Vec<Relation> = vec![];
         let mut err: String = String::new();
-        if let Some(e) = &settings.executor {
-            let find = e.iter().find(|e| {
+        let e = &settings.executor;
+        if e.len() > 0 {
+            let find_err = e.iter().find(|e| {
                 // check Protocol type
                 if e.protocol == Protocol::Auto {
                     err = format!("{} Protocol::Auto can not be used by user. ", val.get_string());
@@ -77,7 +78,7 @@ impl Relation {
                 // return find result
                 false
             });
-            if find.is_some() {
+            if find_err.is_some() {
                 warn!("{}", &err);
                 return Err(NatureError::VerifyError(err));
             }
@@ -189,6 +190,19 @@ mod test_from_raw {
     use super::*;
 
     #[test]
+    fn master_should_have_relation() {
+        let raw = RawRelation {
+            from_meta: "B:from:1".to_string(),
+            to_meta: "B:to:1".to_string(),
+            settings: "{}".to_string(),
+            flag: 1,
+        };
+        let mg: MetaGetter = meta;
+        let rtn = Relation::from_raw(raw, meta_cache_master, &mg).unwrap();
+        assert_eq!(rtn[0].executor.protocol, Protocol::Auto);
+    }
+
+    #[test]
     fn setting_error_test() {
         let raw = RawRelation {
             from_meta: "B:from:1".to_string(),
@@ -205,15 +219,15 @@ mod test_from_raw {
     fn one_group_is_ok() {
         let settings = RelationSettings {
             selector: None,
-            executor: Some(vec![
+            executor: vec![
                 Executor {
                     protocol: Protocol::LocalRust,
                     url: "url_one".to_string(),
                     group: "grp_one".to_string(),
                     weight: 100,
-                    settings: "".to_string()
+                    settings: "".to_string(),
                 },
-            ]),
+            ],
             use_upstream_id: false,
             target_states: None,
             delay: 0,
@@ -233,22 +247,22 @@ mod test_from_raw {
     fn multiple_group_is_illegal() {
         let settings = RelationSettings {
             selector: None,
-            executor: Some(vec![
+            executor: vec![
                 Executor {
                     protocol: Protocol::LocalRust,
                     url: "url_one".to_string(),
                     group: "".to_string(),
                     weight: 100,
-                    settings: "".to_string()
+                    settings: "".to_string(),
                 },
                 Executor {
                     protocol: Protocol::LocalRust,
                     url: "url_two".to_string(),
                     group: "url_two".to_string(),
                     weight: 200,
-                    settings: "".to_string()
+                    settings: "".to_string(),
                 },
-            ]),
+            ],
             use_upstream_id: false,
             target_states: None,
             delay: 0,
@@ -266,6 +280,16 @@ mod test_from_raw {
 
     fn meta_cache(m: &str, _: &MetaGetter) -> Result<Meta> {
         Meta::from_string(m)
+    }
+
+    fn meta_cache_master(m: &str, _: &MetaGetter) -> Result<Meta> {
+        if m.eq("B:to:1") {
+            let mut rtn = Meta::from_string(m).unwrap();
+            let _ = rtn.set_setting(r#"{"master":"B:from:1"}"#);
+            Ok(rtn)
+        } else {
+            Meta::from_string(m)
+        }
     }
 
     fn meta(m: &str) -> Result<Option<RawMeta>> {

@@ -33,7 +33,9 @@ impl RelationDaoImpl {
                 for d in def {
                     match Relation::from_raw(d, meta_cache_getter, meta_getter) {
                         Ok(multi) => {
-                            multi.into_iter().for_each(|e| rtn.push(e))
+                            multi.into_iter().for_each(|e| {
+                                rtn.push(e)
+                            })
                         }
                         Err(e) => {
                             warn!("raw to `one_step_flow` occur error : {:?}", e);
@@ -99,13 +101,13 @@ impl RelationDaoImpl {
             to,
             &RelationSettings {
                 selector: None,
-                executor: Some(vec![Executor {
+                executor: vec![Executor {
                     protocol: Protocol::from_str(protocol)?,
                     url: url.to_string(),
                     group: "".to_string(),
                     weight: 1,
-                    settings: "".to_string()
-                }]),
+                    settings: "".to_string(),
+                }],
                 use_upstream_id: false,
                 target_states: None,
                 delay: 0,

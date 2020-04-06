@@ -7,9 +7,9 @@ pub struct RelationSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub selector: Option<FlowSelector>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     #[serde(default)]
-    pub executor: Option<Vec<Executor>>,
+    pub executor: Vec<Executor>,
     /// if the downstream is state meta, when `is_main` is set to true, the upstream's id will be used as downstream's id
     #[serde(skip_serializing_if = "is_false")]
     #[serde(default)]
@@ -40,7 +40,7 @@ mod test {
 
         let setting = RelationSettings {
             selector: Some(fs),
-            executor: None,
+            executor: vec![],
             use_upstream_id: false,
             target_states: None,
             delay: 0,
@@ -56,7 +56,7 @@ mod test {
     fn empty_executor_test() {
         let setting = RelationSettings {
             selector: None,
-            executor: None,
+            executor: vec![],
             use_upstream_id: false,
             target_states: None,
             delay: 0,
@@ -72,13 +72,13 @@ mod test {
     fn executor_test() {
         let setting = RelationSettings {
             selector: None,
-            executor: Some(vec![Executor {
+            executor: vec![Executor {
                 protocol: Protocol::LocalRust,
                 url: "nature_demo.dll:order_new".to_string(),
                 group: "".to_string(),
                 weight: 1,
-                settings: "".to_string()
-            }]),
+                settings: "".to_string(),
+            }],
             use_upstream_id: false,
             target_states: None,
             delay: 0,
@@ -94,7 +94,7 @@ mod test {
     fn use_upstream_id() {
         let setting = RelationSettings {
             selector: None,
-            executor: None,
+            executor: vec![],
             use_upstream_id: true,
             target_states: None,
             delay: 0,
@@ -110,7 +110,7 @@ mod test {
     fn target_state() {
         let setting = RelationSettings {
             selector: None,
-            executor: None,
+            executor: vec![],
             use_upstream_id: false,
             target_states: Some(TargetState { add: Some(vec!["new".to_string()]), remove: None, need_all: Default::default(), need_any: Default::default(), need_none: Default::default() }),
             delay: 0,
