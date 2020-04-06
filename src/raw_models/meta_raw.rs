@@ -80,7 +80,7 @@ impl TryInto<Meta> for RawMeta {
                 }
             }
         }
-        let _ = rtn.set_setting(&self.config);
+        let _ = rtn.set_setting(&self.config)?;
         debug!("get meta:{}", rtn.meta_string());
         Ok(rtn)
     }
