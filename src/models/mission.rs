@@ -77,9 +77,8 @@ impl Mission {
     }
 
     /// Check the instance's context, sys_context and states whether satisfy the Selector request
-    pub fn get_by_instance(instance: &Instance, relations: &Option<Vec<Relation>>, ctx_chk: ContextChecker, sta_chk: StateChecker) -> Vec<Mission> {
-        if relations.is_none() { return vec![]; }
-        let relations = relations.as_ref().unwrap();
+    pub fn get_by_instance(instance: &Instance, relations: &Vec<Relation>, ctx_chk: ContextChecker, sta_chk: StateChecker) -> Vec<Mission> {
+        if relations.is_empty() { return vec![]; }
         let mut rtn: Vec<Mission> = Vec::new();
         for r in relations {
             if r.selector.is_some() {
@@ -133,7 +132,7 @@ mod test {
         let mut selector = FlowSelector::default();
         selector.state_any.insert("a".to_string());
         relation.selector = Some(selector);
-        let relations = Some(vec![relation]);
+        let relations = vec![relation];
         let mut instance = Instance::default();
         let rtn = Mission::get_by_instance(&instance, &relations, context_check, state_check);
         assert_eq!(rtn.is_empty(), true);
@@ -148,7 +147,7 @@ mod test {
         let mut selector = FlowSelector::default();
         selector.sys_context_any.insert("a".to_string());
         relation.selector = Some(selector);
-        let relations = Some(vec![relation]);
+        let relations = vec![relation];
         let mut instance = Instance::default();
         let rtn = Mission::get_by_instance(&instance, &relations, context_check, state_check);
         assert_eq!(rtn.is_empty(), true);
@@ -163,7 +162,7 @@ mod test {
         let mut selector = FlowSelector::default();
         selector.context_any.insert("a".to_string());
         relation.selector = Some(selector);
-        let relations = Some(vec![relation]);
+        let relations = vec![relation];
         let mut instance = Instance::default();
         let rtn = Mission::get_by_instance(&instance, &relations, context_check, state_check);
         assert_eq!(rtn.is_empty(), true);
@@ -188,7 +187,7 @@ mod test {
             target_states: state.clone(),
             delay: 2,
         };
-        let relations = Some(vec![relation]);
+        let relations = vec![relation];
         let rtn = Mission::get_by_instance(&Instance::default(), &relations, context_check, state_check);
         let rtn = &rtn[0];
         assert_eq!(rtn.delay, 2);
@@ -200,65 +199,21 @@ mod test {
 
     #[test]
     fn many_relations() {
-        let relations = Some(vec![Relation::default(), Relation::default(), Relation::default()]);
+        let relations = vec![Relation::default(), Relation::default(), Relation::default()];
         let rtn = Mission::get_by_instance(&Instance::default(), &relations, context_check, state_check);
         assert_eq!(rtn.len(), 3);
     }
 
     #[test]
     fn one_relation_but_no_selector() {
-        let relations = Some(vec![Relation::default()]);
+        let relations = vec![Relation::default()];
         let rtn = Mission::get_by_instance(&Instance::default(), &relations, context_check, state_check);
         assert_eq!(rtn.len(), 1);
     }
 
     #[test]
     fn no_relation() {
-        let rtn = Mission::get_by_instance(&Instance::default(), &None, context_check, state_check);
+        let rtn = Mission::get_by_instance(&Instance::default(), &vec![], context_check, state_check);
         assert_eq!(rtn.is_empty(), true);
     }
 }
-
-
-// #[cfg(test)]
-// mod other_test {
-//     use nature_common::Protocol;
-//
-//     use super::*;
-//
-//     #[test]
-//     fn input_cfg_is_empty() {
-//         let instance = Instance::default();
-//         let osf: Vec<Relation> = Vec::new();
-//         let osf = Some(osf);
-//         let option = Mission::get_by_instance(&instance, &osf);
-//         assert_eq!(option.is_none(), true)
-//     }
-//
-//     #[test]
-//     fn no_selector_but_only_executor() {
-//         let instance = Instance::default();
-//         let osf = vec![new_for_local_executor("B:from:1", "B:to:1", "local").unwrap()];
-//         let osf = Some(osf);
-//         let option = Mission::get_by_instance(&instance, &osf);
-//         assert_eq!(option.unwrap().len(), 1)
-//     }
-//
-//     pub fn new_for_local_executor(from: &str, to: &str, local_executor: &str) -> Result<Relation> {
-//         Ok(Relation {
-//             from: from.to_string(),
-//             to: Meta::from_string(to)?,
-//             selector: None,
-//             executor: Executor {
-//                 protocol: Protocol::LocalRust,
-//                 url: local_executor.to_string(),
-//                 group: "".to_string(),
-//                 weight: 1,
-//             },
-//             use_upstream_id: false,
-//             target_states: None,
-//             delay: 0,
-//         })
-//     }
-// }
-

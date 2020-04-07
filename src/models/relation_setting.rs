@@ -7,9 +7,14 @@ pub struct RelationSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub selector: Option<FlowSelector>,
+    /// array executor will share the convert task
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub executor: Option<Executor>,
+    /// filter will execute after executor,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     #[serde(default)]
-    pub executor: Vec<Executor>,
+    pub filter: Vec<Executor>,
     /// if the downstream is state meta, when `is_main` is set to true, the upstream's id will be used as downstream's id
     #[serde(skip_serializing_if = "is_false")]
     #[serde(default)]
@@ -38,13 +43,9 @@ mod test {
         let mut fs = FlowSelector::default();
         fs.state_all = set;
 
-        let setting = RelationSettings {
-            selector: Some(fs),
-            executor: vec![],
-            use_upstream_id: false,
-            target_states: None,
-            delay: 0,
-        };
+        let mut setting = RelationSettings::default();
+        setting.selector = Some(fs);
+
         let result = serde_json::to_string(&setting).unwrap();
         let res_str = r#"{"selector":{"state_all":["one"]}}"#;
         assert_eq!(result, res_str);
@@ -54,13 +55,7 @@ mod test {
 
     #[test]
     fn empty_executor_test() {
-        let setting = RelationSettings {
-            selector: None,
-            executor: vec![],
-            use_upstream_id: false,
-            target_states: None,
-            delay: 0,
-        };
+        let setting = RelationSettings::default();
         let result = serde_json::to_string(&setting).unwrap();
         let res_str = r#"{}"#;
         assert_eq!(result, res_str);
@@ -70,21 +65,15 @@ mod test {
 
     #[test]
     fn executor_test() {
-        let setting = RelationSettings {
-            selector: None,
-            executor: vec![Executor {
-                protocol: Protocol::LocalRust,
-                url: "nature_demo.dll:order_new".to_string(),
-                group: "".to_string(),
-                weight: 1,
-                settings: "".to_string(),
-            }],
-            use_upstream_id: false,
-            target_states: None,
-            delay: 0,
+        let executor = Executor {
+            protocol: Protocol::LocalRust,
+            url: "nature_demo.dll:order_new".to_string(),
+            settings: "".to_string(),
         };
+        let mut setting = RelationSettings::default();
+        setting.executor = Some(executor);
         let result = serde_json::to_string(&setting).unwrap();
-        let res_str = r#"{"executor":[{"protocol":"localRust","url":"nature_demo.dll:order_new"}]}"#;
+        let res_str = r#"{"executor":{"protocol":"localRust","url":"nature_demo.dll:order_new"}}"#;
         assert_eq!(result, res_str);
         let res_obj: RelationSettings = serde_json::from_str(res_str).unwrap();
         assert_eq!(res_obj, setting);
@@ -92,13 +81,8 @@ mod test {
 
     #[test]
     fn use_upstream_id() {
-        let setting = RelationSettings {
-            selector: None,
-            executor: vec![],
-            use_upstream_id: true,
-            target_states: None,
-            delay: 0,
-        };
+        let mut setting = RelationSettings::default();
+        setting.use_upstream_id = true;
         let result = serde_json::to_string(&setting).unwrap();
         let res_str = r#"{"use_upstream_id":true}"#;
         assert_eq!(result, res_str);
@@ -108,13 +92,9 @@ mod test {
 
     #[test]
     fn target_state() {
-        let setting = RelationSettings {
-            selector: None,
-            executor: vec![],
-            use_upstream_id: false,
-            target_states: Some(TargetState { add: Some(vec!["new".to_string()]), remove: None, need_all: Default::default(), need_any: Default::default(), need_none: Default::default() }),
-            delay: 0,
-        };
+        let state = TargetState { add: Some(vec!["new".to_string()]), remove: None, need_all: Default::default(), need_any: Default::default(), need_none: Default::default() };
+        let mut setting = RelationSettings::default();
+        setting.target_states = Some(state);
         let result = serde_json::to_string(&setting).unwrap();
         let res_str = r#"{"target_states":{"add":["new"]}}"#;
         assert_eq!(result, res_str);

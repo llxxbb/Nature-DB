@@ -9,11 +9,11 @@ use super::*;
 
 pub struct RelationDaoImpl;
 
-pub type RelationResult = Result<Option<Vec<Relation>>>;
-pub type RelationGetter = fn(&str, MetaCacheGetter, &MetaGetter) -> RelationResult;
+pub type Relations = Result<Vec<Relation>>;
+pub type RelationGetter = fn(&str, MetaCacheGetter, &MetaGetter) -> Relations;
 
 impl RelationDaoImpl {
-    pub fn get_relations(from: &str, meta_cache_getter: MetaCacheGetter, meta_getter: &MetaGetter) -> RelationResult {
+    pub fn get_relations(from: &str, meta_cache_getter: MetaCacheGetter, meta_getter: &MetaGetter) -> Relations {
         use self::schema::relation::dsl::*;
         let rtn = { // {} used to release conn
             let conn: &CONNNECTION = &CONN.lock().unwrap();
@@ -27,29 +27,18 @@ impl RelationDaoImpl {
             Err(e) => return Err(DbError::from(e)),
         };
         match def.len() {
-            0 => Ok(None),
+            0 => Ok(vec![]),
             x if x > 0 => {
                 let mut rtn: Vec<Relation> = Vec::new();
                 for d in def {
                     match Relation::from_raw(d, meta_cache_getter, meta_getter) {
-                        Ok(multi) => {
-                            multi.into_iter().for_each(|e| {
-                                rtn.push(e)
-                            })
-                        }
-                        Err(e) => {
-                            warn!("raw to `one_step_flow` occur error : {:?}", e);
-                        }
+                        Ok(r) => rtn.push(r),
+                        Err(e) => return Err(e)
                     }
                 }
-                if rtn.is_empty() {
-                    Ok(None)
-                } else {
-                    Ok(Some(rtn))
-                }
+                Ok(rtn)
             }
-            _ => Err(NatureError::SystemError(
-                "unknown error occurred".to_string(),
+            _ => Err(NatureError::SystemError("unknown error occurred".to_string(),
             )),
         }
     }
@@ -101,13 +90,12 @@ impl RelationDaoImpl {
             to,
             &RelationSettings {
                 selector: None,
-                executor: vec![Executor {
+                executor: Some(Executor {
                     protocol: Protocol::from_str(protocol)?,
                     url: url.to_string(),
-                    group: "".to_string(),
-                    weight: 1,
                     settings: "".to_string(),
-                }],
+                }),
+                filter: vec![],
                 use_upstream_id: false,
                 target_states: None,
                 delay: 0,
@@ -138,30 +126,36 @@ mod test {
 
     use super::*;
 
+    /// need db connection
     #[test]
     fn relation_test() {
         env::set_var("DATABASE_URL", CONN_STR);
         let _ = setup_logger();
 
         // clear before test
+        debug!("--delete first-----------------");
         let _ = RelationDaoImpl::delete_by_biz("B:from:1", "B:to:1");
 
         // get null
+        debug!("--will get none-----------------");
         let meta = "B:from:1";
         let rtn = RelationDaoImpl::get_relations(meta, MetaCacheImpl::get, MG).unwrap();
-        assert_eq!(rtn, None);
+        assert_eq!(rtn.is_empty(), true);
 
         // insert
+        debug!("--insert one-----------------");
         let _ = RelationDaoImpl::insert_by_biz("B:from:1", "B:to:1", "url", "http");
         let rtn = RelationDaoImpl::get_relations(meta, meta_cache, MG).unwrap();
-        assert_eq!(rtn.unwrap().len(), 1);
+        assert_eq!(rtn.len(), 1);
 
         // update flag
+        debug!("--update it-----------------");
         let _ = RelationDaoImpl::update_flag("B:from:1", "B:to:1", 0);
         let rtn = RelationDaoImpl::get_relations(meta, meta_cache, MG).unwrap();
-        assert_eq!(rtn, None);
+        assert_eq!(rtn.is_empty(), true);
 
         // delete after test
+        debug!("--delete it after used-----------------");
         let _ = RelationDaoImpl::delete_by_biz("B:from:1", "B:to:1");
     }
 

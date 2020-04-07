@@ -1,10 +1,5 @@
 use std::clone::Clone;
-use std::collections::HashMap;
-use std::ops::Range;
-use std::ptr;
 use std::string::ToString;
-
-use rand::{Rng, thread_rng};
 
 use nature_common::{Executor, Meta, NatureError, Protocol, Result, TargetState};
 
@@ -30,7 +25,7 @@ impl Iterator for Relation {
 }
 
 impl Relation {
-    pub fn from_raw(val: RawRelation, meta_cache_getter: MetaCacheGetter, meta_getter: &MetaGetter) -> Result<Vec<Relation>> {
+    pub fn from_raw(val: RawRelation, meta_cache_getter: MetaCacheGetter, meta_getter: &MetaGetter) -> Result<Relation> {
         let settings = match serde_json::from_str::<RelationSettings>(&val.settings) {
             Ok(s) => s,
             Err(e) => {
@@ -41,63 +36,44 @@ impl Relation {
         };
         let selector = &settings.selector;
         let m_to = Relation::check_converter(&val.to_meta, meta_cache_getter, meta_getter, &settings)?;
-        let mut group = String::new();
-        let mut rtn: Vec<Relation> = vec![];
-        let mut err: String = String::new();
-        let e = &settings.executor;
-        if e.len() > 0 {
-            let find_err = e.iter().find(|e| {
+        let rtn = match settings.executor {
+            Some(e) => {
                 // check Protocol type
                 if e.protocol == Protocol::Auto {
-                    err = format!("{} Protocol::Auto can not be used by user. ", val.get_string());
-                    return true;
+                    let err = format!("{} Protocol::Auto can not be used by user. ", val.get_string());
+                    return Err(NatureError::VerifyError(err));
                 }
-                // check group: only one group is allowed.
-                if group.is_empty() {
-                    group = e.group.clone();
-                    if group.is_empty() {
-                        group = uuid::Uuid::new_v4().to_string();
-                    }
-                } else if group != e.group {
-                    err = "in one setting all executor's group must be same.".to_string();
-                    return true;
-                }
-                // generate relation
-                let mut e2 = (*e).clone();
-                e2.group = group.clone();
-                let r = Relation {
+                Relation {
                     from: val.from_meta.to_string(),
-                    to: m_to.clone(),
+                    to: m_to,
                     selector: selector.clone(),
-                    executor: e2,
+                    executor: e,
                     use_upstream_id: settings.use_upstream_id,
                     target_states: settings.target_states.clone(),
                     delay: settings.delay,
-                };
-                rtn.push(r);
-                // return find result
-                false
-            });
-            if find_err.is_some() {
-                warn!("{}", &err);
-                return Err(NatureError::VerifyError(err));
-            }
-        } else {
-            if let Some(s) = &m_to.get_setting() {
-                if s.master.is_some() {
-                    let r = Relation {
-                        from: val.from_meta.to_string(),
-                        to: m_to.clone(),
-                        selector: selector.clone(),
-                        executor: Executor::new_auto(),
-                        use_upstream_id: settings.use_upstream_id,
-                        target_states: settings.target_states.clone(),
-                        delay: settings.delay,
-                    };
-                    rtn.push(r);
                 }
             }
-        }
+            None => {
+                match &m_to.get_setting() {
+                    Some(s) => {
+                        if s.master.is_some() {
+                            Relation {
+                                from: val.from_meta.to_string(),
+                                to: m_to.clone(),
+                                selector: selector.clone(),
+                                executor: Executor::new_auto(),
+                                use_upstream_id: settings.use_upstream_id,
+                                target_states: settings.target_states.clone(),
+                                delay: settings.delay,
+                            }
+                        } else {
+                            return Err(NatureError::VerifyError("master or executor should be defined".to_string()));
+                        }
+                    }
+                    None => return Err(NatureError::VerifyError("master or executor should be defined".to_string()))
+                }
+            }
+        };
         debug!("load {}", val.get_string());
         Ok(rtn)
     }
@@ -123,59 +99,6 @@ impl Relation {
         Ok(())
     }
 
-    pub fn weight_filter(relations: &[Relation], balances: &HashMap<Executor, Range<f32>>) -> Vec<Relation> {
-        let mut rtn: Vec<Relation> = Vec::new();
-        let rnd = thread_rng().gen::<f32>();
-        for m in relations {
-            match balances.get(&m.executor) {
-                Some(rng) => if rng.contains(&rnd) {
-                    rtn.push(m.clone());
-                },
-                None => rtn.push(m.clone())
-            };
-        }
-        rtn
-    }
-
-    /// weight group will be cached
-    pub fn weight_calculate(groups: &HashMap<String, Vec<Relation>>) -> HashMap<Executor, Range<f32>> {
-        let mut rtn: HashMap<Executor, Range<f32>> = HashMap::new();
-        for group in groups.values() {
-            // summarize the weight for one group
-            let sum = group.iter().fold(0u32, |sum, mapping| {
-                sum + mapping.executor.weight
-            });
-            if sum == 0 {
-                continue;
-            }
-            // give a certain range for every participants
-            let mut begin = 0.0;
-            let last = group.last().unwrap();
-            for m in group {
-                let w = m.executor.weight as f32 / sum as f32;
-                let end = begin + w;
-                if ptr::eq(m, last) {
-                    // last must great 1
-                    rtn.insert(m.executor.clone(), begin..1.1);
-                } else {
-                    rtn.insert(m.executor.clone(), begin..end);
-                }
-                begin = end;
-            }
-        }
-        rtn
-    }
-
-    /// group by labels. Only one flow will be used when there are same label. This can be used to switch two different flows smoothly.
-    pub fn get_label_groups(maps: &[Relation]) -> HashMap<String, Vec<Relation>> {
-        let mut labels: HashMap<String, Vec<Relation>> = HashMap::new();
-        for mapping in maps {
-            let mappings = labels.entry(mapping.executor.group.clone()).or_insert_with(Vec::new);
-            mappings.push(mapping.clone());
-        }
-        labels
-    }
-
     pub fn relation_string(&self) -> String {
         format!("{}->{}", self.from, self.to.meta_string()).to_owned()
     }
@@ -199,7 +122,7 @@ mod test_from_raw {
         };
         let mg: MetaGetter = meta;
         let rtn = Relation::from_raw(raw, meta_cache_master, &mg).unwrap();
-        assert_eq!(rtn[0].executor.protocol, Protocol::Auto);
+        assert_eq!(rtn.executor.protocol, Protocol::Auto);
     }
 
     #[test]
@@ -219,15 +142,12 @@ mod test_from_raw {
     fn one_group_is_ok() {
         let settings = RelationSettings {
             selector: None,
-            executor: vec![
-                Executor {
-                    protocol: Protocol::LocalRust,
-                    url: "url_one".to_string(),
-                    group: "grp_one".to_string(),
-                    weight: 100,
-                    settings: "".to_string(),
-                },
-            ],
+            executor: Some(Executor {
+                protocol: Protocol::LocalRust,
+                url: "url_one".to_string(),
+                settings: "".to_string(),
+            }),
+            filter: vec![],
             use_upstream_id: false,
             target_states: None,
             delay: 0,
@@ -241,41 +161,6 @@ mod test_from_raw {
         let mg: MetaGetter = meta;
         let rtn = Relation::from_raw(raw, meta_cache, &mg);
         assert_eq!(rtn.is_ok(), true);
-    }
-
-    #[test]
-    fn multiple_group_is_illegal() {
-        let settings = RelationSettings {
-            selector: None,
-            executor: vec![
-                Executor {
-                    protocol: Protocol::LocalRust,
-                    url: "url_one".to_string(),
-                    group: "".to_string(),
-                    weight: 100,
-                    settings: "".to_string(),
-                },
-                Executor {
-                    protocol: Protocol::LocalRust,
-                    url: "url_two".to_string(),
-                    group: "url_two".to_string(),
-                    weight: 200,
-                    settings: "".to_string(),
-                },
-            ],
-            use_upstream_id: false,
-            target_states: None,
-            delay: 0,
-        };
-        let raw = RawRelation {
-            from_meta: "B:from:1".to_string(),
-            to_meta: "B:to:1".to_string(),
-            settings: serde_json::to_string(&settings).unwrap(),
-            flag: 1,
-        };
-        let mg: MetaGetter = meta;
-        let rtn = Relation::from_raw(raw, meta_cache, &mg);
-        assert_eq!(rtn, Err(NatureError::VerifyError("in one setting all executor's group must be same.".to_string())));
     }
 
     fn meta_cache(m: &str, _: &MetaGetter) -> Result<Meta> {
