@@ -9,6 +9,7 @@ use crate::flow_tool::StateChecker;
 pub struct Mission {
     pub to: Meta,
     pub executor: Executor,
+    pub filter: Vec<Executor>,
     pub states_demand: Option<TargetState>,
     pub use_upstream_id: bool,
     pub delay: i32,
@@ -18,6 +19,9 @@ pub struct Mission {
 pub struct MissionRaw {
     pub to: String,
     pub executor: Executor,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
+    pub filter: Vec<Executor>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub states_demand: Option<TargetState>,
@@ -34,6 +38,7 @@ impl From<Mission> for MissionRaw {
         MissionRaw {
             to: input.to.meta_string(),
             executor: input.executor,
+            filter: input.filter,
             states_demand: input.states_demand,
             use_upstream_id: input.use_upstream_id,
             delay: input.delay,
@@ -66,6 +71,7 @@ impl Mission {
             let mission = Mission {
                 to: t,
                 executor: d.fun.clone(),
+                filter: vec![],
                 states_demand: None,
                 use_upstream_id: d.use_upstream_id,
                 delay: d.delay,
@@ -97,6 +103,7 @@ impl Mission {
             let m = Mission {
                 to: r.to.clone(),
                 executor: r.executor.clone(),
+                filter: r.filter.clone(),
                 states_demand: r.target_states.clone(),
                 use_upstream_id: r.use_upstream_id,
                 delay: r.delay,
@@ -111,6 +118,7 @@ impl Mission {
         let rtn = Mission {
             to: mc_g(&raw.to, &m_g)?,
             executor: raw.executor.clone(),
+            filter: raw.filter.clone(),
             states_demand: raw.states_demand.clone(),
             use_upstream_id: raw.use_upstream_id,
             delay: raw.delay,
@@ -183,6 +191,7 @@ mod test {
             to: meta.clone(),
             selector: None,
             executor: executor.clone(),
+            filter: vec![],
             use_upstream_id: true,
             target_states: state.clone(),
             delay: 2,

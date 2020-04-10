@@ -1,5 +1,3 @@
-extern crate r2d2;
-
 use std::convert::TryInto;
 use std::sync::Mutex;
 use std::time::Duration;
