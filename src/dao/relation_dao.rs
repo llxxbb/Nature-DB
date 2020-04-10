@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use diesel::prelude::*;
 
-use crate::{CONN, CONNNECTION, MetaCacheGetter, Relation, RelationSettings};
+use crate::{get_conn, MetaCacheGetter, Relation, RelationSettings};
 use crate::raw_models::RawRelation;
 
 use super::*;
@@ -16,11 +16,10 @@ impl RelationDaoImpl {
     pub fn get_relations(from: &str, meta_cache_getter: MetaCacheGetter, meta_getter: &MetaGetter) -> Relations {
         use self::schema::relation::dsl::*;
         let rtn = { // {} used to release conn
-            let conn: &CONNNECTION = &CONN.lock().unwrap();
             relation
                 .filter(from_meta.eq(from.to_string()))
                 .filter(flag.eq(1))
-                .load::<RawRelation>(conn)
+                .load::<RawRelation>(&get_conn()?)
         };
         let def = match rtn {
             Ok(rows) => rows,
@@ -44,10 +43,9 @@ impl RelationDaoImpl {
     }
     pub fn insert(one: RawRelation) -> Result<usize> {
         use self::schema::relation;
-        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::insert_into(relation::table)
             .values(&one)
-            .execute(conn);
+            .execute(&get_conn()?);
         match rtn {
             Ok(x) => Ok(x),
             Err(e) => Err(DbError::from_with_msg(e, &format!("{:?}", &one))),
@@ -55,13 +53,12 @@ impl RelationDaoImpl {
     }
     pub fn delete(one: RawRelation) -> Result<usize> {
         use self::schema::relation::dsl::*;
-        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::delete(
             relation
                 .filter(from_meta.eq(one.from_meta))
                 .filter(to_meta.eq(one.to_meta)),
         )
-            .execute(conn);
+            .execute(&get_conn()?);
         match rtn {
             Ok(num) => Ok(num),
             Err(err) => Err(DbError::from(err)),
@@ -71,12 +68,11 @@ impl RelationDaoImpl {
     /// `from` and `to`'s form are full_key:version
     pub fn update_flag(from: &str, to: &str, flag_f: i32) -> Result<usize> {
         use self::schema::relation::dsl::*;
-        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::update(
             relation.filter(from_meta.eq(&from))
                 .filter(to_meta.eq(&to)))
             .set(flag.eq(flag_f))
-            .execute(conn);
+            .execute(&get_conn()?);
         match rtn {
             Ok(x) => Ok(x),
             Err(e) => Err(DbError::from(e))

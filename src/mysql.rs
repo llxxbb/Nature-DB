@@ -2,60 +2,39 @@ pub use self::conn::*;
 
 mod conn {
     use std::env;
-    use std::sync::Mutex;
 
-    use diesel::Connection;
     use diesel::mysql::MysqlConnection;
+    use diesel::r2d2::ConnectionManager;
+    use r2d2::{Pool, PooledConnection};
+
+    use nature_common::Result;
 
     lazy_static! {
-        pub static ref CONN :Mutex<MysqlConnection>  = Mutex::new(establish_connection());
+       static ref POOL : Pool<ConnectionManager<MysqlConnection>> = make_db_connection_pool();
     }
 
-    fn establish_connection() -> MysqlConnection {
+    fn make_db_connection_pool() -> Pool<ConnectionManager<MysqlConnection>> {
         let database_url = env::var("DATABASE_URL")
             .expect("DATABASE_URL must be set");
-
-        info!("connect to db : {}", &database_url);
-        MysqlConnection::establish(&database_url)
-            .unwrap_or_else(|_| panic!("Error connect to db: {}", database_url))
+        let manager = ConnectionManager::<MysqlConnection>::new(database_url);
+        r2d2::Pool::builder().build(manager).expect("Failed to create pool.")
     }
 
-//lazy_static! {
-//    pub static ref POOL : Pool<ConnectionManager<SqliteConnection>> = make_db_connection_pool();
-//}
+    pub fn get_conn() -> Result<PooledConnection<ConnectionManager<MysqlConnection>>> {
+        let rtn = POOL.clone().get()?;
+        Ok(rtn)
+    }
+}
 
-//impl From<Error> for NatureError {
-//    fn from(err: Error) -> Self {
-//        NatureError::R2D2Error(err.to_string())
-//    }
-//}
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::env;
 
-//fn make_db_connection_pool() -> Pool<ConnectionManager<SqliteConnection>> {
-//    dotenv().ok();
-//
-//    let database_url = env::var("DATABASE_URL")
-//        .expect("DATABASE_URL must be set");
-//
-//    let manager = ConnectionManager::<SqliteConnection>::new(database_url);
-//    Pool::builder().build(manager).expect("Failed to create pool.")
-//}
-//
-//pub struct DBPool;
-//
-//impl DBPool {
-
-// /// 使用说明：
-// ///
-// /// ```rust
-// /// use std::ops::Deref;
-// /// let conn = DBPool::get_connection()?;
-// /// conn.deref()
-// /// ```
-//    pub fn get_connection() -> Result<PooledConnection<ConnectionManager<SqliteConnection>>> {
-//        match POOL.clone().get() {
-//            Err(err) => Err(NatureError::from(err)),
-//            Ok(conn) => Ok(conn),
-//        }
-//    }
-//}
+    #[test]
+    fn conn_test() {
+        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
+        let rtn = get_conn();
+        assert_eq!(rtn.is_ok(), true);
+    }
 }

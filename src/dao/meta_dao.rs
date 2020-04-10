@@ -2,7 +2,7 @@ use diesel::prelude::*;
 
 use nature_common::{Meta, NatureError, Result};
 
-use crate::{CONN, CONNNECTION, DbError};
+use crate::{DbError, get_conn};
 use crate::raw_models::RawMeta;
 use crate::schema;
 
@@ -15,13 +15,12 @@ pub struct MetaDaoImpl;
 impl MetaDaoImpl {
     pub fn get(meta_str: &str) -> Result<Option<RawMeta>> {
         use self::schema::meta::dsl::*;
-        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let m = Meta::from_string(meta_str)?;
         let def = meta.filter(meta_type.eq(&m.get_meta_type().get_prefix()))
             .filter(meta_key.eq(m.get_key()))
             .filter(version.eq(m.version as i32))
             .filter(flag.eq(1))
-            .load::<RawMeta>(conn);
+            .load::<RawMeta>(&get_conn()?);
         match def {
             Ok(rtn) => {
                 debug!("load meta : {:?}", &rtn);
@@ -37,10 +36,9 @@ impl MetaDaoImpl {
 
     pub fn insert(define: &RawMeta) -> Result<usize> {
         use self::schema::meta;
-        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::insert_into(meta::table)
             .values(define)
-            .execute(conn);
+            .execute(&get_conn()?);
         match rtn {
             Ok(x) => Ok(x),
             Err(e) => Err(DbError::from(e))
@@ -49,14 +47,13 @@ impl MetaDaoImpl {
 
     pub fn update_flag(meta_str: &str, flag_f: i32) -> Result<usize> {
         use self::schema::meta::dsl::*;
-        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let m = Meta::from_string(meta_str)?;
         let rtn = diesel::update(
             meta.filter(meta_type.eq(m.get_meta_type().get_prefix()))
                 .filter(meta_key.eq(m.get_key()))
                 .filter(version.eq(m.version as i32)))
             .set(flag.eq(flag_f))
-            .execute(conn);
+            .execute(&get_conn()?);
         match rtn {
             Ok(x) => Ok(x),
             Err(e) => Err(DbError::from(e))
@@ -65,12 +62,11 @@ impl MetaDaoImpl {
 
     pub fn delete(m: &Meta) -> Result<usize> {
         use self::schema::meta::dsl::*;
-        let conn: &CONNNECTION = &CONN.lock().unwrap();
         let rtn = diesel::delete(
             meta.filter(meta_type.eq(m.get_meta_type().get_prefix()))
                 .filter(meta_key.eq(m.get_key()))
                 .filter(version.eq(m.version as i32)))
-            .execute(conn);
+            .execute(&get_conn()?);
         match rtn {
             Ok(x) => Ok(x),
             Err(err) => Err(DbError::from(err))

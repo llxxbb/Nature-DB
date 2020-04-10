@@ -37,6 +37,4 @@ mod models;
 #[cfg(feature = "mysql")]
 mod mysql;
 
-mod mysql_pool;
-
 mod conn;

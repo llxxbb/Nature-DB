@@ -5,11 +5,7 @@ pub use self::sqlite::*;
 
 #[cfg(feature = "mysql")]
 mod mysql {
-    use diesel::mysql::MysqlConnection;
-
-    pub use crate::mysql::CONN;
-
-    pub type CONNNECTION = MysqlConnection;
+    pub use crate::mysql::get_conn;
 }
 
 #[cfg(feature = "sqlite")]
@@ -22,6 +18,6 @@ mod sqlite {
 }
 
 #[cfg(feature = "mysql")]
-pub static CONN_STR : &str = "mysql://root@localhost/nature";
+pub static CONN_STR: &str = "mysql://root@localhost/nature";
 #[cfg(feature = "sqlite")]
-pub static CONN_STR : &str = "nature.sqlite";
+pub static CONN_STR: &str = "nature.sqlite";
