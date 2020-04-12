@@ -67,13 +67,13 @@ mod test {
     fn executor_test() {
         let executor = Executor {
             protocol: Protocol::LocalRust,
-            url: "nature_demo.dll:order_new".to_string(),
+            url: "nature_demo:order_new".to_string(),
             settings: "".to_string(),
         };
         let mut setting = RelationSettings::default();
         setting.executor = Some(executor);
         let result = serde_json::to_string(&setting).unwrap();
-        let res_str = r#"{"executor":{"protocol":"localRust","url":"nature_demo.dll:order_new"}}"#;
+        let res_str = r#"{"executor":{"protocol":"localRust","url":"nature_demo:order_new"}}"#;
         assert_eq!(result, res_str);
         let res_obj: RelationSettings = serde_json::from_str(res_str).unwrap();
         assert_eq!(res_obj, setting);
