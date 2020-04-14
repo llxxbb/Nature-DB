@@ -1,8 +1,9 @@
-use nature_common::{Executor, is_false, is_zero, TargetState};
+use nature_common::{Executor, is_default};
 
 use crate::FlowSelector;
+use crate::relation_target::RelationTarget;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 pub struct RelationSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
@@ -16,14 +17,14 @@ pub struct RelationSettings {
     #[serde(default)]
     pub filter: Vec<Executor>,
     /// if the downstream is state meta, when `is_main` is set to true, the upstream's id will be used as downstream's id
-    #[serde(skip_serializing_if = "is_false")]
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub use_upstream_id: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
-    pub target_states: Option<TargetState>,
+    pub target: RelationTarget,
     // delay seconds to execute the converter
-    #[serde(skip_serializing_if = "is_zero")]
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub delay: i32,
 }
@@ -32,7 +33,7 @@ pub struct RelationSettings {
 mod test {
     use std::collections::HashSet;
 
-    use nature_common::Protocol;
+    use nature_common::{Protocol, TargetState};
 
     use super::*;
 
@@ -94,9 +95,9 @@ mod test {
     fn target_state() {
         let state = TargetState { add: Some(vec!["new".to_string()]), remove: None, need_all: Default::default(), need_any: Default::default(), need_none: Default::default() };
         let mut setting = RelationSettings::default();
-        setting.target_states = Some(state);
+        setting.target.states = Some(state);
         let result = serde_json::to_string(&setting).unwrap();
-        let res_str = r#"{"target_states":{"add":["new"]}}"#;
+        let res_str = r#"{"target":{"states":{"add":["new"]}}}"#;
         assert_eq!(result, res_str);
         let res_obj: RelationSettings = serde_json::from_str(res_str).unwrap();
         assert_eq!(res_obj, setting);

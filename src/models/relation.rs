@@ -1,9 +1,10 @@
 use std::clone::Clone;
 use std::string::ToString;
 
-use nature_common::{Executor, Meta, NatureError, Protocol, Result, TargetState};
+use nature_common::{Executor, Meta, NatureError, Protocol, Result};
 
 use crate::{FlowSelector, MetaCacheGetter, MetaGetter, RawRelation, RelationSettings};
+use crate::models::relation_target::RelationTarget;
 
 /// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -14,7 +15,7 @@ pub struct Relation {
     pub executor: Executor,
     pub filter: Vec<Executor>,
     pub use_upstream_id: bool,
-    pub target_states: Option<TargetState>,
+    pub target: RelationTarget,
     pub delay: i32,
 }
 
@@ -51,7 +52,7 @@ impl Relation {
                     executor: e,
                     filter: settings.filter,
                     use_upstream_id: settings.use_upstream_id,
-                    target_states: settings.target_states.clone(),
+                    target: settings.target.clone(),
                     delay: settings.delay,
                 }
             }
@@ -66,7 +67,7 @@ impl Relation {
                                 executor: Executor::new_auto(),
                                 filter: settings.filter,
                                 use_upstream_id: settings.use_upstream_id,
-                                target_states: settings.target_states.clone(),
+                                target: settings.target.clone(),
                                 delay: settings.delay,
                             }
                         } else {
@@ -83,7 +84,7 @@ impl Relation {
 
     fn check_converter(meta_to: &str, meta_cache_getter: MetaCacheGetter, meta_getter: &MetaGetter, settings: &RelationSettings) -> Result<Meta> {
         let m_to = meta_cache_getter(meta_to, &meta_getter)?;
-        if let Some(ts) = &settings.target_states {
+        if let Some(ts) = &settings.target.states {
             if let Some(x) = &ts.add {
                 Relation::check_state(&m_to, x)?
             };
@@ -152,7 +153,7 @@ mod test_from_raw {
             }),
             filter: vec![],
             use_upstream_id: false,
-            target_states: None,
+            target: Default::default(),
             delay: 0,
         };
         let raw = RawRelation {

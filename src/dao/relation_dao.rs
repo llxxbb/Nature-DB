@@ -93,7 +93,7 @@ impl RelationDaoImpl {
                 }),
                 filter: vec![],
                 use_upstream_id: false,
-                target_states: None,
+                target: Default::default(),
                 delay: 0,
             },
         )?;

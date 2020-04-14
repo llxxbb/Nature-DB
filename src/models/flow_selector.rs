@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 /// select an upstream
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 pub struct FlowSelector {
     #[serde(skip_serializing_if = "HashSet::is_empty")]
     #[serde(default)]

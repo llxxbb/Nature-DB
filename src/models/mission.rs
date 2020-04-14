@@ -1,4 +1,4 @@
-use nature_common::{DynamicConverter, Executor, Instance, is_false, is_zero, Meta, MetaType, Result, TargetState};
+use nature_common::{DynamicConverter, Executor, Instance, is_default, Meta, MetaType, Result, TargetState};
 
 use crate::{MetaCacheGetter, MetaGetter, Relation};
 use crate::flow_tool::ContextChecker;
@@ -25,10 +25,10 @@ pub struct MissionRaw {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub states_demand: Option<TargetState>,
-    #[serde(skip_serializing_if = "is_false")]
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub use_upstream_id: bool,
-    #[serde(skip_serializing_if = "is_zero")]
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub delay: i32,
 }
@@ -104,7 +104,7 @@ impl Mission {
                 to: r.to.clone(),
                 executor: r.executor.clone(),
                 filter: r.filter.clone(),
-                states_demand: r.target_states.clone(),
+                states_demand: r.target.states.clone(),
                 use_upstream_id: r.use_upstream_id,
                 delay: r.delay,
             };
@@ -131,6 +131,7 @@ impl Mission {
 mod test {
     use crate::FlowSelector;
     use crate::models::flow_tool::{context_check, state_check};
+    use crate::models::relation_target::RelationTarget;
 
     use super::*;
 
@@ -186,6 +187,10 @@ mod test {
         let mut state = TargetState::default();
         state.add = Some(vec!["a".to_string()]);
         let state = Some(state);
+        let target = RelationTarget {
+            states: state.clone(),
+            upstream_para: vec![],
+        };
         let relation = Relation {
             from: "a".to_string(),
             to: meta.clone(),
@@ -193,7 +198,7 @@ mod test {
             executor: executor.clone(),
             filter: vec![],
             use_upstream_id: true,
-            target_states: state.clone(),
+            target,
             delay: 2,
         };
         let relations = vec![relation];
