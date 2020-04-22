@@ -3,6 +3,7 @@ use nature_common::{DynamicConverter, Executor, Instance, is_default, Meta, Meta
 use crate::{MetaCacheGetter, MetaGetter, Relation};
 use crate::flow_tool::ContextChecker;
 use crate::flow_tool::StateChecker;
+use crate::models::relation_target::RelationTarget;
 
 /// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
 #[derive(Debug, Clone, Default)]
@@ -10,7 +11,7 @@ pub struct Mission {
     pub to: Meta,
     pub executor: Executor,
     pub filter: Vec<Executor>,
-    pub states_demand: Option<TargetState>,
+    pub target_demand: RelationTarget,
     pub use_upstream_id: bool,
     pub delay: i32,
 }
@@ -22,9 +23,9 @@ pub struct MissionRaw {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     #[serde(default)]
     pub filter: Vec<Executor>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
-    pub states_demand: Option<TargetState>,
+    pub target_demand: RelationTarget,
     #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub use_upstream_id: bool,
@@ -39,7 +40,7 @@ impl From<Mission> for MissionRaw {
             to: input.to.meta_string(),
             executor: input.executor,
             filter: input.filter,
-            states_demand: input.states_demand,
+            target_demand: input.target_demand,
             use_upstream_id: input.use_upstream_id,
             delay: input.delay,
         }
@@ -72,7 +73,7 @@ impl Mission {
                 to: t,
                 executor: d.fun.clone(),
                 filter: vec![],
-                states_demand: None,
+                target_demand: Default::default(),
                 use_upstream_id: d.use_upstream_id,
                 delay: d.delay,
             };
@@ -104,7 +105,7 @@ impl Mission {
                 to: r.to.clone(),
                 executor: r.executor.clone(),
                 filter: r.filter.clone(),
-                states_demand: r.target.states.clone(),
+                target_demand: r.target.clone(),
                 use_upstream_id: r.use_upstream_id,
                 delay: r.delay,
             };
@@ -119,7 +120,7 @@ impl Mission {
             to: mc_g(&raw.to, &m_g)?,
             executor: raw.executor.clone(),
             filter: raw.filter.clone(),
-            states_demand: raw.states_demand.clone(),
+            target_demand: raw.target_demand.clone(),
             use_upstream_id: raw.use_upstream_id,
             delay: raw.delay,
         };
@@ -208,7 +209,7 @@ mod test {
         assert_eq!(rtn.executor, executor);
         assert_eq!(rtn.to, meta);
         assert_eq!(rtn.use_upstream_id, true);
-        assert_eq!(rtn.states_demand, state);
+        assert_eq!(rtn.target_demand, state);
     }
 
     #[test]
