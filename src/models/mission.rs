@@ -1,4 +1,4 @@
-use nature_common::{DynamicConverter, Executor, Instance, is_default, Meta, MetaType, Result, TargetState};
+use nature_common::{DynamicConverter, Executor, Instance, is_default, Meta, MetaType, Result};
 
 use crate::{MetaCacheGetter, MetaGetter, Relation};
 use crate::flow_tool::ContextChecker;
@@ -130,6 +130,8 @@ impl Mission {
 
 #[cfg(test)]
 mod test {
+    use nature_common::TargetState;
+
     use crate::FlowSelector;
     use crate::models::flow_tool::{context_check, state_check};
     use crate::models::relation_target::RelationTarget;
@@ -209,7 +211,7 @@ mod test {
         assert_eq!(rtn.executor, executor);
         assert_eq!(rtn.to, meta);
         assert_eq!(rtn.use_upstream_id, true);
-        assert_eq!(rtn.target_demand, state);
+        assert_eq!(rtn.target_demand.states, state);
     }
 
     #[test]
