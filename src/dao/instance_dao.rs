@@ -4,7 +4,7 @@ use diesel::prelude::*;
 
 use nature_common::*;
 
-use crate::{DbError, get_conn};
+use crate::{DbError, get_conn, Mission};
 use crate::raw_models::RawInstance;
 
 pub struct InstanceDaoImpl;
@@ -54,7 +54,7 @@ impl InstanceDaoImpl {
         }
     }
 
-    pub fn get_last_state(f_para: &ParaForQueryByID) -> Result<Option<Instance>> {
+    fn get_last_state(f_para: &ParaForQueryByID) -> Result<Option<Instance>> {
         use super::schema::instances::dsl::*;
         let def = instances
             .filter(instance_id.eq(u128_to_vec_u8(f_para.id))
@@ -122,5 +122,30 @@ impl InstanceDaoImpl {
             Ok(rtn) => Ok(rtn),
             Err(e) => Err(DbError::from(e))
         }
+    }
+
+    /// get downstream instance through upstream instance
+    pub fn get_last_taget(from: &Instance, mission: &Mission) -> Result<Option<Instance>> {
+        if !mission.to.is_state() {
+            return Ok(None);
+        }
+        let para_part = &mission.target_demand.upstream_para;
+        let para_id = get_para_and_key_from_para(&from.para, para_part)?.0;
+        let mut id:u128 = match from.sys_context.get(&*CONTEXT_TARGET_INSTANCE_ID) {
+            // context have target id
+            Some(state_id) => u128::from_str(state_id)?,
+            None => 0,
+        };
+        if id == 0 {
+            if mission.use_upstream_id{
+                id = from.id
+            }else if mission.to.check_master(&from.meta){
+                id = from.id
+            }
+        }
+        let meta = mission.to.meta_string();
+        debug!("get last state for meta {}", &meta);
+        let qc = ParaForQueryByID::new(id, &meta, &para_id, 0);
+        Self::get_last_state(&qc)
     }
 }
