@@ -17,15 +17,18 @@ impl TaskDaoImpl {
         let rtn = diesel::insert_into(task::table).values(raw).execute(&get_conn()?);
         match rtn {
             Ok(num) => {
-                if num == 0 {
-                    warn!("saved 0 task KEY: {} FOR: {} TYPE: {}", &raw.task_key, &raw.task_for, raw.task_type)
-                }else{
+                if num == 1 {
                     debug!("---- saved task KEY: {} FOR: {} TYPE: {}", &raw.task_key, &raw.task_for, raw.task_type)
+                } else {
+                    warn!("==== saved 0 task KEY: {} FOR: {} TYPE: {}", &raw.task_key, &raw.task_for, raw.task_type)
                 }
                 Ok(num)
             }
             Err(Error::DatabaseError(kind, info)) => match kind {
-                DatabaseErrorKind::UniqueViolation => Ok(0),
+                DatabaseErrorKind::UniqueViolation => {
+                    warn!("==== task duplicated KEY: {} FOR: {} TYPE: {}, {:?}", &raw.task_key, &raw.task_for, raw.task_type, info);
+                    Ok(0)
+                }
                 DatabaseErrorKind::__Unknown => {
                     Err(NatureError::EnvironmentError(format!("{:?}", info)))
                 }

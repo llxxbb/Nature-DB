@@ -37,8 +37,9 @@ impl RawTask {
             return Err(NatureError::SystemError("data's length can' be over : ".to_owned() + &TASK_CONTENT_MAX_LENGTH.to_string()));
         }
         let time = Local::now().naive_local();
+        let id = format!("{}{}{}{}", json, task_key, task_for, task_type);
         Ok(RawTask {
-            task_id: u128_to_vec_u8(generate_id(json)?),
+            task_id: u128_to_vec_u8(generate_id(&id)?),
             task_key: task_key.to_string(),
             task_type,
             task_for: task_for.to_string(),
@@ -70,7 +71,7 @@ impl RawTask {
               FD: Fn(&[u8]) -> Result<usize>
     {
         for v in news {
-            dao_insert(v)?;
+            let _num = dao_insert(v)?;
         }
         dao_finish(old_id)?;
         Ok(())

@@ -29,7 +29,7 @@ impl RawRelation {
     }
 
     pub fn get_string(&self) -> String {
-        format!("relation[{}->{}]", self.from_meta, self.to_meta)
+        format!("relation[{}  --->  {}]", self.from_meta, self.to_meta)
     }
 }
 

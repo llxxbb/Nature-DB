@@ -23,7 +23,7 @@ impl InstanceDaoImpl {
             .values(new)
             .execute(&get_conn()?) {
             Ok(rtn) => {
-                debug!("Saved instance for `Meta` {}, id : {:?}", instance.meta, instance.id);
+                debug!("Saved instance : {}", instance.get_key());
                 Ok(rtn)
             }
             Err(err) => Err(DbError::from_with_msg(err, &instance.id.to_string()))
