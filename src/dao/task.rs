@@ -17,6 +17,11 @@ impl TaskDaoImpl {
         let rtn = diesel::insert_into(task::table).values(raw).execute(&get_conn()?);
         match rtn {
             Ok(num) => {
+                if num == 0 {
+                    warn!("saved 0 task KEY: {} FOR: {} TYPE: {}", &raw.task_key, &raw.task_for, raw.task_type)
+                }else{
+                    debug!("---- saved task KEY: {} FOR: {} TYPE: {}", &raw.task_key, &raw.task_for, raw.task_type)
+                }
                 Ok(num)
             }
             Err(Error::DatabaseError(kind, info)) => match kind {
@@ -33,7 +38,7 @@ impl TaskDaoImpl {
         }
     }
 
-    pub fn delete(record_id: &[u8]) -> Result<usize> {
+    fn delete(record_id: &[u8]) -> Result<usize> {
         let rtn = diesel::delete(task.filter(task_id.eq(record_id))).execute(&get_conn()?);
         match rtn {
             Ok(num) => Ok(num),

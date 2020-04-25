@@ -41,7 +41,7 @@ CREATE TABLE `instances` (
 
 create TABLE `task` (
 	`task_id`	BINARY(16) NOT NULL,
-	`task_key`	VARCHAR ( 511 ) NOT NULL,
+	`task_key`	VARCHAR ( 511 ) NOT NULL COMMENT 'meta|id|para|sta_ver',
 	`task_type`	TINYINT NOT NULL,
 	`task_for`	VARCHAR ( 255 ) NOT NULL,
 	`task_state`	TINYINT NOT NULL,
