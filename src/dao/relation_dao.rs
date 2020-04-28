@@ -91,7 +91,7 @@ impl RelationDaoImpl {
                     url: url.to_string(),
                     settings: "".to_string(),
                 }),
-                filter: vec![],
+                filter_after: vec![],
                 use_upstream_id: false,
                 target: Default::default(),
                 delay: 0,

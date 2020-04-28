@@ -13,7 +13,7 @@ pub struct Relation {
     pub to: Meta,
     pub selector: Option<FlowSelector>,
     pub executor: Executor,
-    pub filter: Vec<Executor>,
+    pub filter_after: Vec<Executor>,
     pub use_upstream_id: bool,
     pub target: RelationTarget,
     pub delay: i32,
@@ -50,7 +50,7 @@ impl Relation {
                     to: m_to,
                     selector: selector.clone(),
                     executor: e,
-                    filter: settings.filter,
+                    filter_after: settings.filter_after,
                     use_upstream_id: settings.use_upstream_id,
                     target: settings.target.clone(),
                     delay: settings.delay,
@@ -65,7 +65,7 @@ impl Relation {
                                 to: m_to.clone(),
                                 selector: selector.clone(),
                                 executor: Executor::new_auto(),
-                                filter: settings.filter,
+                                filter_after: settings.filter_after,
                                 use_upstream_id: settings.use_upstream_id,
                                 target: settings.target.clone(),
                                 delay: settings.delay,
@@ -139,7 +139,7 @@ mod test_from_raw {
         };
         let mg: MetaGetter = meta;
         let rtn = Relation::from_raw(raw, meta_cache, &mg);
-        assert_eq!(rtn.err().unwrap().to_string().contains("relation[B:from:1->B:to:1]"), true);
+        assert_eq!(rtn.err().unwrap().to_string().contains("relation[B:from:1  --->  B:to:1]"), true);
     }
 
     #[test]
@@ -151,7 +151,7 @@ mod test_from_raw {
                 url: "url_one".to_string(),
                 settings: "".to_string(),
             }),
-            filter: vec![],
+            filter_after: vec![],
             use_upstream_id: false,
             target: Default::default(),
             delay: 0,

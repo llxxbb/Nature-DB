@@ -41,7 +41,7 @@ mod test{
     #[test]
     fn get_string_test(){
         let result = RawRelation::new("a", "b", &RelationSettings::default()).unwrap();
-        assert_eq!(result.get_string(), "relation[a->b]")
+        assert_eq!(result.get_string(), "relation[a  --->  b]")
     }
 }
 

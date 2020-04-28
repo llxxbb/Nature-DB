@@ -15,7 +15,7 @@ pub struct RelationSettings {
     /// filter will execute after executor,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     #[serde(default)]
-    pub filter: Vec<Executor>,
+    pub filter_after: Vec<Executor>,
     /// if the downstream is state meta, when `is_main` is set to true, the upstream's id will be used as downstream's id
     #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
