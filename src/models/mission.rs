@@ -10,6 +10,7 @@ use crate::models::relation_target::RelationTarget;
 pub struct Mission {
     pub to: Meta,
     pub executor: Executor,
+    pub filter_before: Vec<Executor>,
     pub filter_after: Vec<Executor>,
     pub target_demand: RelationTarget,
     pub use_upstream_id: bool,
@@ -20,6 +21,9 @@ pub struct Mission {
 pub struct MissionRaw {
     pub to: String,
     pub executor: Executor,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
+    pub filter_before: Vec<Executor>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     #[serde(default)]
     pub filter_after: Vec<Executor>,
@@ -39,6 +43,7 @@ impl From<Mission> for MissionRaw {
         MissionRaw {
             to: input.to.meta_string(),
             executor: input.executor,
+            filter_before: input.filter_before,
             filter_after: input.filter_after,
             target_demand: input.target_demand,
             use_upstream_id: input.use_upstream_id,
@@ -72,6 +77,7 @@ impl Mission {
             let mission = Mission {
                 to: t,
                 executor: d.fun.clone(),
+                filter_before: vec![],
                 filter_after: vec![],
                 target_demand: Default::default(),
                 use_upstream_id: d.use_upstream_id,
@@ -104,6 +110,7 @@ impl Mission {
             let m = Mission {
                 to: r.to.clone(),
                 executor: r.executor.clone(),
+                filter_before: r.filter_before.clone(),
                 filter_after: r.filter_after.clone(),
                 target_demand: r.target.clone(),
                 use_upstream_id: r.use_upstream_id,
@@ -119,6 +126,7 @@ impl Mission {
         let rtn = Mission {
             to: mc_g(&raw.to, &m_g)?,
             executor: raw.executor.clone(),
+            filter_before: raw.filter_before.clone(),
             filter_after: raw.filter_after.clone(),
             target_demand: raw.target_demand.clone(),
             use_upstream_id: raw.use_upstream_id,
@@ -199,6 +207,7 @@ mod test {
             to: meta.clone(),
             selector: None,
             executor: executor.clone(),
+            filter_before: vec![],
             filter_after: vec![],
             use_upstream_id: true,
             target,

@@ -12,6 +12,10 @@ pub struct RelationSettings {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     pub executor: Option<Executor>,
+    /// filter will execute before executor,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
+    pub filter_before: Vec<Executor>,
     /// filter will execute after executor,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     #[serde(default)]
