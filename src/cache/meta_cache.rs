@@ -125,7 +125,7 @@ mod test {
             is_state: false,
             master: None,
             multi_meta: set,
-            conflict_avoid: false,
+            cache_saved: false,
         };
         let mut m = Meta::from_string("B:test:3").unwrap();
         let _ = m.set_setting(&setting.to_json().unwrap());
