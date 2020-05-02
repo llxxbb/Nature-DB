@@ -11,7 +11,6 @@ table! {
         from_para -> Varchar,
         from_id -> Binary,
         from_state_version -> Integer,
-        execute_time -> Datetime,
         create_time -> Datetime,
         sys_context -> Nullable<Text>,
     }

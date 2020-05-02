@@ -32,7 +32,6 @@ CREATE TABLE `instances` (
   `from_para` varchar(255) CHARACTER SET latin1 NOT NULL DEFAULT '',
   `from_id` binary(16) NOT NULL DEFAULT '0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0',
   `from_state_version` int(11) NOT NULL DEFAULT 0,
-  `execute_time` datetime NOT NULL,
   `create_time` datetime NOT NULL,
   `sys_context` text CHARACTER SET latin1 DEFAULT NULL,
   UNIQUE KEY `instance_un` (`meta`,`instance_id`,`para`,`from_meta`,`from_id`,`from_para`,`from_state_version`),

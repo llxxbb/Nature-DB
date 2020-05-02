@@ -25,7 +25,6 @@ pub struct RawInstance {
     from_para: String,
     from_id: Vec<u8>,
     from_state_version: i32,
-    execute_time: NaiveDateTime,
     create_time: NaiveDateTime,
     sys_context: Option<String>,
 }
@@ -65,7 +64,6 @@ impl RawInstance {
                 from,
                 para: self.para.clone(),
             },
-            execute_time: self.execute_time.timestamp_millis(),
             create_time: self.create_time.timestamp_millis(),
         })
     }
@@ -95,7 +93,6 @@ impl RawInstance {
             para: instance.para.clone(),
             from_state_version,
             from_id,
-            execute_time: Local.timestamp_millis(instance.execute_time).naive_local(),
             create_time: Local.timestamp_millis(instance.create_time).naive_local(),
             sys_context: Self::context_to_raw(&instance.sys_context, "sys_context")?,
         })
