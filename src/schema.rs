@@ -36,7 +36,7 @@ table! {
 
 table! {
     task (task_id) {
-        task_id -> Binary,
+        task_id -> Char,
         task_key -> Varchar,
         task_type -> Tinyint,
         task_for -> Varchar,
@@ -50,7 +50,7 @@ table! {
 
 table! {
     task_error (task_id) {
-        task_id -> Binary,
+        task_id -> Char,
         task_key -> Varchar,
         task_type -> Tinyint,
         task_for -> Varchar,

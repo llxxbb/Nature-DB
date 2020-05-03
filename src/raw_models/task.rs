@@ -15,7 +15,7 @@ use super::super::schema::task;
 #[derive(Insertable, Queryable, QueryableByName)]
 #[table_name = "task"]
 pub struct RawTask {
-    pub task_id: Vec<u8>,
+    pub task_id: String,
     pub task_key: String,
     pub task_type: i8,
     pub task_for: String,
@@ -39,7 +39,7 @@ impl RawTask {
         let time = Local::now().naive_local();
         let id = format!("{}{}{}{}", json, task_key, task_for, task_type);
         Ok(RawTask {
-            task_id: u128_to_vec_u8(generate_id(&id)?),
+            task_id: format!("{:x}", generate_id(&id)?),
             task_key: task_key.to_string(),
             task_type,
             task_for: task_for.to_string(),
@@ -66,9 +66,9 @@ impl RawTask {
     }
 
 
-    pub fn save_batch<FI, FD>(news: &[RawTask], old_id: &[u8], dao_insert: FI, dao_finish: FD) -> Result<()>
+    pub fn save_batch<FI, FD>(news: &[RawTask], old_id: &str, dao_insert: FI, dao_finish: FD) -> Result<()>
         where FI: Fn(&RawTask) -> Result<usize>,
-              FD: Fn(&[u8]) -> Result<usize>
+              FD: Fn(&str) -> Result<usize>
     {
         for v in news {
             let _num = dao_insert(v)?;

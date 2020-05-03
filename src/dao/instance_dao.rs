@@ -9,7 +9,7 @@ use crate::raw_models::RawInstance;
 
 pub struct InstanceDaoImpl;
 
-pub type InstanceParaGetter = fn(&QueryByID) -> Result<Option<Instance>>;
+pub type InstanceParaGetter = fn(&ByID) -> Result<Option<Instance>>;
 pub type InstanceKeyGetter = fn(&str, &str) -> Result<Option<Instance>>;
 
 pub static INS_PARA_GETTER: InstanceParaGetter = InstanceDaoImpl::get_by_id;
@@ -31,7 +31,7 @@ impl InstanceDaoImpl {
     }
 
     /// check whether source stored earlier
-    pub fn get_by_from(f_para: &ParaForIDAndFrom) -> Result<Option<Instance>> {
+    pub fn get_by_from(f_para: &IDAndFrom) -> Result<Option<Instance>> {
         use super::schema::instances::dsl::*;
         let def = instances
             .filter(ins_key.like(&f_para.para_like())
@@ -50,7 +50,7 @@ impl InstanceDaoImpl {
         }
     }
 
-    fn get_last_state(f_para: &QueryByID) -> Result<Option<Instance>> {
+    fn get_last_state(f_para: &ByID) -> Result<Option<Instance>> {
         use super::schema::instances::dsl::*;
         let def = instances
             .filter(ins_key.like(&f_para.para_like()))
@@ -72,7 +72,7 @@ impl InstanceDaoImpl {
         if temp.len() != 4 {
             return Err(NatureError::VerifyError("error key format for task".to_string()));
         }
-        let para = QueryByID {
+        let para = ByID {
             id: temp[1].to_string(),
             meta: temp[0].to_string(),
             para: temp[2].to_string(),
@@ -82,7 +82,7 @@ impl InstanceDaoImpl {
         Self::get_by_id(&para)
     }
 
-    pub fn get_by_id(f_para: &QueryByID) -> Result<Option<Instance>> {
+    pub fn get_by_id(f_para: &ByID) -> Result<Option<Instance>> {
         use super::schema::instances::dsl::*;
         let def = instances
             .filter(ins_key.eq(f_para.get_key()))
@@ -131,7 +131,7 @@ impl InstanceDaoImpl {
         }
         let meta = mission.to.meta_string();
         debug!("get last state for meta {}", &meta);
-        let qc = QueryByID::new(id, &meta, &para_id, 0);
+        let qc = ByID::new(id, &meta, &para_id, 0);
         Self::get_last_state(&qc)
     }
 }
@@ -146,7 +146,7 @@ mod test {
     #[allow(dead_code)]
     fn query_by_id() {
         env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
-        let para = QueryByID {
+        let para = ByID {
             id: "3827f37003127855b32ea022daa04cd".to_string(),
             meta: "B:sale/order:1".to_string(),
             para: "".to_string(),

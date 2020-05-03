@@ -3,7 +3,7 @@ use diesel::dsl::sql;
 use diesel::prelude::*;
 use diesel::result::*;
 
-use nature_common::{NatureError, Result, vec_to_hex_string};
+use nature_common::{NatureError, Result};
 
 use crate::{DbError, get_conn};
 use crate::raw_models::{RawTask, RawTaskError};
@@ -41,7 +41,7 @@ impl TaskDaoImpl {
         }
     }
 
-    fn delete(record_id: &[u8]) -> Result<usize> {
+    fn delete(record_id: &str) -> Result<usize> {
         let rtn = diesel::delete(task.filter(task_id.eq(record_id))).execute(&get_conn()?);
         match rtn {
             Ok(num) => Ok(num),
@@ -103,7 +103,7 @@ impl TaskDaoImpl {
         }
     }
 
-    pub fn update_execute_time(record_id: &[u8], delay: i64) -> Result<()> {
+    pub fn update_execute_time(record_id: &str, delay: i64) -> Result<()> {
         let time = Local::now().checked_add_signed(Duration::seconds(delay)).unwrap().naive_local();
         match diesel::update(task)
             .set(execute_time.eq(time))
@@ -119,7 +119,7 @@ impl TaskDaoImpl {
         }
     }
 
-    pub fn finish_task(record_id: &[u8]) -> Result<usize> {
+    pub fn finish_task(record_id: &str) -> Result<usize> {
         match diesel::update(task)
             .set(task_state.eq(1))
             .filter(task_id.eq(record_id))
@@ -134,9 +134,9 @@ impl TaskDaoImpl {
     }
 
     /// increase one times and delay `delay` seconds
-    pub fn increase_times_and_delay(record_id: &[u8], delay: i32) -> Result<usize> {
+    pub fn increase_times_and_delay(record_id: &str, delay: i32) -> Result<usize> {
         let time = Local::now().checked_add_signed(Duration::seconds(delay as i64)).unwrap().naive_local();
-        let sql = format!("update task set retried_times = retried_times + 1, execute_time = datetime('now', '+{} seconds', 'localtime') where task_id = x'{}'", delay, vec_to_hex_string(&record_id));
+        let sql = format!("update task set retried_times = retried_times + 1, execute_time = datetime('now', '+{} seconds', 'localtime') where task_id = {}", delay, record_id);
         println!("{}", &sql);
         match diesel::update(task)
             .set((execute_time.eq(time), retried_times.eq(retried_times + 1)))
@@ -147,7 +147,7 @@ impl TaskDaoImpl {
         }
     }
 
-    pub fn get(record_id: &[u8]) -> Result<Option<RawTask>> {
+    pub fn get(record_id: &str) -> Result<Option<RawTask>> {
         let def = task.filter(task_id.eq(record_id))
             .limit(1)
             .load::<RawTask>(&get_conn()?);

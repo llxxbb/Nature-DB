@@ -9,7 +9,7 @@ use crate::schema::task_error;
 #[derive(Insertable)]
 #[table_name = "task_error"]
 pub struct RawTaskError {
-    pub task_id: Vec<u8>,
+    pub task_id: String,
     pub task_key: String,
     pub task_type: i8,
     pub task_for: String,
