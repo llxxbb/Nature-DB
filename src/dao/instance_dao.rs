@@ -4,12 +4,12 @@ use diesel::prelude::*;
 
 use nature_common::*;
 
-use crate::{DbError, get_conn, Mission};
+use crate::{DbError, get_conn, Mission, QUERY_SIZE_LIMIT};
 use crate::raw_models::RawInstance;
 
 pub struct InstanceDaoImpl;
 
-pub type InstanceParaGetter = fn(&ByID) -> Result<Option<Instance>>;
+pub type InstanceParaGetter = fn(&KeyCondition) -> Result<Option<Instance>>;
 pub type InstanceKeyGetter = fn(&str, &str) -> Result<Option<Instance>>;
 
 pub static INS_PARA_GETTER: InstanceParaGetter = InstanceDaoImpl::get_by_id;
@@ -50,7 +50,7 @@ impl InstanceDaoImpl {
         }
     }
 
-    fn get_last_state(f_para: &ByID) -> Result<Option<Instance>> {
+    fn get_last_state(f_para: &KeyCondition) -> Result<Option<Instance>> {
         use super::schema::instances::dsl::*;
         let def = instances
             .filter(ins_key.like(&f_para.para_like()))
@@ -72,9 +72,10 @@ impl InstanceDaoImpl {
         if temp.len() != 4 {
             return Err(NatureError::VerifyError("error key format for task".to_string()));
         }
-        let para = ByID {
+        let para = KeyCondition {
             id: temp[1].to_string(),
             meta: temp[0].to_string(),
+            gt_key: "".to_string(),
             para: temp[2].to_string(),
             state_version: i32::from_str(temp[3])?,
             limit: 1,
@@ -82,7 +83,7 @@ impl InstanceDaoImpl {
         Self::get_by_id(&para)
     }
 
-    pub fn get_by_id(f_para: &ByID) -> Result<Option<Instance>> {
+    pub fn get_by_id(f_para: &KeyCondition) -> Result<Option<Instance>> {
         use super::schema::instances::dsl::*;
         let def = instances
             .filter(ins_key.eq(f_para.get_key()))
@@ -94,6 +95,28 @@ impl InstanceDaoImpl {
                 1 => Ok(Some(rtn[0].to()?)),
                 _ => {
                     Err(NatureError::SystemError("should less than 2 record return".to_string()))
+                }
+            }
+            Err(e) => Err(DbError::from(e))
+        }
+    }
+    pub fn get_by_meta(f_para: &KeyCondition) -> Result<Option<Vec<Instance>>> {
+        use super::schema::instances::dsl::*;
+        let limit = if f_para.limit < *QUERY_SIZE_LIMIT {
+            f_para.limit
+        } else { *QUERY_SIZE_LIMIT };
+        let def = instances
+            .filter(ins_key.like(f_para.id_like()))
+            .filter(ins_key.gt(&f_para.gt_key))
+            .order(ins_key)
+            .limit(limit as i64)
+            .load::<RawInstance>(&get_conn()?);
+        match def {
+            Ok(rtn) => match rtn.len() {
+                0 => Ok(None),
+                _ => {
+                    let rtn: Vec<Instance> = rtn.iter().map(|one| one.to().unwrap()).collect();
+                    Ok(Some(rtn))
                 }
             }
             Err(e) => Err(DbError::from(e))
@@ -131,7 +154,7 @@ impl InstanceDaoImpl {
         }
         let meta = mission.to.meta_string();
         debug!("get last state for meta {}", &meta);
-        let qc = ByID::new(id, &meta, &para_id, 0);
+        let qc = KeyCondition::new(id, &meta, &para_id, 0);
         Self::get_last_state(&qc)
     }
 }
@@ -142,18 +165,35 @@ mod test {
 
     use super::*;
 
-    #[test]
+    // #[test]
     #[allow(dead_code)]
     fn query_by_id() {
         env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
-        let para = ByID {
+        let para = KeyCondition {
             id: "3827f37003127855b32ea022daa04cd".to_string(),
             meta: "B:sale/order:1".to_string(),
+            gt_key: "".to_string(),
             para: "".to_string(),
             state_version: 0,
             limit: 1,
         };
         let result = InstanceDaoImpl::get_by_id(&para);
+        let _ = dbg!(result);
+    }
+
+    // #[test]
+    #[allow(dead_code)]
+    fn query_by_meta() {
+        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
+        let para = KeyCondition {
+            id: "".to_string(),
+            meta: "B:sale/order:1".to_string(),
+            gt_key: "B:sale/order:1|4e7c0395030d2bb06f323d5355a9d957|".to_string(),
+            para: "".to_string(),
+            state_version: 0,
+            limit: 100,
+        };
+        let result = InstanceDaoImpl::get_by_meta(&para);
         let _ = dbg!(result);
     }
 }
