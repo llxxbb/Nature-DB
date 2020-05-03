@@ -9,7 +9,7 @@ use crate::raw_models::RawInstance;
 
 pub struct InstanceDaoImpl;
 
-pub type InstanceParaGetter = fn(&ParaForQueryByID) -> Result<Option<Instance>>;
+pub type InstanceParaGetter = fn(&QueryByID) -> Result<Option<Instance>>;
 pub type InstanceKeyGetter = fn(&str, &str) -> Result<Option<Instance>>;
 
 pub static INS_PARA_GETTER: InstanceParaGetter = InstanceDaoImpl::get_by_id;
@@ -34,12 +34,8 @@ impl InstanceDaoImpl {
     pub fn get_by_from(f_para: &ParaForIDAndFrom) -> Result<Option<Instance>> {
         use super::schema::instances::dsl::*;
         let def = instances
-            .filter(instance_id.eq(u128_to_vec_u8(f_para.id))
-                .and(meta.eq(&f_para.meta))
-                .and(from_id.eq(u128_to_vec_u8(f_para.from_id)))
-                .and(from_meta.eq(&f_para.from_meta))
-                .and(from_state_version.eq(f_para.from_state_version))
-                .and(from_para.eq(&f_para.from_para))
+            .filter(ins_key.like(&f_para.para_like())
+                .and(from_key.eq(&f_para.from_key))
             )
             .order(state_version.desc())
             .limit(1)
@@ -54,13 +50,10 @@ impl InstanceDaoImpl {
         }
     }
 
-    fn get_last_state(f_para: &ParaForQueryByID) -> Result<Option<Instance>> {
+    fn get_last_state(f_para: &QueryByID) -> Result<Option<Instance>> {
         use super::schema::instances::dsl::*;
         let def = instances
-            .filter(instance_id.eq(u128_to_vec_u8(f_para.id))
-                .and(meta.eq(&f_para.meta))
-                .and(para.eq(&f_para.para))
-            )
+            .filter(ins_key.like(&f_para.para_like()))
             .order(state_version.desc())
             .limit(f_para.limit as i64)
             .load::<RawInstance>(&get_conn()?);
@@ -79,8 +72,8 @@ impl InstanceDaoImpl {
         if temp.len() != 4 {
             return Err(NatureError::VerifyError("error key format for task".to_string()));
         }
-        let para = ParaForQueryByID {
-            id: u128::from_str(temp[1].clone())?,
+        let para = QueryByID {
+            id: temp[1].to_string(),
             meta: temp[0].to_string(),
             para: temp[2].to_string(),
             state_version: i32::from_str(temp[3])?,
@@ -89,14 +82,11 @@ impl InstanceDaoImpl {
         Self::get_by_id(&para)
     }
 
-    pub fn get_by_id(f_para: &ParaForQueryByID) -> Result<Option<Instance>> {
+    pub fn get_by_id(f_para: &QueryByID) -> Result<Option<Instance>> {
         use super::schema::instances::dsl::*;
         let def = instances
-            .filter(instance_id.eq(u128_to_vec_u8(f_para.id))
-                .and(meta.eq(&f_para.meta))
-                .and(state_version.eq(f_para.state_version))
-                .and(para.eq(&f_para.para))
-            )
+            .filter(ins_key.eq(f_para.get_key()))
+            .filter(state_version.eq(f_para.state_version))
             .load::<RawInstance>(&get_conn()?);
         match def {
             Ok(rtn) => match rtn.len() {
@@ -113,11 +103,7 @@ impl InstanceDaoImpl {
     pub fn delete(ins: &Instance) -> Result<usize> {
         debug!("delete instance, id is : {:?}", ins.id);
         use super::schema::instances::dsl::*;
-        let rows = instances
-            .filter(instance_id.eq(ins.id.to_ne_bytes().to_vec()))
-            .filter(meta.eq(&ins.meta))
-            .filter(state_version.eq(ins.state_version));
-        //        debug!("rows filter : {:?}", rows);
+        let rows = instances.filter(ins_key.eq(ins.get_key()));
         match diesel::delete(rows).execute(&get_conn()?) {
             Ok(rtn) => Ok(rtn),
             Err(e) => Err(DbError::from(e))
@@ -131,21 +117,43 @@ impl InstanceDaoImpl {
         }
         let para_part = &mission.target_demand.upstream_para;
         let para_id = get_para_and_key_from_para(&from.para, para_part)?.0;
-        let mut id:u128 = match from.sys_context.get(&*CONTEXT_TARGET_INSTANCE_ID) {
+        let mut id: u128 = match from.sys_context.get(&*CONTEXT_TARGET_INSTANCE_ID) {
             // context have target id
             Some(state_id) => u128::from_str(state_id)?,
             None => 0,
         };
         if id == 0 {
-            if mission.use_upstream_id{
+            if mission.use_upstream_id {
                 id = from.id
-            }else if mission.to.check_master(&from.meta){
+            } else if mission.to.check_master(&from.meta) {
                 id = from.id
             }
         }
         let meta = mission.to.meta_string();
         debug!("get last state for meta {}", &meta);
-        let qc = ParaForQueryByID::new(id, &meta, &para_id, 0);
+        let qc = QueryByID::new(id, &meta, &para_id, 0);
         Self::get_last_state(&qc)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::env;
+
+    use super::*;
+
+    #[test]
+    #[allow(dead_code)]
+    fn query_by_id() {
+        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
+        let para = QueryByID {
+            id: "3827f37003127855b32ea022daa04cd".to_string(),
+            meta: "B:sale/order:1".to_string(),
+            para: "".to_string(),
+            state_version: 0,
+            limit: 1,
+        };
+        let result = InstanceDaoImpl::get_by_id(&para);
+        let _ = dbg!(result);
     }
 }

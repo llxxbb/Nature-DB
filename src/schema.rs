@@ -1,18 +1,13 @@
 table! {
-    instances (meta, instance_id, para, state_version) {
-        instance_id -> Binary,
-        meta -> Varchar,
-        para -> Varchar,
-        content -> Varchar,
+    instances (ins_key, state_version) {
+        ins_key -> Varchar,
+        content -> Text,
         context -> Nullable<Text>,
         states -> Nullable<Text>,
         state_version -> Integer,
-        from_meta -> Varchar,
-        from_para -> Varchar,
-        from_id -> Binary,
-        from_state_version -> Integer,
         create_time -> Datetime,
         sys_context -> Nullable<Text>,
+        from_key -> Varchar,
     }
 }
 
