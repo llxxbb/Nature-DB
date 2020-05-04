@@ -1,5 +1,7 @@
 use std::str::FromStr;
 
+use chrono::{Local, TimeZone};
+use diesel::expression::sql_literal::sql;
 use diesel::prelude::*;
 
 use nature_common::*;
@@ -75,9 +77,11 @@ impl InstanceDaoImpl {
         let para = KeyCondition {
             id: temp[1].to_string(),
             meta: temp[0].to_string(),
-            gt_key: "".to_string(),
+            key_gt: "".to_string(),
             para: temp[2].to_string(),
             state_version: i32::from_str(temp[3])?,
+            time_ge: None,
+            time_lt: None,
             limit: 1,
         };
         Self::get_by_id(&para)
@@ -100,23 +104,33 @@ impl InstanceDaoImpl {
             Err(e) => Err(DbError::from(e))
         }
     }
-    pub fn get_by_meta(f_para: &KeyCondition) -> Result<Option<Vec<Instance>>> {
+    pub fn get_by_meta(f_para: &KeyCondition) -> Result<Vec<Instance>> {
         use super::schema::instances::dsl::*;
         let limit = if f_para.limit < *QUERY_SIZE_LIMIT {
             f_para.limit
         } else { *QUERY_SIZE_LIMIT };
         let def = instances
             .filter(ins_key.like(f_para.id_like()))
-            .filter(ins_key.gt(&f_para.gt_key))
+            .filter(if f_para.key_gt.eq("") { sql("1 = 1") } else {
+                sql(&format!("ins_key > '{}'", f_para.key_gt))
+            })
+            .filter(match f_para.time_ge {
+                Some(ge) => sql(&format!("create_time >= '{}'", Local.timestamp_millis(ge))),
+                None => sql("1 = 1")
+            })
+            .filter(match f_para.time_lt {
+                Some(lt) => sql(&format!("create_time < '{}'", Local.timestamp_millis(lt))),
+                None => sql("1 = 1")
+            })
             .order(ins_key)
             .limit(limit as i64)
             .load::<RawInstance>(&get_conn()?);
         match def {
             Ok(rtn) => match rtn.len() {
-                0 => Ok(None),
+                0 => Ok(vec![]),
                 _ => {
                     let rtn: Vec<Instance> = rtn.iter().map(|one| one.to().unwrap()).collect();
-                    Ok(Some(rtn))
+                    Ok(rtn)
                 }
             }
             Err(e) => Err(DbError::from(e))
@@ -159,6 +173,10 @@ impl InstanceDaoImpl {
     }
 }
 
+// fn time_ge<T: AsExpression<Self::SqlType>>() -> And<BoolExpressionMethods, T::Expression>{
+//
+// }
+
 #[cfg(test)]
 mod test {
     use std::env;
@@ -172,25 +190,32 @@ mod test {
         let para = KeyCondition {
             id: "3827f37003127855b32ea022daa04cd".to_string(),
             meta: "B:sale/order:1".to_string(),
-            gt_key: "".to_string(),
+            key_gt: "".to_string(),
             para: "".to_string(),
             state_version: 0,
+            time_ge: None,
+            time_lt: None,
             limit: 1,
         };
         let result = InstanceDaoImpl::get_by_id(&para);
         let _ = dbg!(result);
     }
 
-    // #[test]
+    #[test]
     #[allow(dead_code)]
     fn query_by_meta() {
+        let ge_t = 1588508143000;
+        let ge = Local.timestamp_millis(ge_t);
+        dbg!(ge);
         env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
         let para = KeyCondition {
             id: "".to_string(),
             meta: "B:sale/order:1".to_string(),
-            gt_key: "B:sale/order:1|4e7c0395030d2bb06f323d5355a9d957|".to_string(),
+            key_gt: "".to_string(),
             para: "".to_string(),
             state_version: 0,
+            time_ge: Some(ge_t),
+            time_lt: Some(1588508144000),
             limit: 100,
         };
         let result = InstanceDaoImpl::get_by_meta(&para);
