@@ -1,4 +1,8 @@
-use nature_common::{DynamicConverter, Executor, Instance, is_default, Meta, MetaType, Result};
+use std::ops::Sub;
+
+use chrono::{Local, TimeZone};
+
+use nature_common::{DynamicConverter, Executor, get_para_and_key_from_para, Instance, is_default, Meta, MetaType, Result};
 
 use crate::{MetaCacheGetter, MetaGetter, Relation};
 use crate::flow_tool::ContextChecker;
@@ -114,7 +118,13 @@ impl Mission {
                 filter_after: r.filter_after.clone(),
                 target_demand: r.target.clone(),
                 use_upstream_id: r.use_upstream_id,
-                delay: r.delay,
+                delay: match get_delay(instance, r) {
+                    Ok(d) => d,
+                    Err(e) => {
+                        warn!("relation will be ignored, R: {}, E:{} ", r.relation_string(), e);
+                        continue;
+                    }
+                },
             };
             // debug!("instance meta: {}, selected relation is {}", instance.meta, r.relation_string());
             rtn.push(m);
@@ -136,6 +146,19 @@ impl Mission {
     }
 }
 
+fn get_delay(ins: &Instance, rela: &Relation) -> Result<i32> {
+    let rtn: i32 = if rela.delay > 0 {
+        rela.delay
+    } else if rela.delay_on_pare.0 > 0 {
+        let rtn = get_para_and_key_from_para(&ins.para, &vec![rela.delay_on_pare.1])?;
+        let diff = Local.timestamp_millis(rtn.0.parse::<i64>()?).sub(Local::now()).num_seconds();
+        diff as i32 + rela.delay_on_pare.0
+    } else {
+        0
+    };
+    Ok(rtn)
+}
+
 #[cfg(test)]
 mod test {
     use nature_common::TargetState;
@@ -145,6 +168,31 @@ mod test {
     use crate::models::relation_target::RelationTarget;
 
     use super::*;
+
+    #[test]
+    fn get_delay_test() {
+        // none delay set
+        let mut ins = Instance::default();
+        let mut relation = Relation::default();
+        let result = get_delay(&ins, &relation).unwrap();
+        assert_eq!(result, 0);
+
+        // para delay is set, but para not set
+        relation.delay_on_pare = (100, 0);
+        let result = get_delay(&ins, &relation);
+        assert_eq!(result.is_err(), true);
+
+        // para delay is set
+        ins.para = (Local::now().timestamp_millis() + 200000).to_string();
+        let result = get_delay(&ins, &relation).unwrap();
+        assert_eq!(result >= 299 && result <= 300, true);
+
+        // delay is set, delay is the high priority
+        relation.delay = 50;
+        ins.para = Local::now().timestamp_millis().to_string();
+        let result = get_delay(&ins, &relation).unwrap();
+        assert_eq!(result, 50);
+    }
 
     #[test]
     fn state_verify() {
@@ -202,17 +250,13 @@ mod test {
             states: state.clone(),
             upstream_para: vec![],
         };
-        let relation = Relation {
-            from: "a".to_string(),
-            to: meta.clone(),
-            selector: None,
-            executor: executor.clone(),
-            filter_before: vec![],
-            filter_after: vec![],
-            use_upstream_id: true,
-            target,
-            delay: 2,
-        };
+        let mut relation = Relation::default();
+        relation.from = "a".to_string();
+        relation.to = meta.clone();
+        relation.executor = executor.clone();
+        relation.use_upstream_id = true;
+        relation.target = target;
+        relation.delay = 2;
         let relations = vec![relation];
         let rtn = Mission::get_by_instance(&Instance::default(), &relations, context_check, state_check);
         let rtn = &rtn[0];

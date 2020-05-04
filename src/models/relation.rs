@@ -18,6 +18,7 @@ pub struct Relation {
     pub use_upstream_id: bool,
     pub target: RelationTarget,
     pub delay: i32,
+    pub delay_on_pare: (i32, u8),
 }
 
 impl Iterator for Relation {
@@ -56,6 +57,7 @@ impl Relation {
                     use_upstream_id: settings.use_upstream_id,
                     target: settings.target.clone(),
                     delay: settings.delay,
+                    delay_on_pare: settings.delay_on_para
                 }
             }
             None => {
@@ -72,6 +74,7 @@ impl Relation {
                                 use_upstream_id: settings.use_upstream_id,
                                 target: settings.target.clone(),
                                 delay: settings.delay,
+                                delay_on_pare: settings.delay_on_para,
                             }
                         } else {
                             return Err(NatureError::VerifyError("master or executor should be defined".to_string()));
@@ -159,6 +162,7 @@ mod test_from_raw {
             use_upstream_id: false,
             target: Default::default(),
             delay: 0,
+            delay_on_para: (0, 0),
         };
         let raw = RawRelation {
             from_meta: "B:from:1".to_string(),

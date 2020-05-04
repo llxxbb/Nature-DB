@@ -96,6 +96,7 @@ impl RelationDaoImpl {
                 use_upstream_id: false,
                 target: Default::default(),
                 delay: 0,
+                delay_on_para: (0, 0)
             },
         )?;
         let _ = RelationDaoImpl::insert(one.clone());

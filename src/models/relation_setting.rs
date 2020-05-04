@@ -27,10 +27,16 @@ pub struct RelationSettings {
     #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub target: RelationTarget,
-    // delay seconds to execute the converter
+    /// delay seconds to execute the converter
     #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub delay: i32,
+    /// delay seconds to execute the converter based on `Instance.para`
+    /// - first value : how long to delay
+    /// - second value : time part based on of the `Instance.para`
+    #[serde(skip_serializing_if = "is_default")]
+    #[serde(default)]
+    pub delay_on_para: (i32, u8),
 }
 
 #[cfg(test)]
@@ -40,6 +46,23 @@ mod test {
     use nature_common::{Protocol, TargetState};
 
     use super::*;
+
+    #[test]
+    fn default_test(){
+        let settings = RelationSettings::default();
+        let result = serde_json::to_string(&settings).unwrap();
+        assert_eq!(result, "{}");
+    }
+
+    #[test]
+    fn delay_on_para(){
+        let mut settings = RelationSettings::default();
+        settings.delay_on_para = (100, 20);
+        let result = serde_json::to_string(&settings).unwrap();
+        assert_eq!(result, r#"{"delay_on_para":[100,20]}"#);
+        let rtn = serde_json::from_str::<RelationSettings>(&result).unwrap();
+        assert_eq!(rtn, settings);
+    }
 
     #[test]
     fn selector_test() {
