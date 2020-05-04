@@ -51,7 +51,7 @@ impl TaskDaoImpl {
 
     /// delete finished task after `delay` seconds
     pub fn delete_finished(delay: i64) -> Result<usize> {
-        let time = sql(&format!("'execute_time' < date_sub(now(), interval {} second)", delay));
+        let time = sql(&format!("execute_time < date_sub(now(), interval {} second)", delay));
         let rtn = diesel::delete(task)
             .filter(time)
             .filter(task_state.eq(1))
@@ -136,8 +136,6 @@ impl TaskDaoImpl {
     /// increase one times and delay `delay` seconds
     pub fn increase_times_and_delay(record_id: &str, delay: i32) -> Result<usize> {
         let time = Local::now().checked_add_signed(Duration::seconds(delay as i64)).unwrap().naive_local();
-        let sql = format!("update task set retried_times = retried_times + 1, execute_time = datetime('now', '+{} seconds', 'localtime') where task_id = {}", delay, record_id);
-        println!("{}", &sql);
         match diesel::update(task)
             .set((execute_time.eq(time), retried_times.eq(retried_times + 1)))
             .filter(task_id.eq(record_id))
