@@ -55,7 +55,7 @@ impl InstanceDaoImpl {
     fn get_last_state(f_para: &KeyCondition) -> Result<Option<Instance>> {
         use super::schema::instances::dsl::*;
         let def = instances
-            .filter(ins_key.like(&f_para.para_like()))
+            .filter(ins_key.eq(&f_para.get_key()))
             .order(state_version.desc())
             .limit(f_para.limit as i64)
             .load::<RawInstance>(&get_conn()?);
@@ -182,6 +182,15 @@ mod test {
     use std::env;
 
     use super::*;
+
+    // #[test]
+    #[allow(dead_code)]
+    fn get_last_state_test() {
+        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
+        let para = KeyCondition::new(0,"B:score/trainee/all-subject:1", "002",0);
+        let result = InstanceDaoImpl::get_last_state(&para);
+        let _ = dbg!(result);
+    }
 
     // #[test]
     #[allow(dead_code)]
