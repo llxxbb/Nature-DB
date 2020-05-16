@@ -156,7 +156,7 @@ impl InstanceDaoImpl {
         let para_id = get_para_and_key_from_para(&from.para, para_part)?.0;
         let mut id: u128 = match from.sys_context.get(&*CONTEXT_TARGET_INSTANCE_ID) {
             // context have target id
-            Some(state_id) => u128::from_str(state_id)?,
+            Some(state_id) => u128::from_str_radix(state_id, 16)?,
             None => 0,
         };
         if id == 0 {
@@ -187,7 +187,7 @@ mod test {
     #[allow(dead_code)]
     fn get_last_state_test() {
         env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
-        let para = KeyCondition::new(0,"B:score/trainee/all-subject:1", "002",0);
+        let para = KeyCondition::new(0, "B:score/trainee/all-subject:1", "002", 0);
         let result = InstanceDaoImpl::get_last_state(&para);
         let _ = dbg!(result);
     }
