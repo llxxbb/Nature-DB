@@ -2,16 +2,12 @@ use std::str::FromStr;
 
 use chrono::{Local, TimeZone};
 use mysql_async::Value;
-use tokio::macros::support::Future;
 
 use nature_common::*;
 
 use crate::{Mission, QUERY_SIZE_LIMIT};
 use crate::mysql_dao::MySql;
 use crate::raw_models::RawInstance;
-
-pub type InstanceParaGetter = fn(&KeyCondition) -> Result<Option<Instance>>;
-pub type InstanceKeyGetter = fn(&str, &str) -> dyn Future<Output=Result<Option<Instance>>>;
 
 pub struct InstanceDaoImpl;
 
@@ -27,6 +23,7 @@ impl InstanceDaoImpl {
         Ok(rtn)
     }
 
+    //noinspection RsLiveness
     /// check whether source stored earlier
     pub async fn get_by_from(f_para: &IDAndFrom) -> Result<Option<Instance>> {
         let sql = r"SELECT ins_key, content, context, states, state_version, create_time, sys_context, from_key
@@ -47,6 +44,7 @@ impl InstanceDaoImpl {
         }
     }
 
+    //noinspection RsLiveness
     async fn get_last_state(f_para: &KeyCondition) -> Result<Option<Instance>> {
         let sql = r"SELECT ins_key, content, context, states, state_version, create_time, sys_context, from_key
             FROM instances
@@ -82,6 +80,7 @@ impl InstanceDaoImpl {
         Self::get_by_id(para).await
     }
 
+    //noinspection RsLiveness
     pub async fn get_by_id(f_para: KeyCondition) -> Result<Option<Instance>> {
         let sql = r"SELECT ins_key, content, context, states, state_version, create_time, sys_context, from_key
             FROM instances

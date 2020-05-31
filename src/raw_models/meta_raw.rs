@@ -1,6 +1,7 @@
 use std::convert::TryInto;
 
 use chrono::prelude::*;
+use mysql_async::{Row, Value};
 
 use nature_common::{Meta, MetaType, NatureError, State};
 
@@ -83,6 +84,39 @@ impl TryInto<Meta> for RawMeta {
         let _ = rtn.set_setting(&self.config)?;
         debug!("get meta:{}", rtn.meta_string());
         Ok(rtn)
+    }
+}
+
+impl From<Row> for RawMeta {
+    fn from(row: Row) -> Self {
+        let (meta_type, meta_key, description, version, states, fields, config, flag, create_time) = mysql_async::from_row(row);
+        RawMeta {
+            meta_type,
+            meta_key,
+            description,
+            version,
+            states,
+            fields,
+            config,
+            flag,
+            create_time,
+        }
+    }
+}
+
+impl Into<Vec<(String, Value)>> for RawMeta {
+    fn into(self) -> Vec<(String, Value)> {
+        params! {
+            "meta_type" => self.meta_type,
+            "meta_key" => self.meta_key,
+            "description" => self.description,
+            "version" => self.version,
+            "states" => self.states,
+            "fields" => self.fields,
+            "config" => self.config,
+            "flag" => self.flag,
+            "create_time" => self.create_time,
+        }
     }
 }
 
