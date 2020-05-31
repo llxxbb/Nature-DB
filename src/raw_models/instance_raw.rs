@@ -4,6 +4,7 @@ use std::str::FromStr;
 
 use chrono::prelude::*;
 use lazy_static::__Deref;
+use mysql_async::{Row, Value};
 use serde_json;
 
 use nature_common::*;
@@ -93,6 +94,37 @@ impl RawInstance {
         match ctx_len {
             0 => Ok(None),
             _ => Ok(Some(serde_json::to_string(context)?))
+        }
+    }
+}
+
+impl From<Row> for RawInstance {
+    fn from(row: Row) -> Self {
+        let (ins_key, content, context, states, state_version, create_time, sys_context, from_key) = mysql_async::from_row(row);
+        RawInstance {
+            ins_key,
+            content,
+            context,
+            states,
+            state_version,
+            create_time,
+            sys_context,
+            from_key,
+        }
+    }
+}
+
+impl Into<Vec<(String, Value)>> for RawInstance {
+    fn into(self) -> Vec<(String, Value)> {
+        params! {
+            "ins_key" => self.ins_key,
+            "content" => self.content,
+            "context" => self.context,
+            "states" => self.states,
+            "state_version" => self.state_version,
+            "create_time" => self.create_time,
+            "sys_context" => self.sys_context,
+            "from_key" => self.from_key,
         }
     }
 }

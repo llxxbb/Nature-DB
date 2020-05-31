@@ -1,0 +1,89 @@
+use std::env;
+
+use mysql_async::{Conn, Params, Pool, Row};
+use mysql_async::error::{DriverError, Error};
+use mysql_async::prelude::*;
+
+pub use instance_dao::*;
+use nature_common::{NatureError, Result};
+
+lazy_static! {
+   static ref POOL : Pool = get_conn();
+}
+
+pub struct MySql;
+
+impl MySql {
+    pub async fn insert_or_delete<Q, P>(query: Q, params: P) -> Result<usize>
+        where
+            Q: AsRef<str>,
+            P: Into<Params>,
+    {
+        let conn = MySql::get_conn().await?;
+        match conn.prep_exec(query, params).await {
+            Ok(num) => {
+                Ok(num.affected_rows() as usize)
+            }
+            Err(e) => return Err(MysqlError(e).into())
+        }
+    }
+
+    pub async fn fetch<Q, P, F, U>(query: Q, params: P, mut fun: F) -> Result<Vec<U>>
+        where
+            Q: AsRef<str>,
+            P: Into<Params>,
+            F: FnMut(Row) -> U,
+    {
+        let conn = MySql::get_conn().await?;
+        match conn.prep_exec(query, params).await {
+            Ok(rtn) => {
+                match rtn.map_and_drop(|one| fun(one)).await {
+                    Ok((_, rtn)) => Ok(rtn),
+                    Err(e) => Err(MysqlError(e).into())
+                }
+            }
+            Err(e) => Err(MysqlError(e).into())
+        }
+    }
+
+
+    async fn get_conn() -> Result<Conn> {
+        match POOL.get_conn().await {
+            Ok(conn) => Ok(conn),
+            Err(e) => Err(MysqlError(e).into())
+        }
+    }
+}
+
+fn get_conn() -> Pool {
+    let database_url = env::var("DATABASE_URL")
+        .expect("DATABASE_URL must be set");
+    Pool::new(database_url)
+}
+
+
+pub struct MysqlError(mysql_async::error::Error);
+
+impl Into<nature_common::NatureError> for MysqlError {
+    fn into(self) -> NatureError {
+        let msg = self.0.to_string();
+        warn!("{}", msg);
+        match self.0 {
+            Error::Driver(err) => match err {
+                DriverError::ConnectionClosed => NatureError::EnvironmentError(msg),
+                DriverError::PoolDisconnected => NatureError::EnvironmentError(msg),
+                _ => NatureError::LogicalError(msg)
+            },
+            Error::Io(_) => NatureError::LogicalError(msg),
+            Error::Other(_) => NatureError::LogicalError(msg),
+            Error::Server(_) => NatureError::LogicalError(msg),
+            Error::Tls(_) => NatureError::LogicalError(msg),
+            Error::Url(_) => NatureError::LogicalError(msg),
+        }
+    }
+}
+
+mod instance_dao;
+mod meta_dao;
+mod relation_dao;
+mod task_dao;
