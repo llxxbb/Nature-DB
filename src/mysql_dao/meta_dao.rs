@@ -1,4 +1,5 @@
 use diesel::prelude::*;
+use mysql_async::Value;
 use tokio::macros::support::Future;
 
 use nature_common::{Meta, NatureError, Result};
@@ -6,7 +7,6 @@ use nature_common::{Meta, NatureError, Result};
 use crate::{DbError, get_conn, MySql};
 use crate::raw_models::RawMeta;
 use crate::schema;
-use mysql_async::Value;
 
 // pub type MetaGetter = fn(&str) -> dyn Future<Output=Result<Option<RawMeta>>>;
 //
@@ -17,9 +17,8 @@ pub struct MetaDaoImpl;
 impl MetaDaoImpl {
     pub async fn get(meta_str: &str) -> Result<Option<RawMeta>> {
         let sql = r"SELECT meta_type, meta_key, description, version, states, fields, config, flag, create_time
-            FROM nature.meta
-            WHERE meta_type = :meta_type and meta_key = :meta_key and version = :version and flag = 1
-            ";
+            FROM meta
+            WHERE meta_type = :meta_type and meta_key = :meta_key and version = :version and flag = 1";
 
         let m = Meta::from_string(meta_str)?;
         let p = params! {
@@ -41,41 +40,45 @@ impl MetaDaoImpl {
     }
 
     pub async fn insert(define: &RawMeta) -> Result<usize> {
-        let sql = r"INSERT INTO nature.meta
+        let sql = r"INSERT INTO meta
             (meta_type, meta_key, description, version, states, fields, config, flag, create_time)
             VALUES(:meta_type, :meta_key, :description, :version, :states, :fields, :config, :flag, :create_time)";
-        let vec: Vec<(String, Value)> = define.into();
-        let rtn: usize = MySql::insert_or_delete(sql, vec).await?;
+        let p: Vec<(String, Value)> = define.clone().into();
+        let rtn: usize = MySql::idu(sql, p).await?;
         debug!("Saved meta : {}:{}:{}", define.meta_type, define.meta_key, define.version);
         Ok(rtn)
     }
 
-    pub fn update_flag(meta_str: &str, flag_f: i32) -> Result<usize> {
-        use self::schema::meta::dsl::*;
+    pub async fn update_flag(meta_str: &str, flag_f: i32) -> Result<usize> {
+        let sql = r"UPDATE meta
+            SET flag=:flag
+            WHERE meta_type = :meta_type and meta_key = :meta_key and version = :version";
+
         let m = Meta::from_string(meta_str)?;
-        let rtn = diesel::update(
-            meta.filter(meta_type.eq(m.get_meta_type().get_prefix()))
-                .filter(meta_key.eq(m.get_key()))
-                .filter(version.eq(m.version as i32)))
-            .set(flag.eq(flag_f))
-            .execute(&get_conn()?);
-        match rtn {
-            Ok(x) => Ok(x),
-            Err(e) => Err(DbError::from(e))
-        }
+        let p = params! {
+            "meta_type" => m.get_meta_type().get_prefix(),
+            "meta_key" => m.get_key(),
+            "version" => m.version,
+            "flag" => flag_f,
+        };
+        let rtn = MySql::idu(sql, p).await?;
+        debug!("meta flag updated: {}:{}:{}", m.get_meta_type().get_prefix(), m.get_key(), m.version);
+        Ok(rtn)
     }
 
-    pub fn delete(m: &Meta) -> Result<usize> {
-        use self::schema::meta::dsl::*;
-        let rtn = diesel::delete(
-            meta.filter(meta_type.eq(m.get_meta_type().get_prefix()))
-                .filter(meta_key.eq(m.get_key()))
-                .filter(version.eq(m.version as i32)))
-            .execute(&get_conn()?);
-        match rtn {
-            Ok(x) => Ok(x),
-            Err(err) => Err(DbError::from(err))
-        }
+    pub async fn delete(m: &Meta) -> Result<usize> {
+        let sql = r"DELETE FROM meta
+            WHERE meta_type = :meta_type and meta_key = :meta_key and version = :version";
+
+        let p = params! {
+            "meta_type" => m.get_meta_type().get_prefix(),
+            "meta_key" => m.get_key(),
+            "version" => m.version,
+        };
+
+        let rtn: usize = MySql::idu(sql, p).await?;
+        debug!("meta deleted: {}:{}:{}", m.get_meta_type().get_prefix(), m.get_key(), m.version);
+        Ok(rtn)
     }
 }
 

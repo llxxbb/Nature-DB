@@ -14,7 +14,8 @@ lazy_static! {
 pub struct MySql;
 
 impl MySql {
-    pub async fn insert_or_delete<Q, P>(query: Q, params: P) -> Result<usize>
+    /// i(nsert) d(elete) u(pdate)
+    pub async fn idu<Q, P>(query: Q, params: P) -> Result<usize>
         where
             Q: AsRef<str>,
             P: Into<Params>,

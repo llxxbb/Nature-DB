@@ -18,7 +18,7 @@ impl InstanceDaoImpl {
             (ins_key, content, context, states, state_version, create_time, sys_context, from_key)
             VALUES(:ins_key, :content,:context,:states,:state_version,:create_time,:sys_context,:from_key)";
         let vec: Vec<(String, Value)> = new.into();
-        let rtn: usize = MySql::insert_or_delete(sql, vec).await?;
+        let rtn: usize = MySql::idu(sql, vec).await?;
         debug!("Saved instance : {}", instance.get_key());
         Ok(rtn)
     }
@@ -136,7 +136,7 @@ impl InstanceDaoImpl {
         let p = params! {
             "ins_key" => ins.get_key(),
         };
-        let rtn: usize = MySql::insert_or_delete(sql, p).await?;
+        let rtn: usize = MySql::idu(sql, p).await?;
         debug!("instance deleted, id is : {:?}", ins.id);
         Ok(rtn)
     }
