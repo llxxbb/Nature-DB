@@ -3,75 +3,93 @@ use std::sync::Mutex;
 use std::time::Duration;
 
 use lru_time_cache::LruCache;
+use tokio::runtime::Runtime;
 
 use nature_common::{Meta, MetaType, NatureError, Result};
 
-use crate::MetaGetter;
+use crate::MetaDao;
 
 lazy_static! {
+    pub static ref C_M: MetaCacheImpl = MetaCacheImpl {};
     static ref CACHE: Mutex<LruCache<String, Meta>> = Mutex::new(LruCache::<String, Meta>::with_expiry_duration(Duration::from_secs(3600)));
 }
 
-pub type MetaCacheGetter = fn(&str, &MetaGetter) -> Result<Meta>;
-
-pub static MCG : MetaCacheGetter = MetaCacheImpl::get;
+pub trait MetaCache {
+    fn get<M>(&self, meta_str: &str, getter: M) -> Result<Meta> where M: MetaDao + Copy;
+}
 
 pub struct MetaCacheImpl;
 
-impl MetaCacheImpl {
-    pub fn get(meta_str: &str, getter: &MetaGetter) -> Result<Meta> {
-        if meta_str.is_empty() {
-            let error = NatureError::VerifyError("[biz] can not be empty!".to_string());
-            warn!("{}", error);
-            return Err(error);
-        }
-        {   // An explicit scope to avoid cache.insert error
-            let mut cache = CACHE.lock().unwrap();
-            if let Some(x) = cache.get(meta_str) {
-                return Ok(x.clone());
-            };
+impl MetaCache for MetaCacheImpl {
+    fn get<M>(&self, meta_str: &str, getter: M) -> Result<Meta> where M: MetaDao + Copy {
+        let mut runtime = match Runtime::new() {
+            Ok(r) => r,
+            Err(e) => {
+                let msg = format!("get tokio runtime error : {}", e.to_string());
+                warn!("{}", msg);
+                return Err(NatureError::LogicalError(msg));
+            }
         };
-        match getter(meta_str)? {
-            None => {
-                let m = Meta::from_string(meta_str)?;
-                match m.get_meta_type() {
-                    MetaType::Null => {
-                        let mut cache = CACHE.lock().unwrap();
-                        cache.insert(meta_str.to_string(), m.clone());
-                        Ok(m)
-                    }
-                    MetaType::Dynamic => {
-                        let mut cache = CACHE.lock().unwrap();
-                        cache.insert(meta_str.to_string(), m.clone());
-                        Ok(m)
-                    }
-                    _ => {
-                        let error = NatureError::VerifyError(format!("{} not defined", meta_str));
-                        warn!("{}", error);
-                        Err(error)
-                    }
+        runtime.block_on(inner_get(meta_str, getter))
+    }
+}
+
+async fn inner_get<M>(meta_str: &str, getter: M) -> Result<Meta>
+    where M: MetaDao + Copy
+{
+    if meta_str.is_empty() {
+        let error = NatureError::VerifyError("[biz] can not be empty!".to_string());
+        warn!("{}", error);
+        return Err(error);
+    }
+    {   // An explicit scope to avoid cache.insert error
+        let mut cache = CACHE.lock().unwrap();
+        if let Some(x) = cache.get(meta_str) {
+            return Ok(x.clone());
+        };
+    };
+    match getter.get(meta_str).await? {
+        None => {
+            let m = Meta::from_string(meta_str)?;
+            match m.get_meta_type() {
+                MetaType::Null => {
+                    let mut cache = CACHE.lock().unwrap();
+                    cache.insert(meta_str.to_string(), m.clone());
+                    Ok(m)
+                }
+                MetaType::Dynamic => {
+                    let mut cache = CACHE.lock().unwrap();
+                    cache.insert(meta_str.to_string(), m.clone());
+                    Ok(m)
+                }
+                _ => {
+                    let error = NatureError::VerifyError(format!("{} not defined", meta_str));
+                    warn!("{}", error);
+                    Err(error)
                 }
             }
-            Some(def) => {
-                let meta: Meta = def.try_into()?;
-                match meta.get_meta_type() {
-                    MetaType::Multi => {
-                        let _ = cache_sub_metas(meta_str, &meta, getter);
-                        Ok(meta)
-                    }
-                    _ => {
-                        let _ = verify_and_load_master(&meta, getter)?;
-                        let mut cache = CACHE.lock().unwrap();
-                        cache.insert(meta_str.to_string(), meta.clone());
-                        Ok(meta)
-                    }
+        }
+        Some(def) => {
+            let meta: Meta = def.try_into()?;
+            match meta.get_meta_type() {
+                MetaType::Multi => {
+                    let _ = cache_sub_metas(meta_str, &meta, getter);
+                    Ok(meta)
+                }
+                _ => {
+                    let _ = verify_and_load_master(&meta, getter).await?;
+                    let mut cache = CACHE.lock().unwrap();
+                    cache.insert(meta_str.to_string(), meta.clone());
+                    Ok(meta)
                 }
             }
         }
     }
 }
 
-fn cache_sub_metas(meta_str: &str, m: &Meta, getter: &MetaGetter) -> Result<()> {
+fn cache_sub_metas<M>(meta_str: &str, m: &Meta, getter: M) -> Result<()>
+    where M: MetaDao + Copy
+{
     {
         // unlock the cache
         let mut cache = CACHE.lock().unwrap();
@@ -83,9 +101,9 @@ fn cache_sub_metas(meta_str: &str, m: &Meta, getter: &MetaGetter) -> Result<()> 
             match setting.multi_meta.len() {
                 0 => Err(NatureError::VerifyError("sub-meta number should great than 0".to_string())),
                 _n => {
-                    setting.multi_meta.into_iter().for_each(|one| {
-                        let _rtn = MetaCacheImpl::get(&one, getter);
-                    });
+                    for one in setting.multi_meta {
+                        let _rtn = C_M.get(&one, getter);
+                    }
                     Ok(())
                 }
             }
@@ -93,13 +111,15 @@ fn cache_sub_metas(meta_str: &str, m: &Meta, getter: &MetaGetter) -> Result<()> 
     }
 }
 
-fn verify_and_load_master(meta: &Meta, getter: &MetaGetter) -> Result<()> {
+async fn verify_and_load_master<M>(meta: &Meta, getter: M) -> Result<()>
+    where M: MetaDao + Copy
+{
     match meta.get_setting() {
         None => Ok(()),
         Some(setting) => match setting.master {
             None => Ok(()),
             Some(master) => {
-                let _ = MetaCacheImpl::get(&master, getter)?;
+                let _ = C_M.get(&master, getter)?;
                 Ok(())
             }
         },
@@ -142,7 +162,7 @@ mod test {
             let x = c.get("B:p/b:1");
             assert_eq!(x.is_some(), false);
         }
-        let _rtn = cache_sub_metas("test", &m, &(get as MetaGetter)).unwrap();
+        let _rtn = cache_sub_metas("test", &m, get).unwrap();
         {
             let mut c = CACHE.lock().unwrap();
             let x = c.get("test");
@@ -154,7 +174,7 @@ mod test {
         }
     }
 
-    fn get(_meta_str: &str) -> Result<Option<RawMeta>> {
+    async fn get(_meta_str: String) -> Result<Option<RawMeta>> {
         Ok(Some({
             let mut rtn = RawMeta::default();
             rtn.meta_key = "lxb".to_string();

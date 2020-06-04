@@ -1,5 +1,7 @@
 #![allow(proc_macro_derive_resolution_fallback)]
 
+#[macro_use]
+extern crate async_trait;
 extern crate chrono;
 #[macro_use]
 extern crate diesel;

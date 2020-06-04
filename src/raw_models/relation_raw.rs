@@ -1,3 +1,4 @@
+use mysql_async::{Row, Value};
 use serde_json;
 
 use nature_common::*;
@@ -33,13 +34,35 @@ impl RawRelation {
     }
 }
 
-#[cfg(test)]
-mod test{
+impl From<Row> for RawRelation {
+    fn from(row: Row) -> Self {
+        let (from_meta, to_meta, settings, flag) = mysql_async::from_row(row);
+        RawRelation {
+            from_meta,
+            to_meta,
+            settings,
+            flag,
+        }
+    }
+}
 
+impl Into<Vec<(String, Value)>> for RawRelation {
+    fn into(self) -> Vec<(String, Value)> {
+        params! {
+            "from_meta" => self.from_meta,
+            "to_meta" => self.to_meta,
+            "settings" => self.settings,
+            "flag" => self.flag,
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
     use super::*;
 
     #[test]
-    fn get_string_test(){
+    fn get_string_test() {
         let result = RawRelation::new("a", "b", &RelationSettings::default()).unwrap();
         assert_eq!(result.get_string(), "relation[a  --->  b]")
     }

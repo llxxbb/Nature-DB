@@ -3,7 +3,7 @@ use std::string::ToString;
 
 use nature_common::{Executor, Meta, NatureError, Protocol, Result};
 
-use crate::{FlowSelector, MetaCacheGetter, MetaGetter, RawRelation, RelationSettings};
+use crate::{FlowSelector, MetaCache, MetaDao, RawRelation, RelationSettings};
 use crate::models::relation_target::RelationTarget;
 
 /// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
@@ -29,7 +29,9 @@ impl Iterator for Relation {
 }
 
 impl Relation {
-    pub fn from_raw(val: RawRelation, meta_cache_getter: MetaCacheGetter, meta_getter: &MetaGetter) -> Result<Relation> {
+    pub fn from_raw<MC, M>(val: RawRelation, meta_cache_getter: MC, meta_getter: M) -> Result<Relation>
+        where MC: MetaCache, M: MetaDao
+    {
         let settings = match serde_json::from_str::<RelationSettings>(&val.settings) {
             Ok(s) => s,
             Err(e) => {
@@ -57,7 +59,7 @@ impl Relation {
                     use_upstream_id: settings.use_upstream_id,
                     target: settings.target.clone(),
                     delay: settings.delay,
-                    delay_on_pare: settings.delay_on_para
+                    delay_on_pare: settings.delay_on_para,
                 }
             }
             None => {
@@ -88,7 +90,9 @@ impl Relation {
         Ok(rtn)
     }
 
-    fn check_converter(meta_to: &str, meta_cache_getter: MetaCacheGetter, meta_getter: &MetaGetter, settings: &RelationSettings) -> Result<Meta> {
+    fn check_converter<MC, M>(meta_to: &str, meta_cache_getter: MC, meta_getter: M, settings: &RelationSettings) -> Result<Meta>
+        where MC: MetaCache, M: MetaDao
+    {
         let m_to = meta_cache_getter(meta_to, &meta_getter)?;
         if let Some(ts) = &settings.target.states {
             if let Some(x) = &ts.add {
@@ -130,8 +134,8 @@ mod test_from_raw {
             settings: "{}".to_string(),
             flag: 1,
         };
-        let mg: MetaGetter = meta;
-        let rtn = Relation::from_raw(raw, meta_cache_master, &mg).unwrap();
+        let mg = MetaMock {};
+        let rtn = Relation::from_raw(raw, MetaCacheMasterMock {}, &mg).unwrap();
         assert_eq!(rtn.executor.protocol, Protocol::Auto);
     }
 
@@ -143,8 +147,8 @@ mod test_from_raw {
             settings: "dd".to_string(),
             flag: 1,
         };
-        let mg: MetaGetter = meta;
-        let rtn = Relation::from_raw(raw, meta_cache, &mg);
+        let mg = MetaMock {};
+        let rtn = Relation::from_raw(raw, MetaCacheMock {}, &mg);
         assert_eq!(rtn.err().unwrap().to_string().contains("relation[B:from:1  --->  B:to:1]"), true);
     }
 
@@ -170,26 +174,51 @@ mod test_from_raw {
             settings: serde_json::to_string(&settings).unwrap(),
             flag: 1,
         };
-        let mg: MetaGetter = meta;
-        let rtn = Relation::from_raw(raw, meta_cache, &mg);
+        let mg = MetaMock {};
+        let rtn = Relation::from_raw(raw, MetaCacheMock {}, &mg);
         assert_eq!(rtn.is_ok(), true);
     }
 
-    fn meta_cache(m: &str, _: &MetaGetter) -> Result<Meta> {
-        Meta::from_string(m)
-    }
+    struct MetaCacheMasterMock;
 
-    fn meta_cache_master(m: &str, _: &MetaGetter) -> Result<Meta> {
-        if m.eq("B:to:1") {
-            let mut rtn = Meta::from_string(m).unwrap();
-            let _ = rtn.set_setting(r#"{"master":"B:from:1"}"#);
-            Ok(rtn)
-        } else {
-            Meta::from_string(m)
+    impl MetaCache for MetaCacheMasterMock {
+        fn get<M>(&self, m: &str, getter: M) -> Result<Meta> where M: MetaDao {
+            if m.eq("B:to:1") {
+                let mut rtn = Meta::from_string(m).unwrap();
+                let _ = rtn.set_setting(r#"{"master":"B:from:1"}"#);
+                Ok(rtn)
+            } else {
+                Meta::from_string(m)
+            }
         }
     }
 
-    fn meta(m: &str) -> Result<Option<RawMeta>> {
-        Ok(Some(RawMeta::from(Meta::from_string(m)?)))
+    struct MetaCacheMock;
+
+    impl MetaCache for MetaCacheMock {
+        fn get<M>(&self, meta_str: &str, getter: M) -> Result<Meta> where M: MetaDao {
+            Meta::from_string(meta_str)
+        }
+    }
+
+    struct MetaMock;
+
+    #[async_trait]
+    impl MetaDao for MetaMock {
+        async fn get(&self, m: &str) -> Result<Option<RawMeta>> {
+            Ok(Some(RawMeta::from(Meta::from_string(m)?)))
+        }
+
+        async fn insert(&self, define: &RawMeta) -> Result<usize> {
+            unimplemented!()
+        }
+
+        async fn update_flag(&self, meta_str: &str, flag_f: i32) -> Result<usize> {
+            unimplemented!()
+        }
+
+        async fn delete(&self, m: &Meta) -> Result<usize> {
+            unimplemented!()
+        }
     }
 }
