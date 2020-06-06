@@ -2,9 +2,6 @@ use std::sync::Mutex;
 use std::time::Duration;
 
 use lru_time_cache::LruCache;
-use tokio::runtime::Runtime;
-
-use nature_common::NatureError;
 
 use crate::{MetaCache, MetaDao, Relation, RelationDao, Relations};
 
@@ -16,31 +13,29 @@ lazy_static! {
     static ref CACHE_MAPPING: CACHE = Mutex::new(LruCache::<String, ITEM>::with_expiry_duration(Duration::from_secs(3600)));
 }
 
+#[async_trait]
 pub trait RelationCache {
-    fn get<R, MC, M>(&self, meta_from: &str, getter: &R, meta_cache: &MC, meta: &M) -> Relations
+    async fn get<R, MC, M>(&self, meta_from: &str, getter: &R, meta_cache: &MC, meta: &M) -> Relations
         where R: RelationDao, MC: MetaCache, M: MetaDao;
 }
 
 pub struct RelationCacheImpl;
 
+#[async_trait]
 impl RelationCache for RelationCacheImpl {
-    fn get<R, MC, M>(&self, meta_from: &str, getter: &R, meta_cache: &MC, meta: &M) -> Relations
+    async fn get<R, MC, M>(&self, meta_from: &str, getter: &R, meta_cache: &MC, meta: &M) -> Relations
         where R: RelationDao, MC: MetaCache, M: MetaDao {
-        let mut cache = CACHE_MAPPING.lock().unwrap();
-        if let Some(rtn) = cache.get(meta_from) {
-            return Ok(rtn.clone());
-        }
-        let mut runtime = match Runtime::new() {
-            Ok(r) => r,
-            Err(e) => {
-                let msg = format!("get tokio runtime error : {}", e.to_string());
-                warn!("{}", msg);
-                return Err(NatureError::LogicalError(msg));
+        {
+            let mut cache = CACHE_MAPPING.lock().unwrap();
+            if let Some(rtn) = cache.get(meta_from) {
+                return Ok(rtn.clone());
             }
-        };
-        let rtn = runtime.block_on(getter.get_relations(meta_from, meta_cache, meta))?;
+        }
+
+        let rtn = getter.get_relations(meta_from, meta_cache, meta).await?;
         {
             let cpy = rtn.clone();
+            let mut cache = CACHE_MAPPING.lock().unwrap();
             cache.insert(meta_from.to_string(), rtn);
             Ok(cpy)
         }
@@ -49,6 +44,8 @@ impl RelationCache for RelationCacheImpl {
 
 #[cfg(test)]
 mod test {
+    use tokio::runtime::Runtime;
+
     use nature_common::{Meta, NatureError, Result};
 
     use crate::{RawMeta, RawRelation};
@@ -60,10 +57,11 @@ mod test {
         let from = "B:error:1";
 
         // this will call mocker
-        let result = C_R.get(&from, &RMockERR {}, &MCMock {}, &MetaMock {});
+        let mut rt = Runtime::new().unwrap();
+        let result = rt.block_on(C_R.get(&from, &RMockERR {}, &MCMock {}, &MetaMock {}));
         assert_eq!(result, Err(NatureError::EnvironmentError("can't connect".to_string())));
         // error can't be catched
-        let result = C_R.get(&from, &RMockERR2, &MCMock {}, &MetaMock {});
+        let result = rt.block_on(C_R.get(&from, &RMockERR2, &MCMock {}, &MetaMock {}));
         assert_eq!(result, Err(NatureError::EnvironmentError("another error".to_string())));
     }
 
@@ -72,12 +70,13 @@ mod test {
     fn get_none() {
         let from = "B:none:1";
         // this will call mocker
-        let result = C_R.get(&from, &RMockNone {}, &MCMock {}, &MetaMock {});
+        let mut rt = Runtime::new().unwrap();
+        let result = rt.block_on(C_R.get(&from, &RMockNone {}, &MCMock {}, &MetaMock {}));
         assert_eq!(result.is_ok(), true);
         let result = result.unwrap();
         assert_eq!(result.is_empty(), true);
         // and the repeated call will not call mocker but get from cache
-        let result = C_R.get(&from, &RMockERR {}, &MCMock {}, &MetaMock {});
+        let result = rt.block_on(C_R.get(&from, &RMockERR {}, &MCMock {}, &MetaMock {}));
         assert_eq!(result.is_ok(), true);
         let result = result.unwrap();
         assert_eq!(result.is_empty(), true);

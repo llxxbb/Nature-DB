@@ -16,7 +16,7 @@ lazy_static! {
 }
 
 #[async_trait]
-pub trait RelationDao {
+pub trait RelationDao: Sync + Send {
     async fn get_relations<MC, M>(&self, from: &str, meta_cache_getter: &MC, meta_getter: &M) -> Relations
         where MC: MetaCache, M: MetaDao;
     async fn insert(&self, one: RawRelation) -> Result<usize>;
