@@ -8,13 +8,9 @@ use serde::Serialize;
 use nature_common::*;
 
 use crate::models::define::*;
+use crate::TaskDao;
 
-use super::super::schema::task;
-
-#[derive(Debug, Clone, PartialEq)]
-#[derive(Serialize, Deserialize)]
-#[derive(Insertable, Queryable, QueryableByName)]
-#[table_name = "task"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RawTask {
     pub task_id: String,
     pub task_key: String,
@@ -67,14 +63,13 @@ impl RawTask {
     }
 
 
-    pub fn save_batch<FI, FD>(news: &[RawTask], old_id: &str, dao_insert: FI, dao_finish: FD) -> Result<()>
-        where FI: Fn(&RawTask) -> Result<usize>,
-              FD: Fn(&str) -> Result<usize>
+    pub async fn save_batch<T>(news: &[RawTask], old_id: &str, task: &T) -> Result<()>
+        where T: TaskDao
     {
         for v in news {
-            let _num = dao_insert(v)?;
+            let _num = task.insert(v).await?;
         }
-        dao_finish(old_id)?;
+        task.finish_task(old_id).await?;
         Ok(())
     }
 

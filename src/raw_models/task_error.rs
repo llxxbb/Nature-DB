@@ -4,11 +4,7 @@ use mysql_async::{Row, Value};
 use nature_common::NatureError;
 
 use crate::raw_models::RawTask;
-use crate::schema::task_error;
 
-#[derive(Debug)]
-#[derive(Insertable)]
-#[table_name = "task_error"]
 pub struct RawTaskError {
     pub task_id: String,
     pub task_key: String,

@@ -4,12 +4,9 @@ use serde_json;
 use nature_common::*;
 
 use crate::RelationSettings;
-use crate::schema::relation;
 
 #[derive(Debug)]
-#[derive(Insertable, Queryable)]
 #[derive(Clone)]
-#[table_name = "relation"]
 pub struct RawRelation {
     pub from_meta: String,
     pub to_meta: String,

@@ -11,10 +11,6 @@ use nature_common::*;
 
 use crate::models::define::*;
 
-use super::super::schema::instances;
-
-#[derive(Insertable, Queryable, Debug, Clone)]
-#[table_name = "instances"]
 pub struct RawInstance {
     ins_key: String,
     content: String,

@@ -6,10 +6,28 @@ use nature_common::{NatureError, Result};
 use crate::MySql;
 use crate::raw_models::{RawTask, RawTaskError};
 
+lazy_static! {
+    pub static ref D_T: TaskDaoImpl = TaskDaoImpl {};
+}
+
+#[async_trait]
+pub trait TaskDao {
+    async fn insert(&self, raw: &RawTask) -> Result<usize>;
+    async fn delete(&self, _record_id: &str) -> Result<usize>;
+    async fn delete_finished(&self, _delay: i64) -> Result<usize>;
+    async fn raw_to_error(&self, err: &NatureError, raw: &RawTask) -> Result<usize>;
+    async fn get_overdue(&self, delay: i64, _limit: i64) -> Result<Vec<RawTask>>;
+    async fn update_execute_time(&self, _record_id: &str, delay: i64) -> Result<usize>;
+    async fn finish_task(&self, _record_id: &str) -> Result<usize>;
+    async fn increase_times_and_delay(&self, _record_id: &str, delay: i32) -> Result<usize>;
+    async fn get(&self, _record_id: &str) -> Result<Option<RawTask>>;
+}
+
 pub struct TaskDaoImpl;
 
-impl TaskDaoImpl {
-    pub async fn insert(raw: &RawTask) -> Result<usize> {
+#[async_trait]
+impl TaskDao for TaskDaoImpl {
+    async fn insert(&self, raw: &RawTask) -> Result<usize> {
         let sql = r"INSERT INTO task
             (task_id, task_key, task_type, task_for, task_state, `data`, create_time, execute_time, retried_times)
             VALUES(:task_id, :task_key, :task_type, :task_for, :task_state, :data, :create_time, :execute_time, :retried_times)";
@@ -24,7 +42,8 @@ impl TaskDaoImpl {
         Ok(num)
     }
 
-    async fn delete(_record_id: &str) -> Result<usize> {
+    #[allow(dead_code)]
+    async fn delete(&self, _record_id: &str) -> Result<usize> {
         let sql = r"DELETE FROM nature.task
             WHERE task_id=:task_id";
 
@@ -37,7 +56,7 @@ impl TaskDaoImpl {
     }
 
     /// delete finished task after `delay` seconds
-    pub async fn delete_finished(_delay: i64) -> Result<usize> {
+    async fn delete_finished(&self, _delay: i64) -> Result<usize> {
         let sql = r"DELETE FROM task
             WHERE execute_time < date_sub(now(), interval :delay second) AND task_state = 1";
 
@@ -49,7 +68,7 @@ impl TaskDaoImpl {
         Ok(rtn)
     }
 
-    pub async fn raw_to_error(err: &NatureError, raw: &RawTask) -> Result<usize> {
+    async fn raw_to_error(&self, err: &NatureError, raw: &RawTask) -> Result<usize> {
         let sql = r"INSERT INTO task_error
             (task_id, task_key, task_type, task_for, `data`, create_time, msg)
             VALUES(:task_id, :task_key, :task_type, :task_for, :data, :create_time, :msg)";
@@ -60,7 +79,7 @@ impl TaskDaoImpl {
         Ok(num)
     }
 
-    pub async fn get_overdue(delay: i64, _limit: i64) -> Result<Vec<RawTask>> {
+    async fn get_overdue(&self, delay: i64, _limit: i64) -> Result<Vec<RawTask>> {
         let sql = r"SELECT task_id, task_key, task_type, task_for, task_state, `data`, create_time, execute_time, retried_times
             FROM task
             WHERE execute_time < :execute_time and task_state = 0
@@ -75,7 +94,7 @@ impl TaskDaoImpl {
         MySql::fetch(sql, p, RawTask::from).await
     }
 
-    pub async fn update_execute_time(_record_id: &str, delay: i64) -> Result<usize> {
+    async fn update_execute_time(&self, _record_id: &str, delay: i64) -> Result<usize> {
         let sql = r"UPDATE nature.task
             SET execute_time=:execute_time
             WHERE task_id=:task_id";
@@ -89,7 +108,7 @@ impl TaskDaoImpl {
         Ok(rtn)
     }
 
-    pub async fn finish_task(_record_id: &str) -> Result<usize> {
+    async fn finish_task(&self, _record_id: &str) -> Result<usize> {
         let sql = r"UPDATE nature.task
             SET task_state=1
             WHERE task_id=:task_id and task_state=0";
@@ -102,7 +121,7 @@ impl TaskDaoImpl {
     }
 
     /// increase one times and delay `delay` seconds
-    pub async fn increase_times_and_delay(_record_id: &str, delay: i32) -> Result<usize> {
+    async fn increase_times_and_delay(&self, _record_id: &str, delay: i32) -> Result<usize> {
         let sql = r"UPDATE nature.task
             SET execute_time=:execute_time, retried_times = retried_times+1
             WHERE task_id=:task_id";
@@ -116,7 +135,7 @@ impl TaskDaoImpl {
         Ok(rtn)
     }
 
-    pub async fn get(_record_id: &str) -> Result<Option<RawTask>> {
+    async fn get(&self, _record_id: &str) -> Result<Option<RawTask>> {
         let sql = r"SELECT task_id, task_key, task_type, task_for, task_state, `data`, create_time, execute_time, retried_times
             FROM task
             WHERE task_id=:task_id";

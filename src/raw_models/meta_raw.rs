@@ -5,13 +5,8 @@ use mysql_async::{Row, Value};
 
 use nature_common::{Meta, MetaType, NatureError, State};
 
-use super::super::schema::meta;
 
 #[derive(Debug, Clone, PartialEq)]
-#[derive(Serialize, Deserialize)]
-#[derive(Queryable)]
-#[derive(Insertable)]
-#[table_name = "meta"]
 pub struct RawMeta {
     pub meta_type: String,
     pub meta_key: String,

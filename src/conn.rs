@@ -5,16 +5,12 @@ pub use self::sqlite::*;
 
 #[cfg(feature = "mysql")]
 mod mysql {
-    pub use crate::mysql::get_conn;
+
 }
 
 #[cfg(feature = "sqlite")]
 mod sqlite {
-    use diesel::sqlite::SqliteConnection;
 
-    pub use crate::sqlite::CONN;
-
-    pub type CONNNECTION = SqliteConnection;
 }
 
 #[cfg(feature = "mysql")]
