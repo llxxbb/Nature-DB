@@ -132,11 +132,11 @@ impl Mission {
         rtn
     }
 
-    pub fn from_raw<MC, M>(raw: &MissionRaw, mc_g: &MC, m_g: &M) -> Result<Self>
+    pub async fn from_raw<MC, M>(raw: &MissionRaw, mc_g: &MC, m_g: &M) -> Result<Self>
         where MC: MetaCache, M: MetaDao
     {
         let rtn = Mission {
-            to: mc_g.get(&raw.to, m_g)?,
+            to: mc_g.get(&raw.to, m_g).await?,
             executor: raw.executor.clone(),
             filter_before: raw.filter_before.clone(),
             filter_after: raw.filter_after.clone(),

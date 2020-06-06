@@ -46,7 +46,7 @@ impl RelationDao for RelationDaoImpl {
             x if x > 0 => {
                 let mut rtn: Vec<Relation> = Vec::new();
                 for d in raws {
-                    match Relation::from_raw(d, meta_cache_getter, meta_getter) {
+                    match Relation::from_raw(d, meta_cache_getter, meta_getter).await {
                         Ok(r) => rtn.push(r),
                         Err(e) => return Err(e)
                     }
@@ -185,8 +185,9 @@ mod test {
     #[derive(Copy, Clone)]
     struct MCMock;
 
+    #[async_trait]
     impl MetaCache for MCMock {
-        fn get<M>(&self, meta_str: &str, _getter: &M) -> Result<Meta> where M: MetaDao {
+        async fn get<M>(&self, meta_str: &str, _getter: &M) -> Result<Meta> where M: MetaDao {
             Meta::from_string(meta_str)
         }
     }

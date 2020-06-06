@@ -1,6 +1,6 @@
 -- This file should undo anything in `up.sql`
-DROP TABLE `meta`;
-DROP TABLE `relation`;
-DROP TABLE `instances`;
-DROP TABLE `task`;
-DROP TABLE `task_error`;
+TRUNCATE TABLE `meta`;
+TRUNCATE TABLE `relation`;
+TRUNCATE TABLE `instances`;
+TRUNCATE TABLE `task`;
+TRUNCATE TABLE `task_error`;

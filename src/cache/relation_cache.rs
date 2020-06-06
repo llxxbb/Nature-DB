@@ -173,8 +173,9 @@ mod test {
     #[derive(Copy, Clone)]
     struct MCMock;
 
+    #[async_trait]
     impl MetaCache for MCMock {
-        fn get<M>(&self, meta_str: &str, _getter: &M) -> Result<Meta> where M: MetaDao {
+        async fn get<M>(&self, meta_str: &str, _getter: &M) -> Result<Meta> where M: MetaDao {
             Ok(Meta::from_string(meta_str)?)
         }
     }

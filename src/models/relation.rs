@@ -29,7 +29,7 @@ impl Iterator for Relation {
 }
 
 impl Relation {
-    pub fn from_raw<MC, M>(val: RawRelation, meta_cache_getter: &MC, meta_getter: &M) -> Result<Relation>
+    pub async fn from_raw<MC, M>(val: RawRelation, meta_cache_getter: &MC, meta_getter: &M) -> Result<Relation>
         where MC: MetaCache, M: MetaDao
     {
         let settings = match serde_json::from_str::<RelationSettings>(&val.settings) {
@@ -41,7 +41,7 @@ impl Relation {
             }
         };
         let selector = &settings.selector;
-        let m_to = Relation::check_converter(&val.to_meta, meta_cache_getter, meta_getter, &settings)?;
+        let m_to = Relation::check_converter(&val.to_meta, meta_cache_getter, meta_getter, &settings).await?;
         let rtn = match settings.executor {
             Some(e) => {
                 // check Protocol type
@@ -90,10 +90,10 @@ impl Relation {
         Ok(rtn)
     }
 
-    fn check_converter<MC, M>(meta_to: &str, meta_cache_getter: &MC, meta_getter: &M, settings: &RelationSettings) -> Result<Meta>
+    async fn check_converter<MC, M>(meta_to: &str, meta_cache_getter: &MC, meta_getter: &M, settings: &RelationSettings) -> Result<Meta>
         where MC: MetaCache, M: MetaDao
     {
-        let m_to = meta_cache_getter.get(meta_to, meta_getter)?;
+        let m_to = meta_cache_getter.get(meta_to, meta_getter).await?;
         if let Some(ts) = &settings.target.states {
             if let Some(x) = &ts.add {
                 Relation::check_state(&m_to, x)?
@@ -120,6 +120,8 @@ impl Relation {
 
 #[cfg(test)]
 mod test_from_raw {
+    use tokio::runtime::Runtime;
+
     use nature_common::Protocol;
 
     use crate::RawMeta;
@@ -135,7 +137,8 @@ mod test_from_raw {
             flag: 1,
         };
         let mg = MetaMock {};
-        let rtn = Relation::from_raw(raw, &MetaCacheMasterMock {}, &mg).unwrap();
+        let mut rt = Runtime::new().unwrap();
+        let rtn = rt.block_on(Relation::from_raw(raw, &MetaCacheMasterMock {}, &mg)).unwrap();
         assert_eq!(rtn.executor.protocol, Protocol::Auto);
     }
 
@@ -148,7 +151,8 @@ mod test_from_raw {
             flag: 1,
         };
         let mg = MetaMock {};
-        let rtn = Relation::from_raw(raw, &MetaCacheMock {}, &mg);
+        let mut rt = Runtime::new().unwrap();
+        let rtn = rt.block_on(Relation::from_raw(raw, &MetaCacheMock {}, &mg));
         assert_eq!(rtn.err().unwrap().to_string().contains("relation[B:from:1  --->  B:to:1]"), true);
     }
 
@@ -175,15 +179,17 @@ mod test_from_raw {
             flag: 1,
         };
         let mg = MetaMock {};
-        let rtn = Relation::from_raw(raw, &MetaCacheMock {}, &mg);
+        let mut rt = Runtime::new().unwrap();
+        let rtn = rt.block_on(Relation::from_raw(raw, &MetaCacheMock {}, &mg));
         assert_eq!(rtn.is_ok(), true);
     }
 
     #[derive(Copy, Clone)]
     struct MetaCacheMasterMock;
 
+    #[async_trait]
     impl MetaCache for MetaCacheMasterMock {
-        fn get<M>(&self, m: &str, _getter: &M) -> Result<Meta> where M: MetaDao {
+        async fn get<M>(&self, m: &str, _getter: &M) -> Result<Meta> where M: MetaDao {
             if m.eq("B:to:1") {
                 let mut rtn = Meta::from_string(m).unwrap();
                 let _ = rtn.set_setting(r#"{"master":"B:from:1"}"#);
@@ -197,8 +203,9 @@ mod test_from_raw {
     #[derive(Copy, Clone)]
     struct MetaCacheMock;
 
+    #[async_trait]
     impl MetaCache for MetaCacheMock {
-        fn get<M>(&self, meta_str: &str, _getter: &M) -> Result<Meta> where M: MetaDao {
+        async fn get<M>(&self, meta_str: &str, _getter: &M) -> Result<Meta> where M: MetaDao {
             Meta::from_string(meta_str)
         }
     }
