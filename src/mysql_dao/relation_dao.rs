@@ -17,8 +17,8 @@ lazy_static! {
 
 #[async_trait]
 pub trait RelationDao {
-    async fn get_relations<MC, M>(&self, from: &str, meta_cache_getter: MC, meta_getter: M) -> Relations
-        where MC: MetaCache + Copy, M: MetaDao + Copy;
+    async fn get_relations<MC, M>(&self, from: &str, meta_cache_getter: &MC, meta_getter: &M) -> Relations
+        where MC: MetaCache, M: MetaDao;
     async fn insert(&self, one: RawRelation) -> Result<usize>;
     async fn delete(&self, one: RawRelation) -> Result<usize>;
     async fn update_flag(&self, from: &str, to: &str, flag_f: i32) -> Result<usize>;
@@ -30,8 +30,8 @@ pub struct RelationDaoImpl;
 
 #[async_trait]
 impl RelationDao for RelationDaoImpl {
-    async fn get_relations<MC, M>(&self, from: &str, meta_cache_getter: MC, meta_getter: M) -> Relations
-        where MC: MetaCache + Copy, M: MetaDao + Copy {
+    async fn get_relations<MC, M>(&self, from: &str, meta_cache_getter: &MC, meta_getter: &M) -> Relations
+        where MC: MetaCache, M: MetaDao {
         let sql = r"SELECT from_meta, to_meta, settings, flag
             FROM nature.relation
             where from_meta = :from_meta and flag = 1";
@@ -139,9 +139,11 @@ mod test {
 
     use std::env;
 
+    use tokio::runtime::Runtime;
+
     use nature_common::{Meta, setup_logger};
 
-    use crate::{CONN_STR, MetaCacheImpl};
+    use crate::{C_M, CONN_STR};
 
     use super::*;
 
@@ -151,34 +153,41 @@ mod test {
         env::set_var("DATABASE_URL", CONN_STR);
         let _ = setup_logger();
 
+        let mut runtime = Runtime::new().unwrap();
+
         // clear before test
         debug!("--delete first-----------------");
-        let _ = RelationDaoImpl::delete_by_biz("B:from:1", "B:to:1");
+        let _ = runtime.block_on(D_R.delete_by_biz("B:from:1", "B:to:1"));
 
         // get null
         debug!("--will get none-----------------");
         let meta = "B:from:1";
-        let rtn = RelationDaoImpl::get_relations(meta, MetaCacheImpl, MetaDaoImpl).unwrap();
+        let rtn = runtime.block_on(D_R.get_relations(meta, &*C_M, &*D_M)).unwrap();
         assert_eq!(rtn.is_empty(), true);
 
         // insert
         debug!("--insert one-----------------");
-        let _ = RelationDaoImpl::insert_by_biz("B:from:1", "B:to:1", "url", "http");
-        let rtn = RelationDaoImpl::get_relations(meta, meta_cache, MetaDaoImpl).unwrap();
+        let _ = runtime.block_on(D_R.insert_by_biz("B:from:1", "B:to:1", "url", "http"));
+        let rtn = runtime.block_on(D_R.get_relations(meta, &MCMock {}, &*D_M)).unwrap();
         assert_eq!(rtn.len(), 1);
 
         // update flag
         debug!("--update it-----------------");
-        let _ = RelationDaoImpl::update_flag("B:from:1", "B:to:1", 0);
-        let rtn = RelationDaoImpl::get_relations(meta, meta_cache, MetaDaoImpl).unwrap();
+        let _ = runtime.block_on(D_R.update_flag("B:from:1", "B:to:1", 0));
+        let rtn = runtime.block_on(D_R.get_relations(meta, &MCMock {}, &*D_M)).unwrap();
         assert_eq!(rtn.is_empty(), true);
 
         // delete after test
         debug!("--delete it after used-----------------");
-        let _ = RelationDaoImpl::delete_by_biz("B:from:1", "B:to:1");
+        let _ = runtime.block_on(D_R.delete_by_biz("B:from:1", "B:to:1"));
     }
 
-    fn meta_cache(m: &str, _: &MetaGetter) -> Result<Meta> {
-        Meta::from_string(m)
+    #[derive(Copy, Clone)]
+    struct MCMock;
+
+    impl MetaCache for MCMock {
+        fn get<M>(&self, meta_str: &str, _getter: &M) -> Result<Meta> where M: MetaDao {
+            Meta::from_string(meta_str)
+        }
     }
 }

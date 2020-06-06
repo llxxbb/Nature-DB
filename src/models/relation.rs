@@ -29,7 +29,7 @@ impl Iterator for Relation {
 }
 
 impl Relation {
-    pub fn from_raw<MC, M>(val: RawRelation, meta_cache_getter: MC, meta_getter: M) -> Result<Relation>
+    pub fn from_raw<MC, M>(val: RawRelation, meta_cache_getter: &MC, meta_getter: &M) -> Result<Relation>
         where MC: MetaCache, M: MetaDao
     {
         let settings = match serde_json::from_str::<RelationSettings>(&val.settings) {
@@ -90,10 +90,10 @@ impl Relation {
         Ok(rtn)
     }
 
-    fn check_converter<MC, M>(meta_to: &str, meta_cache_getter: MC, meta_getter: M, settings: &RelationSettings) -> Result<Meta>
+    fn check_converter<MC, M>(meta_to: &str, meta_cache_getter: &MC, meta_getter: &M, settings: &RelationSettings) -> Result<Meta>
         where MC: MetaCache, M: MetaDao
     {
-        let m_to = meta_cache_getter(meta_to, &meta_getter)?;
+        let m_to = meta_cache_getter.get(meta_to, meta_getter)?;
         if let Some(ts) = &settings.target.states {
             if let Some(x) = &ts.add {
                 Relation::check_state(&m_to, x)?
@@ -135,7 +135,7 @@ mod test_from_raw {
             flag: 1,
         };
         let mg = MetaMock {};
-        let rtn = Relation::from_raw(raw, MetaCacheMasterMock {}, &mg).unwrap();
+        let rtn = Relation::from_raw(raw, &MetaCacheMasterMock {}, &mg).unwrap();
         assert_eq!(rtn.executor.protocol, Protocol::Auto);
     }
 
@@ -148,7 +148,7 @@ mod test_from_raw {
             flag: 1,
         };
         let mg = MetaMock {};
-        let rtn = Relation::from_raw(raw, MetaCacheMock {}, &mg);
+        let rtn = Relation::from_raw(raw, &MetaCacheMock {}, &mg);
         assert_eq!(rtn.err().unwrap().to_string().contains("relation[B:from:1  --->  B:to:1]"), true);
     }
 
@@ -175,14 +175,15 @@ mod test_from_raw {
             flag: 1,
         };
         let mg = MetaMock {};
-        let rtn = Relation::from_raw(raw, MetaCacheMock {}, &mg);
+        let rtn = Relation::from_raw(raw, &MetaCacheMock {}, &mg);
         assert_eq!(rtn.is_ok(), true);
     }
 
+    #[derive(Copy, Clone)]
     struct MetaCacheMasterMock;
 
     impl MetaCache for MetaCacheMasterMock {
-        fn get<M>(&self, m: &str, getter: M) -> Result<Meta> where M: MetaDao {
+        fn get<M>(&self, m: &str, _getter: &M) -> Result<Meta> where M: MetaDao {
             if m.eq("B:to:1") {
                 let mut rtn = Meta::from_string(m).unwrap();
                 let _ = rtn.set_setting(r#"{"master":"B:from:1"}"#);
@@ -193,14 +194,16 @@ mod test_from_raw {
         }
     }
 
+    #[derive(Copy, Clone)]
     struct MetaCacheMock;
 
     impl MetaCache for MetaCacheMock {
-        fn get<M>(&self, meta_str: &str, getter: M) -> Result<Meta> where M: MetaDao {
+        fn get<M>(&self, meta_str: &str, _getter: &M) -> Result<Meta> where M: MetaDao {
             Meta::from_string(meta_str)
         }
     }
 
+    #[derive(Copy, Clone)]
     struct MetaMock;
 
     #[async_trait]
@@ -209,15 +212,15 @@ mod test_from_raw {
             Ok(Some(RawMeta::from(Meta::from_string(m)?)))
         }
 
-        async fn insert(&self, define: &RawMeta) -> Result<usize> {
+        async fn insert(&self, _define: &RawMeta) -> Result<usize> {
             unimplemented!()
         }
 
-        async fn update_flag(&self, meta_str: &str, flag_f: i32) -> Result<usize> {
+        async fn update_flag(&self, _meta_str: &str, _flag_f: i32) -> Result<usize> {
             unimplemented!()
         }
 
-        async fn delete(&self, m: &Meta) -> Result<usize> {
+        async fn delete(&self, _m: &Meta) -> Result<usize> {
             unimplemented!()
         }
     }

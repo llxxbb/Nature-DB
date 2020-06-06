@@ -14,7 +14,7 @@ lazy_static! {
 pub type MetaGetter = fn(&str) -> dyn Future<Output=Result<Option<RawMeta>>>;
 
 #[async_trait]
-pub trait MetaDao {
+pub trait MetaDao: Sync + Send {
     async fn get(&self, meta_str: &str) -> Result<Option<RawMeta>>;
     async fn insert(&self, define: &RawMeta) -> Result<usize>;
     async fn update_flag(&self, meta_str: &str, flag_f: i32) -> Result<usize>;
@@ -121,15 +121,16 @@ mod test {
         let meta = "B:test:100";
         let m = Meta::from_string(meta).unwrap();
         // delete if it exists
-        if let Ok(Some(_)) = Runtime::new().unwrap().block_on(MetaDaoImpl::get("B:test:100".to_string())) {
-            let _ = MetaDaoImpl::delete(&m);
+        let mut runtime = Runtime::new().unwrap();
+        if let Ok(Some(_)) = runtime.block_on(D_M.get("B:test:100")) {
+            let _ = runtime.block_on(D_M.delete(&m));
         }
 
         // insert
-        let rtn = Runtime::new().unwrap().block_on(MetaDaoImpl::insert(&define));
+        let rtn = runtime.block_on(D_M.insert(&define));
         assert_eq!(rtn.unwrap(), 1);
         // repeat insert
-        let rtn = Runtime::new().unwrap().block_on(MetaDaoImpl::insert(&define));
+        let rtn = runtime.block_on(D_M.insert(&define));
         let _ = match rtn {
             Err(err) => match err {
                 NatureError::DaoDuplicated(_) => (),
@@ -138,15 +139,15 @@ mod test {
             _ => panic!("match error")
         };
         // find inserted
-        let row = Runtime::new().unwrap().block_on(MetaDaoImpl::get(meta.to_string())).unwrap().unwrap();
+        let row = runtime.block_on(D_M.get(meta)).unwrap().unwrap();
         assert_eq!(row, define);
 
         // change flag
-        let _ = Runtime::new().unwrap().block_on(MetaDaoImpl::update_flag("B:test:100", 0));
-        let row = Runtime::new().unwrap().block_on(MetaDaoImpl::get(meta.to_string())).unwrap();
+        let _ = runtime.block_on(D_M.update_flag("B:test:100", 0));
+        let row = runtime.block_on(D_M.get(meta)).unwrap();
         assert_eq!(row, None);
 
         // delete it
-        let _ = MetaDaoImpl::delete(&m);
+        let _ = runtime.block_on(D_M.delete(&m));
     }
 }

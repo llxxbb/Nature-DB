@@ -14,14 +14,15 @@ lazy_static! {
     static ref CACHE: Mutex<LruCache<String, Meta>> = Mutex::new(LruCache::<String, Meta>::with_expiry_duration(Duration::from_secs(3600)));
 }
 
-pub trait MetaCache {
-    fn get<M>(&self, meta_str: &str, getter: M) -> Result<Meta> where M: MetaDao + Copy;
+pub trait MetaCache: Copy + Sync + Send {
+    fn get<M>(&self, meta_str: &str, getter: &M) -> Result<Meta> where M: MetaDao;
 }
 
+#[derive(Copy, Clone)]
 pub struct MetaCacheImpl;
 
 impl MetaCache for MetaCacheImpl {
-    fn get<M>(&self, meta_str: &str, getter: M) -> Result<Meta> where M: MetaDao + Copy {
+    fn get<M>(&self, meta_str: &str, getter: &M) -> Result<Meta> where M: MetaDao {
         let mut runtime = match Runtime::new() {
             Ok(r) => r,
             Err(e) => {
@@ -34,8 +35,8 @@ impl MetaCache for MetaCacheImpl {
     }
 }
 
-async fn inner_get<M>(meta_str: &str, getter: M) -> Result<Meta>
-    where M: MetaDao + Copy
+async fn inner_get<M>(meta_str: &str, getter: &M) -> Result<Meta>
+    where M: MetaDao
 {
     if meta_str.is_empty() {
         let error = NatureError::VerifyError("[biz] can not be empty!".to_string());
@@ -87,8 +88,8 @@ async fn inner_get<M>(meta_str: &str, getter: M) -> Result<Meta>
     }
 }
 
-fn cache_sub_metas<M>(meta_str: &str, m: &Meta, getter: M) -> Result<()>
-    where M: MetaDao + Copy
+fn cache_sub_metas<M>(meta_str: &str, m: &Meta, getter: &M) -> Result<()>
+    where M: MetaDao
 {
     {
         // unlock the cache
@@ -111,8 +112,8 @@ fn cache_sub_metas<M>(meta_str: &str, m: &Meta, getter: M) -> Result<()>
     }
 }
 
-async fn verify_and_load_master<M>(meta: &Meta, getter: M) -> Result<()>
-    where M: MetaDao + Copy
+async fn verify_and_load_master<M>(meta: &Meta, getter: &M) -> Result<()>
+    where M: MetaDao
 {
     match meta.get_setting() {
         None => Ok(()),
@@ -162,7 +163,7 @@ mod test {
             let x = c.get("B:p/b:1");
             assert_eq!(x.is_some(), false);
         }
-        let _rtn = cache_sub_metas("test", &m, get).unwrap();
+        let _rtn = cache_sub_metas("test", &m, &MetaMock {}).unwrap();
         {
             let mut c = CACHE.lock().unwrap();
             let x = c.get("test");
@@ -174,11 +175,29 @@ mod test {
         }
     }
 
-    async fn get(_meta_str: String) -> Result<Option<RawMeta>> {
-        Ok(Some({
-            let mut rtn = RawMeta::default();
-            rtn.meta_key = "lxb".to_string();
-            rtn
-        }))
+    #[derive(Copy, Clone)]
+    struct MetaMock;
+
+    #[async_trait]
+    impl MetaDao for MetaMock {
+        async fn get(&self, _m: &str) -> Result<Option<RawMeta>> {
+            Ok(Some({
+                let mut rtn = RawMeta::default();
+                rtn.meta_key = "lxb".to_string();
+                rtn
+            }))
+        }
+
+        async fn insert(&self, _define: &RawMeta) -> Result<usize> {
+            unimplemented!()
+        }
+
+        async fn update_flag(&self, _meta_str: &str, _flag_f: i32) -> Result<usize> {
+            unimplemented!()
+        }
+
+        async fn delete(&self, _m: &Meta) -> Result<usize> {
+            unimplemented!()
+        }
     }
 }

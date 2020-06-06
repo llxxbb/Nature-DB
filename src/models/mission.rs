@@ -1,11 +1,10 @@
-use std::future::Future;
 use std::ops::Sub;
 
 use chrono::{Local, TimeZone};
 
 use nature_common::{DynamicConverter, Executor, get_para_and_key_from_para, Instance, is_default, Meta, MetaType, Result};
 
-use crate::{RawMeta, Relation};
+use crate::{MetaCache, MetaDao, Relation};
 use crate::flow_tool::ContextChecker;
 use crate::flow_tool::StateChecker;
 use crate::models::relation_target::RelationTarget;
@@ -133,11 +132,11 @@ impl Mission {
         rtn
     }
 
-    pub async fn from_raw<R>(raw: &MissionRaw, mc_g: fn(&str, fn(String) -> R) -> Result<Meta>, m_g: fn(String) -> R) -> Result<Self>
-        where R: Future<Output=Result<Option<RawMeta>>>
+    pub fn from_raw<MC, M>(raw: &MissionRaw, mc_g: &MC, m_g: &M) -> Result<Self>
+        where MC: MetaCache, M: MetaDao
     {
         let rtn = Mission {
-            to: mc_g(&raw.to, m_g)?,
+            to: mc_g.get(&raw.to, m_g)?,
             executor: raw.executor.clone(),
             filter_before: raw.filter_before.clone(),
             filter_after: raw.filter_after.clone(),
