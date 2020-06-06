@@ -2,6 +2,7 @@ use std::fmt::Debug;
 
 use chrono::prelude::*;
 use lazy_static::__Deref;
+use mysql_async::{Row, Value};
 use serde::Serialize;
 
 use nature_common::*;
@@ -82,4 +83,35 @@ impl RawTask {
     }
 }
 
+impl From<Row> for RawTask {
+    fn from(row: Row) -> Self {
+        let (task_id, task_key, task_type, task_for, task_state, data, create_time, execute_time, retried_times) = mysql_async::from_row(row);
+        RawTask {
+            task_id,
+            task_key,
+            task_type,
+            task_for,
+            task_state,
+            data,
+            create_time,
+            execute_time,
+            retried_times,
+        }
+    }
+}
 
+impl Into<Vec<(String, Value)>> for RawTask {
+    fn into(self) -> Vec<(String, Value)> {
+        params! {
+            "task_id" => self.task_id,
+            "task_key" => self.task_key,
+            "task_type" => self.task_type,
+            "task_for" => self.task_for,
+            "task_state" => self.task_state,
+            "data" => self.data,
+            "create_time" => self.create_time,
+            "execute_time" => self.execute_time,
+            "retried_times" => self.retried_times,
+        }
+    }
+}
