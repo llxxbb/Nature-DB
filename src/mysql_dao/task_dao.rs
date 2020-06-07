@@ -123,7 +123,13 @@ impl TaskDao for TaskDaoImpl {
         let p = params! {
             "task_id" => _record_id,
         };
-        let rtn = MySql::idu(sql, p).await?;
+        let rtn = match MySql::idu(sql, p).await {
+            Ok(n) => n,
+            Err(e) => {
+                warn!("**** save task error : {}", _record_id);
+                return Err(e);
+            }
+        };
         Ok(rtn)
     }
 
