@@ -71,7 +71,6 @@ pub struct MysqlError(mysql_async::error::Error);
 impl Into<nature_common::NatureError> for MysqlError {
     fn into(self) -> NatureError {
         let msg = self.0.to_string();
-        warn!("{}", msg);
         match self.0 {
             Error::Driver(err) => match err {
                 DriverError::ConnectionClosed => NatureError::EnvironmentError(msg),
