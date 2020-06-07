@@ -45,15 +45,16 @@ impl MetaCache for MetaCacheImpl {
             if para.is_none() {
                 break;
             }
-            let meta = if let Some(def) = getter.get(meta_str).await? {
+            let para = para.unwrap();
+            let meta = if let Some(def) = getter.get(&para).await? {
                 let meta: Meta = def.try_into()?;
                 match meta.get_meta_type() {
                     MetaType::Multi => {
-                        let sub = cache_sub_metas(&meta)?;
+                        let sub = get_sub(&meta)?;
                         sub.into_iter().for_each(|one| input.push(one));
                     }
                     _ => {
-                        match verify_and_load_master(&meta)? {
+                        match get_master(&meta)? {
                             None => {}
                             Some(master) => input.push(master),
                         }
@@ -61,9 +62,9 @@ impl MetaCache for MetaCacheImpl {
                 }
                 meta
             } else {
-                get_none(meta_str)?
+                get_none(&para)?
             };
-            got.push((meta_str.to_string(), meta.clone()));
+            got.push((para, meta.clone()));
         }
         if got.len() > 0 {
             let mut cache = CACHE.lock().unwrap();
@@ -96,7 +97,7 @@ fn get_none(meta_str: &str) -> Result<Meta> {
     }
 }
 
-fn cache_sub_metas(m: &Meta) -> Result<Vec<String>> {
+fn get_sub(m: &Meta) -> Result<Vec<String>> {
     match m.get_setting() {
         None => Err(NatureError::VerifyError("Multi-Meta must define sub-metas".to_string())),
         Some(setting) => {
@@ -108,7 +109,7 @@ fn cache_sub_metas(m: &Meta) -> Result<Vec<String>> {
     }
 }
 
-fn verify_and_load_master(meta: &Meta) -> Result<Option<String>> {
+fn get_master(meta: &Meta) -> Result<Option<String>> {
     match meta.get_setting() {
         None => Ok(None),
         Some(setting) => match setting.master {
@@ -131,7 +132,69 @@ mod test {
     use super::*;
 
     #[test]
+    fn cache_mater_test() {
+        {   // clear cache
+            let mut c = CACHE.lock().unwrap();
+            c.clear();
+        }
+        let runtime = tokio::runtime::Runtime::new();
+        let _rtn = runtime.unwrap().block_on(C_M.get("B:child:1", &MetaMock {})).unwrap();
+        {
+            let mut c = CACHE.lock().unwrap();
+            assert_eq!(3, c.len());
+            let x = c.get("B:child:1").unwrap();
+            assert_eq!(x.meta_string(), "B:child:1");
+            let x = c.get("B:master:1").unwrap();
+            assert_eq!(x.meta_string(), "B:master:1");
+            let x = c.get("B:master-master:1").unwrap();
+            assert_eq!(x.meta_string(), "B:master-master:1");
+        }
+    }
+
+    #[test]
     fn cache_sub_meta_test() {
+        {   // clear cache
+            let mut c = CACHE.lock().unwrap();
+            c.clear();
+        }
+        let runtime = tokio::runtime::Runtime::new();
+        let _rtn = runtime.unwrap().block_on(C_M.get("M:sub:1", &MetaMock {})).unwrap();
+        {
+            let mut c = CACHE.lock().unwrap();
+            assert_eq!(4, c.len());
+            let x = c.get("M:sub:1").unwrap();
+            assert_eq!(x.meta_string(), "M:sub:1");
+            let x = c.get("B:sub-1:1").unwrap();
+            assert_eq!(x.meta_string(), "B:sub-1:1");
+            let x = c.get("M:sub-2:1").unwrap();
+            assert_eq!(x.meta_string(), "M:sub-2:1");
+            let x = c.get("B:sub-end:1").unwrap();
+            assert_eq!(x.meta_string(), "B:sub-end:1");
+        }
+    }
+
+    #[test]
+    fn get_master_test() {
+        let mut setting = MetaSetting {
+            is_state: false,
+            master: Some("abc".to_string()),
+            multi_meta: Default::default(),
+            cache_saved: false,
+        };
+        let mut m = Meta::from_string("B:test:3").unwrap();
+        let _ = m.set_setting(&setting.to_json().unwrap());
+        let rtn = get_master(&m).unwrap().unwrap();
+        assert_eq!("abc", rtn);
+
+        // for none
+        setting.master = None;
+        let _ = m.set_setting(&setting.to_json().unwrap());
+        let rtn = get_master(&m).unwrap();
+        assert_eq!(None, rtn);
+    }
+
+    #[test]
+    fn get_sub_test() {
         let mut set: BTreeSet<String> = BTreeSet::new();
         set.insert("B:p/a:1".to_owned());
         set.insert("B:p/b:1".to_owned());
@@ -143,30 +206,10 @@ mod test {
         };
         let mut m = Meta::from_string("B:test:3").unwrap();
         let _ = m.set_setting(&setting.to_json().unwrap());
-        {
-            let mut c = CACHE.lock().unwrap();
-            c.clear();
-        }
-        {
-            let mut c = CACHE.lock().unwrap();
-            let x = c.get("test");
-            assert_eq!(x.is_some(), false);
-            let x = c.get("B:p/a:1");
-            assert_eq!(x.is_some(), false);
-            let x = c.get("B:p/b:1");
-            assert_eq!(x.is_some(), false);
-        }
-        let runtime = tokio::runtime::Runtime::new();
-        let _rtn = runtime.unwrap().block_on(C_M.get("test", &MetaMock {})).unwrap();
-        {
-            let mut c = CACHE.lock().unwrap();
-            let x = c.get("test");
-            assert_eq!(x.is_some(), true);
-            let x = c.get("B:p/a:1");
-            assert_eq!(x.is_some(), true);
-            let x = c.get("B:p/b:1");
-            assert_eq!(x.is_some(), true);
-        }
+        let rtn = get_sub(&m).unwrap();
+        assert_eq!(2, rtn.len());
+        assert_eq!(true, rtn.contains(&"B:p/a:1".to_string()));
+        assert_eq!(true, rtn.contains(&"B:p/b:1".to_string()));
     }
 
     #[derive(Copy, Clone)]
@@ -174,12 +217,81 @@ mod test {
 
     #[async_trait]
     impl MetaDao for MetaMock {
-        async fn get(&self, _m: &str) -> Result<Option<RawMeta>> {
-            Ok(Some({
-                let mut rtn = RawMeta::default();
-                rtn.meta_key = "lxb".to_string();
-                rtn
-            }))
+        async fn get(&self, m: &str) -> Result<Option<RawMeta>> {
+            let rtn = match m {
+                "M:sub:1" => {
+                    let mut set: BTreeSet<String> = BTreeSet::new();
+                    set.insert("B:sub-1:1".to_owned());
+                    set.insert("M:sub-2:1".to_owned());
+                    let setting = MetaSetting {
+                        is_state: false,
+                        master: None,
+                        multi_meta: set,
+                        cache_saved: false,
+                    };
+                    let mut rtn = RawMeta::default();
+                    rtn.meta_key = "sub".to_string();
+                    rtn.meta_type = "M".to_string();
+                    rtn.config = serde_json::to_string(&setting).unwrap();
+                    rtn
+                }
+                "B:sub-1:1" => {
+                    let mut rtn = RawMeta::default();
+                    rtn.meta_key = "sub-1".to_string();
+                    rtn
+                }
+                "M:sub-2:1" => {
+                    let mut set: BTreeSet<String> = BTreeSet::new();
+                    set.insert("B:sub-end:1".to_owned());
+                    let setting = MetaSetting {
+                        is_state: false,
+                        master: None,
+                        multi_meta: set,
+                        cache_saved: false,
+                    };
+                    let mut rtn = RawMeta::default();
+                    rtn.meta_key = "sub-2".to_string();
+                    rtn.meta_type = "M".to_string();
+                    rtn.config = serde_json::to_string(&setting).unwrap();
+                    rtn
+                }
+                "B:sub-end:1" => {
+                    let mut rtn = RawMeta::default();
+                    rtn.meta_key = "sub-end".to_string();
+                    rtn
+                }
+                "B:child:1" => {
+                    let setting = MetaSetting {
+                        is_state: false,
+                        master: Some("B:master:1".to_string()),
+                        multi_meta: Default::default(),
+                        cache_saved: false,
+                    };
+                    let mut rtn = RawMeta::default();
+                    rtn.meta_key = "child".to_string();
+                    rtn.config = serde_json::to_string(&setting).unwrap();
+                    rtn
+                }
+                "B:master:1" => {
+                    let setting = MetaSetting {
+                        is_state: false,
+                        master: Some("B:master-master:1".to_string()),
+                        multi_meta: Default::default(),
+                        cache_saved: false,
+                    };
+                    let mut rtn = RawMeta::default();
+                    rtn.meta_key = "master".to_string();
+                    rtn.config = serde_json::to_string(&setting).unwrap();
+                    rtn
+                }
+                "B:master-master:1" => {
+                    let mut rtn = RawMeta::default();
+                    rtn.meta_key = "master-master".to_string();
+                    rtn
+                }
+                _ => return Err(NatureError::LogicalError("undefined meta".to_string()))
+            };
+            Ok(Some(rtn))
         }
 
         async fn insert(&self, _define: &RawMeta) -> Result<usize> {
