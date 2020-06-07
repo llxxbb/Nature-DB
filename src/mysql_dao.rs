@@ -80,7 +80,10 @@ impl Into<nature_common::NatureError> for MysqlError {
             },
             Error::Io(_) => NatureError::LogicalError(msg),
             Error::Other(_) => NatureError::LogicalError(msg),
-            Error::Server(_) => NatureError::LogicalError(msg),
+            Error::Server(e) => match e.code {
+                1062 => NatureError::DaoDuplicated(msg),
+                _ => NatureError::EnvironmentError(msg)
+            }
             Error::Tls(_) => NatureError::LogicalError(msg),
             Error::Url(_) => NatureError::LogicalError(msg),
         }

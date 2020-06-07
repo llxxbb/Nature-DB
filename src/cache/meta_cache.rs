@@ -12,8 +12,9 @@ lazy_static! {
     pub static ref C_M: MetaCacheImpl = MetaCacheImpl {};
     static ref CACHE: Mutex<LruCache<String, Meta>> = Mutex::new(LruCache::<String, Meta>::with_expiry_duration(Duration::from_secs(3600)));
 }
+
 #[async_trait]
-pub trait MetaCache: Copy + Sync + Send {
+pub trait MetaCache: Sync + Send {
     async fn get<M>(&self, meta_str: &str, getter: &M) -> Result<Meta> where M: MetaDao;
 }
 

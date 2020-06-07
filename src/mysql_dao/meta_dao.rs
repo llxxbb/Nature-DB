@@ -139,7 +139,8 @@ mod test {
             _ => panic!("match error")
         };
         // find inserted
-        let row = runtime.block_on(D_M.get(meta)).unwrap().unwrap();
+        let mut row: RawMeta = runtime.block_on(D_M.get(meta)).unwrap().unwrap();
+        row.create_time = define.create_time;
         assert_eq!(row, define);
 
         // change flag
