@@ -23,6 +23,22 @@ pub struct RawTask {
     pub retried_times: i16,
 }
 
+impl Default for RawTask {
+    fn default() -> Self {
+        RawTask {
+            task_id: "".to_string(),
+            task_key: "".to_string(),
+            task_type: 0,
+            task_for: "".to_string(),
+            task_state: 0,
+            data: "".to_string(),
+            create_time: Local::now().naive_local(),
+            execute_time: Local::now().naive_local(),
+            retried_times: 0,
+        }
+    }
+}
+
 impl RawTask {
     pub fn new<T: Serialize + Debug>(task: &T, task_key: &str, task_type: i8, task_for: &str) -> Result<RawTask> {
         let json = serde_json::to_string(task)?;

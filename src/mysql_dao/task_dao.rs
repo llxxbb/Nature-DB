@@ -33,12 +33,19 @@ impl TaskDao for TaskDaoImpl {
             VALUES(:task_id, :task_key, :task_type, :task_for, :task_state, :data, :create_time, :execute_time, :retried_times)";
 
         let p: Vec<(String, Value)> = raw.clone().into();
-        let num: usize = MySql::idu(sql, p).await?;
-        if num == 1 {
-            debug!("---- saved task KEY: {} FOR: {} TYPE: {}", &raw.task_key, &raw.task_for, raw.task_type)
-        } else {
-            warn!("==== saved 0 task KEY: {} FOR: {} TYPE: {}", &raw.task_key, &raw.task_for, raw.task_type)
-        }
+        let num: usize = match MySql::idu(sql, p).await {
+            Ok(n) => {
+                debug!("---- saved task KEY: {} FOR: {} TYPE: {}", &raw.task_key, &raw.task_for, raw.task_type);
+                n
+            }
+            Err(e) => match e {
+                NatureError::DaoDuplicated(_) => {
+                    warn!("==== task repeated. KEY: {} FOR: {} TYPE: {}", &raw.task_key, &raw.task_for, raw.task_type);
+                    0
+                }
+                _ => return Err(e)
+            }
+        };
         Ok(num)
     }
 
@@ -150,5 +157,29 @@ impl TaskDao for TaskDaoImpl {
             1 => Ok(Some(rtn[0].clone())),
             _ => Err(NatureError::SystemError("should less than 2 record return".to_string())),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::env;
+
+    use tokio::runtime::Runtime;
+
+    use crate::CONN_STR;
+
+    use super::*;
+
+    #[test]
+    fn insert_repeat_test() {
+        env::set_var("DATABASE_URL", CONN_STR);
+        let mut runtime = Runtime::new().unwrap();
+        let mut task = RawTask::default();
+        let _num = runtime.block_on(D_T.delete("lxb")).unwrap();
+        task.task_id = "lxb".to_string();
+        let num = runtime.block_on(D_T.insert(&task)).unwrap();
+        assert_eq!(1, num);
+        let num = runtime.block_on(D_T.insert(&task)).unwrap();
+        assert_eq!(0, num);
     }
 }

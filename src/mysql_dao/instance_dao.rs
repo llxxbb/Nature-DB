@@ -18,7 +18,12 @@ impl InstanceDaoImpl {
             (ins_key, content, context, states, state_version, create_time, sys_context, from_key)
             VALUES(:ins_key, :content,:context,:states,:state_version,:create_time,:sys_context,:from_key)";
         let vec: Vec<(String, Value)> = new.into();
-        let rtn: usize = MySql::idu(sql, vec).await?;
+        let rtn: usize = match MySql::idu(sql, vec).await {
+            Ok(n) => n,
+            Err(e) => {
+                return Err(e);
+            }
+        };
         debug!("Saved instance : {}", instance.get_key());
         Ok(rtn)
     }
