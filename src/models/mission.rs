@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::ops::Sub;
 
 use chrono::{Local, TimeZone};
@@ -19,6 +20,7 @@ pub struct Mission {
     pub target_demand: RelationTarget,
     pub use_upstream_id: bool,
     pub delay: i32,
+    pub sys_context: HashMap<String, String>,
     pub id_bridge: bool,
 }
 
@@ -43,6 +45,9 @@ pub struct MissionRaw {
     pub delay: i32,
     #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
+    pub sys_context: HashMap<String, String>,
+    #[serde(skip_serializing_if = "is_default")]
+    #[serde(default)]
     pub id_bridge: bool,
 }
 
@@ -56,6 +61,7 @@ impl From<Mission> for MissionRaw {
             target_demand: input.target_demand,
             use_upstream_id: input.use_upstream_id,
             delay: input.delay,
+            sys_context: input.sys_context,
             id_bridge: input.id_bridge,
         }
     }
@@ -91,7 +97,8 @@ impl Mission {
                 target_demand: Default::default(),
                 use_upstream_id: d.use_upstream_id,
                 delay: d.delay,
-                id_bridge: false
+                sys_context: Default::default(),
+                id_bridge: false,
             };
             missions.push(mission)
         }
@@ -131,6 +138,7 @@ impl Mission {
                         continue;
                     }
                 },
+                sys_context: instance.sys_context.clone(),
                 id_bridge: r.id_bridge,
             };
             // debug!("instance meta: {}, selected relation is {}", instance.meta, r.relation_string());
@@ -150,6 +158,7 @@ impl Mission {
             target_demand: raw.target_demand.clone(),
             use_upstream_id: raw.use_upstream_id,
             delay: raw.delay,
+            sys_context: raw.sys_context.clone(),
             id_bridge: raw.id_bridge,
         };
         Ok(rtn)

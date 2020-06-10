@@ -27,7 +27,6 @@ CREATE TABLE `instances` (
   `states` text DEFAULT NULL,
   `state_version` int(11) NOT NULL,
   `create_time` datetime NOT NULL,
-  `sys_context` text DEFAULT NULL,
   `from_key` varchar(256) NOT NULL COMMENT 'meta|id|para|sta_ver',
   PRIMARY KEY (`ins_key`,`state_version`),
   UNIQUE KEY `instances_un` (`ins_key`,`from_key`),

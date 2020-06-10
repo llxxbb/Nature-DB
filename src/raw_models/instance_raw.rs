@@ -18,7 +18,6 @@ pub struct RawInstance {
     states: Option<String>,
     state_version: i32,
     create_time: NaiveDateTime,
-    sys_context: Option<String>,
     from_key: String,
 }
 
@@ -33,10 +32,7 @@ impl RawInstance {
             None => HashMap::new(),
             Some(ref s) => serde_json::from_str::<HashMap<String, String>>(s)?
         };
-        let sys_context = match self.sys_context {
-            None => HashMap::new(),
-            Some(ref s) => serde_json::from_str::<HashMap<String, String>>(s)?
-        };
+        let sys_context = HashMap::new();
         let states = match self.states {
             None => HashSet::new(),
             Some(ref s) => serde_json::from_str::<HashSet<String>>(s)?
@@ -73,7 +69,6 @@ impl RawInstance {
             },
             state_version: instance.state_version,
             create_time: Local.timestamp_millis(instance.create_time).naive_local(),
-            sys_context: Self::context_to_raw(&instance.sys_context, "sys_context")?,
             from_key: match &instance.from {
                 None => "".to_string(),
                 Some(from) => from.to_string()
@@ -96,7 +91,7 @@ impl RawInstance {
 
 impl From<Row> for RawInstance {
     fn from(row: Row) -> Self {
-        let (ins_key, content, context, states, state_version, create_time, sys_context, from_key) = mysql_async::from_row(row);
+        let (ins_key, content, context, states, state_version, create_time, from_key) = mysql_async::from_row(row);
         RawInstance {
             ins_key,
             content,
@@ -104,7 +99,6 @@ impl From<Row> for RawInstance {
             states,
             state_version,
             create_time,
-            sys_context,
             from_key,
         }
     }
@@ -119,7 +113,6 @@ impl Into<Vec<(String, Value)>> for RawInstance {
             "states" => self.states,
             "state_version" => self.state_version,
             "create_time" => self.create_time,
-            "sys_context" => self.sys_context,
             "from_key" => self.from_key,
         }
     }
