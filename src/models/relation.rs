@@ -19,6 +19,7 @@ pub struct Relation {
     pub target: RelationTarget,
     pub delay: i32,
     pub delay_on_pare: (i32, u8),
+    pub id_bridge: bool,
 }
 
 impl Iterator for Relation {
@@ -60,6 +61,7 @@ impl Relation {
                     target: settings.target.clone(),
                     delay: settings.delay,
                     delay_on_pare: settings.delay_on_para,
+                    id_bridge: settings.id_bridge,
                 }
             }
             None => {
@@ -77,6 +79,7 @@ impl Relation {
                                 target: settings.target.clone(),
                                 delay: settings.delay,
                                 delay_on_pare: settings.delay_on_para,
+                                id_bridge: settings.id_bridge,
                             }
                         } else {
                             return Err(NatureError::VerifyError("master or executor should be defined".to_string()));
@@ -171,6 +174,7 @@ mod test_from_raw {
             target: Default::default(),
             delay: 0,
             delay_on_para: (0, 0),
+            id_bridge: false
         };
         let raw = RawRelation {
             from_meta: "B:from:1".to_string(),

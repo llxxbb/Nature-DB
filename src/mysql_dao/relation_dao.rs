@@ -116,6 +116,7 @@ impl RelationDao for RelationDaoImpl {
                 target: Default::default(),
                 delay: 0,
                 delay_on_para: (0, 0),
+                id_bridge: false,
             },
         )?;
         let _ = D_R.insert(one.clone()).await;

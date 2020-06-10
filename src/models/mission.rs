@@ -19,6 +19,7 @@ pub struct Mission {
     pub target_demand: RelationTarget,
     pub use_upstream_id: bool,
     pub delay: i32,
+    pub id_bridge: bool,
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -40,6 +41,9 @@ pub struct MissionRaw {
     #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub delay: i32,
+    #[serde(skip_serializing_if = "is_default")]
+    #[serde(default)]
+    pub id_bridge: bool,
 }
 
 impl From<Mission> for MissionRaw {
@@ -52,6 +56,7 @@ impl From<Mission> for MissionRaw {
             target_demand: input.target_demand,
             use_upstream_id: input.use_upstream_id,
             delay: input.delay,
+            id_bridge: input.id_bridge,
         }
     }
 }
@@ -86,6 +91,7 @@ impl Mission {
                 target_demand: Default::default(),
                 use_upstream_id: d.use_upstream_id,
                 delay: d.delay,
+                id_bridge: false
             };
             missions.push(mission)
         }
@@ -125,6 +131,7 @@ impl Mission {
                         continue;
                     }
                 },
+                id_bridge: r.id_bridge,
             };
             // debug!("instance meta: {}, selected relation is {}", instance.meta, r.relation_string());
             rtn.push(m);
@@ -143,6 +150,7 @@ impl Mission {
             target_demand: raw.target_demand.clone(),
             use_upstream_id: raw.use_upstream_id,
             delay: raw.delay,
+            id_bridge: raw.id_bridge,
         };
         Ok(rtn)
     }

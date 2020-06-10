@@ -37,6 +37,10 @@ pub struct RelationSettings {
     #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub delay_on_para: (i32, u8),
+    /// if this relation's next target will use the upstream's id please set this property to `true`
+    #[serde(skip_serializing_if = "is_default")]
+    #[serde(default)]
+    pub id_bridge: bool,
 }
 
 #[cfg(test)]
@@ -48,14 +52,14 @@ mod test {
     use super::*;
 
     #[test]
-    fn default_test(){
+    fn default_test() {
         let settings = RelationSettings::default();
         let result = serde_json::to_string(&settings).unwrap();
         assert_eq!(result, "{}");
     }
 
     #[test]
-    fn delay_on_para(){
+    fn delay_on_para() {
         let mut settings = RelationSettings::default();
         settings.delay_on_para = (100, 20);
         let result = serde_json::to_string(&settings).unwrap();
