@@ -15,8 +15,8 @@ impl InstanceDaoImpl {
     pub async fn insert(instance: &Instance) -> Result<usize> {
         let new = RawInstance::new(instance)?;
         let sql = r"INSERT INTO instances
-            (ins_key, content, context, states, state_version, create_time, from_key)
-            VALUES(:ins_key, :content,:context,:states,:state_version,:create_time,:from_key)";
+            (ins_key, content, context, states, state_version, create_time, sys_context, from_key)
+            VALUES(:ins_key, :content,:context,:states,:state_version,:create_time,:sys_context,:from_key)";
         let vec: Vec<(String, Value)> = new.into();
         let rtn: usize = match MySql::idu(sql, vec).await {
             Ok(n) => n,
@@ -31,7 +31,7 @@ impl InstanceDaoImpl {
     //noinspection RsLiveness
     /// check whether source stored earlier
     pub async fn get_by_from(f_para: &IDAndFrom) -> Result<Option<Instance>> {
-        let sql = r"SELECT ins_key, content, context, states, state_version, create_time, from_key
+        let sql = r"SELECT ins_key, content, context, states, state_version, create_time, sys_context, from_key
             FROM instances
             where ins_key like :para_like and from_key = :from_key
             order by state_version desc
@@ -51,7 +51,7 @@ impl InstanceDaoImpl {
 
     //noinspection RsLiveness
     async fn get_last_state(f_para: &KeyCondition) -> Result<Option<Instance>> {
-        let sql = r"SELECT ins_key, content, context, states, state_version, create_time, from_key
+        let sql = r"SELECT ins_key, content, context, states, state_version, create_time, sys_context, from_key
             FROM instances
             where ins_key = :ins_key
             order by state_version desc
@@ -87,7 +87,7 @@ impl InstanceDaoImpl {
 
     //noinspection RsLiveness
     pub async fn get_by_id(f_para: KeyCondition) -> Result<Option<Instance>> {
-        let sql = r"SELECT ins_key, content, context, states, state_version, create_time, from_key
+        let sql = r"SELECT ins_key, content, context, states, state_version, create_time, sys_context, from_key
             FROM instances
             where ins_key = :ins_key and state_version = :state_version
             order by state_version desc
@@ -119,7 +119,7 @@ impl InstanceDaoImpl {
         let limit = if f_para.limit < *QUERY_SIZE_LIMIT {
             f_para.limit
         } else { *QUERY_SIZE_LIMIT };
-        let sql = format!("SELECT ins_key, content, context, states, state_version, create_time, from_key
+        let sql = format!("SELECT ins_key, content, context, states, state_version, create_time, sys_context, from_key
             FROM instances
             where ins_key like :id_like{}{}{}
             order by ins_key
