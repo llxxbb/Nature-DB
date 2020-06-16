@@ -7,5 +7,5 @@ pub struct RelationTarget {
     pub states: Option<TargetState>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     #[serde(default)]
-    pub upstream_para: Vec<u8>,
+    pub copy_para: Vec<u8>,
 }

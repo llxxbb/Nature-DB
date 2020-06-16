@@ -151,7 +151,7 @@ impl InstanceDaoImpl {
         if !mission.to.is_state() {
             return Ok(None);
         }
-        let para_part = &mission.target_demand.upstream_para;
+        let para_part = &mission.target_demand.copy_para;
         let para_id = get_para_and_key_from_para(&from.para, para_part)?.0;
         let mut id: u128 = match mission.sys_context.get(&*CONTEXT_TARGET_INSTANCE_ID) {
             // context have target id
