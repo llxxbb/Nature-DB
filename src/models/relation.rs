@@ -64,29 +64,18 @@ impl Relation {
                     id_bridge: settings.id_bridge,
                 }
             }
-            None => {
-                match &m_to.get_setting() {
-                    Some(s) => {
-                        if s.master.is_some() {
-                            Relation {
-                                from: val.from_meta.to_string(),
-                                to: m_to.clone(),
-                                selector: selector.clone(),
-                                executor: Executor::new_auto(),
-                                filter_before: settings.filter_before,
-                                filter_after: settings.filter_after,
-                                use_upstream_id: settings.use_upstream_id,
-                                target: settings.target.clone(),
-                                delay: settings.delay,
-                                delay_on_pare: settings.delay_on_para,
-                                id_bridge: settings.id_bridge,
-                            }
-                        } else {
-                            return Err(NatureError::VerifyError("master or executor should be defined".to_string()));
-                        }
-                    }
-                    None => return Err(NatureError::VerifyError("master or executor should be defined".to_string()))
-                }
+            None => Relation {
+                from: val.from_meta.to_string(),
+                to: m_to.clone(),
+                selector: selector.clone(),
+                executor: Executor::new_auto(),
+                filter_before: settings.filter_before,
+                filter_after: settings.filter_after,
+                use_upstream_id: settings.use_upstream_id,
+                target: settings.target.clone(),
+                delay: settings.delay,
+                delay_on_pare: settings.delay_on_para,
+                id_bridge: settings.id_bridge,
             }
         };
         debug!("load {}", val.get_string());
@@ -174,7 +163,7 @@ mod test_from_raw {
             target: Default::default(),
             delay: 0,
             delay_on_para: (0, 0),
-            id_bridge: false
+            id_bridge: false,
         };
         let raw = RawRelation {
             from_meta: "B:from:1".to_string(),
