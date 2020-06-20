@@ -132,6 +132,7 @@ mod test {
     use super::*;
 
     #[test]
+    #[ignore]
     fn cache_mater_test() {
         {   // clear cache
             let mut c = CACHE.lock().unwrap();
@@ -152,6 +153,7 @@ mod test {
     }
 
     #[test]
+    #[ignore]
     fn cache_sub_meta_test() {
         {   // clear cache
             let mut c = CACHE.lock().unwrap();

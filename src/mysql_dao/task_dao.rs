@@ -177,6 +177,7 @@ mod test {
     use super::*;
 
     #[test]
+    #[ignore]
     fn insert_repeat_test() {
         env::set_var("DATABASE_URL", CONN_STR);
         let mut runtime = Runtime::new().unwrap();

@@ -104,6 +104,7 @@ mod test {
     use super::*;
 
     #[test]
+    #[ignore]
     fn define_test() {
         // prepare data to insert
         env::set_var("DATABASE_URL", CONN_STR);

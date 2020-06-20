@@ -150,6 +150,7 @@ mod test {
 
     /// need db connection
     #[test]
+    #[ignore]
     fn relation_test() {
         env::set_var("DATABASE_URL", CONN_STR);
         let _ = setup_logger();
