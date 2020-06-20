@@ -1,4 +1,9 @@
--- Your SQL goes here
+DROP TABLE `meta`;
+DROP TABLE `relation`;
+DROP TABLE `instances`;
+DROP TABLE `task`;
+DROP TABLE `task_error`;
+
 create TABLE `meta` (
 	`meta_type`	VARCHAR ( 10 ) NOT NULL,
 	`meta_key`	VARCHAR ( 255 ) NOT NULL,
