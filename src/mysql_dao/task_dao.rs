@@ -43,7 +43,10 @@ impl TaskDao for TaskDaoImpl {
                     warn!("==== task repeated. KEY: {} FOR: {} TYPE: {}", &raw.task_key, &raw.task_for, raw.task_type);
                     0
                 }
-                _ => return Err(e)
+                _ => return {
+                    warn!("insert task error: {}", e);
+                    Err(e)
+                }
             }
         };
         Ok(num)

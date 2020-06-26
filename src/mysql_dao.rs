@@ -77,7 +77,7 @@ impl Into<nature_common::NatureError> for MysqlError {
                 DriverError::PoolDisconnected => NatureError::EnvironmentError(msg),
                 _ => NatureError::LogicalError(msg)
             },
-            Error::Io(_) => NatureError::LogicalError(msg),
+            Error::Io(_) => NatureError::EnvironmentError(msg),
             Error::Other(_) => NatureError::LogicalError(msg),
             Error::Server(e) => match e.code {
                 1062 => NatureError::DaoDuplicated(msg),
