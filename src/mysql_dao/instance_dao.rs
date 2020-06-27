@@ -147,21 +147,26 @@ impl InstanceDaoImpl {
     }
 
     /// get downstream instance through upstream instance
-    pub async fn get_last_taget(from: &Instance, mission: &Mission) -> Result<Option<Instance>> {
+    pub async fn get_last_taget(from: &Instance, mission: &mut Mission) -> Result<Option<Instance>> {
         if !mission.to.is_state() {
             return Ok(None);
         }
         let para_part = &mission.target_demand.copy_para;
-        let para_id = get_para_and_key_from_para(&from.para, para_part)?.0;
+        let para_id = if para_part.len() > 0 {
+            let id = get_para_and_key_from_para(&from.para, para_part)?.0;
+            mission.sys_context.insert(CONTEXT_TARGET_INSTANCE_PARA.to_string(), id.to_string());
+            id
+        } else {
+            "".to_string()
+        };
         let mut id: u128 = match mission.sys_context.get(&*CONTEXT_TARGET_INSTANCE_ID) {
             // context have target id
             Some(state_id) => u128::from_str_radix(state_id, 16)?,
             None => 0,
         };
         if id == 0 {
-            if mission.use_upstream_id {
-                id = from.id
-            } else if mission.to.check_master(&from.meta) {
+            if mission.use_upstream_id || mission.to.check_master(&from.meta) {
+                mission.sys_context.insert(CONTEXT_TARGET_INSTANCE_ID.to_string(), format!("{:x}", from.id));
                 id = from.id
             }
         }

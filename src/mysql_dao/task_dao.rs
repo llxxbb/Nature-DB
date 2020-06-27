@@ -44,7 +44,7 @@ impl TaskDao for TaskDaoImpl {
                     0
                 }
                 _ => return {
-                    warn!("insert task error: {}", e);
+                    warn!("**** task insert error. KEY: {} FOR: {} TYPE: {} err: {}", &raw.task_key, &raw.task_for, raw.task_type, e);
                     Err(e)
                 }
             }
