@@ -6,7 +6,6 @@ use nature_common::{Executor, Meta, NatureError, Protocol, Result};
 use crate::{FlowSelector, MetaCache, MetaDao, RawRelation, RelationSettings};
 use crate::models::relation_target::RelationTarget;
 
-/// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Relation {
     pub from: String,

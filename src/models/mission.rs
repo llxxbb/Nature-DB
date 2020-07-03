@@ -10,7 +10,6 @@ use crate::flow_tool::ContextChecker;
 use crate::flow_tool::StateChecker;
 use crate::models::relation_target::RelationTarget;
 
-/// the compose of `Mapping::from`, `Mapping::to` and `Weight::label` must be unique
 #[derive(Debug, Clone, Default)]
 pub struct Mission {
     pub to: Meta,
