@@ -104,7 +104,8 @@ impl InstanceDaoImpl {
         }
     }
 
-    pub async fn get_by_meta(f_para: &KeyCondition) -> Result<Vec<Instance>> {
+    /// ins_key > and between time range
+    pub async fn get_by_key_gt(f_para: &KeyCondition) -> Result<Vec<Instance>> {
         let key_gt = if f_para.key_gt.eq("") { "".to_string() } else {
             format!(" and ins_key > '{}'", f_para.key_gt)
         };
@@ -230,7 +231,7 @@ mod test {
             time_lt: Some(1588508144000),
             limit: 100,
         };
-        let result = Runtime::new().unwrap().block_on(InstanceDaoImpl::get_by_meta(&para));
+        let result = Runtime::new().unwrap().block_on(InstanceDaoImpl::get_by_key_gt(&para));
         let _ = dbg!(result);
     }
 }
