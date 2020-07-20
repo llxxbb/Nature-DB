@@ -9,6 +9,11 @@ use crate::{Mission, QUERY_SIZE_LIMIT};
 use crate::mysql_dao::MySql;
 use crate::raw_models::RawInstance;
 
+#[async_trait]
+pub trait KeyGT: Sync + Send {
+    async fn get_by_key_gt(&self, f_para: &KeyCondition) -> Result<Vec<Instance>>;
+}
+
 pub struct InstanceDaoImpl;
 
 impl InstanceDaoImpl {
@@ -104,38 +109,6 @@ impl InstanceDaoImpl {
         }
     }
 
-    /// ins_key > and between time range
-    pub async fn get_by_key_gt(f_para: &KeyCondition) -> Result<Vec<Instance>> {
-        let key_gt = if f_para.key_gt.eq("") { "".to_string() } else {
-            format!(" and ins_key > '{}'", f_para.key_gt)
-        };
-        let time_ge = match f_para.time_ge {
-            Some(ge) => format!(" and create_time >= '{}'", Local.timestamp_millis(ge)),
-            None => "".to_string()
-        };
-        let time_lt = match f_para.time_lt {
-            Some(lt) => format!(" and create_time < '{}'", Local.timestamp_millis(lt)),
-            None => "".to_string()
-        };
-        let limit = if f_para.limit < *QUERY_SIZE_LIMIT {
-            f_para.limit
-        } else { *QUERY_SIZE_LIMIT };
-        let sql = format!("SELECT ins_key, content, context, states, state_version, create_time, sys_context, from_key
-            FROM instances
-            where ins_key like :id_like{}{}{}
-            order by ins_key
-            limit {}", key_gt, time_ge, time_lt, limit);
-        let p = params! {
-            "id_like" => f_para.id_like().to_string(),
-        };
-        let result = MySql::fetch(sql, p, RawInstance::from).await?;
-        let mut rtn: Vec<Instance> = vec![];
-        for one in result {
-            rtn.push(one.to()?)
-        }
-        Ok(rtn)
-    }
-
     pub async fn delete(ins: &Instance) -> Result<usize> {
         let sql = r"DELETE FROM instances
             WHERE ins_key=:ins_key";
@@ -178,6 +151,41 @@ impl InstanceDaoImpl {
     }
 }
 
+#[async_trait]
+impl KeyGT for InstanceDaoImpl {
+    /// ins_key > and between time range
+    async fn get_by_key_gt(&self, f_para: &KeyCondition) -> Result<Vec<Instance>> {
+        let key_gt = if f_para.key_gt.eq("") { "".to_string() } else {
+            format!(" and ins_key > '{}'", f_para.key_gt)
+        };
+        let time_ge = match f_para.time_ge {
+            Some(ge) => format!(" and create_time >= '{}'", Local.timestamp_millis(ge)),
+            None => "".to_string()
+        };
+        let time_lt = match f_para.time_lt {
+            Some(lt) => format!(" and create_time < '{}'", Local.timestamp_millis(lt)),
+            None => "".to_string()
+        };
+        let limit = if f_para.limit < *QUERY_SIZE_LIMIT {
+            f_para.limit
+        } else { *QUERY_SIZE_LIMIT };
+        let sql = format!("SELECT ins_key, content, context, states, state_version, create_time, sys_context, from_key
+            FROM instances
+            where ins_key like :id_like{}{}{}
+            order by ins_key
+            limit {}", key_gt, time_ge, time_lt, limit);
+        let p = params! {
+            "id_like" => f_para.id_like().to_string(),
+        };
+        let result = MySql::fetch(sql, p, RawInstance::from).await?;
+        let mut rtn: Vec<Instance> = vec![];
+        for one in result {
+            rtn.push(one.to()?)
+        }
+        Ok(rtn)
+    }
+}
+
 
 #[cfg(test)]
 mod test {
@@ -214,9 +222,9 @@ mod test {
         let _ = dbg!(result);
     }
 
-    #[test]
     #[allow(dead_code)]
-    fn query_by_meta() {
+    #[tokio::test]
+    async fn query_by_meta_test() {
         let ge_t = 1588508143000;
         let ge = Local.timestamp_millis(ge_t);
         dbg!(ge);
@@ -231,7 +239,8 @@ mod test {
             time_lt: Some(1588508144000),
             limit: 100,
         };
-        let result = Runtime::new().unwrap().block_on(InstanceDaoImpl::get_by_key_gt(&para));
+        let dao = InstanceDaoImpl {};
+        let result = dao.get_by_key_gt(&para).await;
         let _ = dbg!(result);
     }
 }
