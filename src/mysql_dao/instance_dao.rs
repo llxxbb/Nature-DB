@@ -10,8 +10,8 @@ use crate::mysql_dao::MySql;
 use crate::raw_models::RawInstance;
 
 #[async_trait]
-pub trait KeyGT: Sync + Send {
-    async fn get_by_key_gt(&self, f_para: &KeyCondition) -> Result<Vec<Instance>>;
+pub trait KeyRange: Sync + Send {
+    async fn get_by_key_range(&self, f_para: &KeyCondition) -> Result<Vec<Instance>>;
 }
 
 pub struct InstanceDaoImpl;
@@ -124,7 +124,7 @@ impl InstanceDaoImpl {
     }
 
     /// get downstream instance through upstream instance
-    pub async fn get_last_taget(from: &Instance, mission: &mut Mission) -> Result<Option<Instance>> {
+    pub async fn get_last_target(from: &Instance, mission: &mut Mission) -> Result<Option<Instance>> {
         if !mission.to.is_state() {
             return Ok(None);
         }
@@ -155,9 +155,9 @@ impl InstanceDaoImpl {
 }
 
 #[async_trait]
-impl KeyGT for InstanceDaoImpl {
+impl KeyRange for InstanceDaoImpl {
     /// ins_key > and between time range
-    async fn get_by_key_gt(&self, f_para: &KeyCondition) -> Result<Vec<Instance>> {
+    async fn get_by_key_range(&self, f_para: &KeyCondition) -> Result<Vec<Instance>> {
         let key_gt = if f_para.key_gt.eq("") { "".to_string() } else {
             format!(" and ins_key > '{}'", f_para.key_gt)
         };
@@ -249,7 +249,7 @@ mod test {
             limit: 100,
         };
         let dao = InstanceDaoImpl {};
-        let result = dao.get_by_key_gt(&para).await;
+        let result = dao.get_by_key_range(&para).await;
         let _ = dbg!(result);
     }
 }
