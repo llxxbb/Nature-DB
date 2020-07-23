@@ -158,8 +158,20 @@ impl InstanceDaoImpl {
 impl KeyRange for InstanceDaoImpl {
     /// ins_key > and between time range
     async fn get_by_key_range(&self, f_para: &KeyCondition) -> Result<Vec<Instance>> {
+        let key_like = if f_para.key_gt.eq("") { "".to_string() } else {
+            format!(" and ins_key like '{}'", f_para.id_like())
+        };
         let key_gt = if f_para.key_gt.eq("") { "".to_string() } else {
             format!(" and ins_key > '{}'", f_para.key_gt)
+        };
+        let key_ge = if f_para.key_ge.eq("") { "".to_string() } else {
+            format!(" and ins_key >= '{}'", f_para.key_ge)
+        };
+        let key_lt = if f_para.key_lt.eq("") { "".to_string() } else {
+            format!(" and ins_key < '{}'", f_para.key_lt)
+        };
+        let key_le = if f_para.key_le.eq("") { "".to_string() } else {
+            format!(" and ins_key <= '{}'", f_para.key_le)
         };
         let time_ge = match f_para.time_ge {
             Some(ge) => format!(" and create_time >= '{}'", Local.timestamp_millis(ge)),
@@ -174,9 +186,9 @@ impl KeyRange for InstanceDaoImpl {
         } else { *QUERY_SIZE_LIMIT };
         let sql = format!("SELECT ins_key, content, context, states, state_version, create_time, sys_context, from_key
             FROM instances
-            where ins_key like :id_like{}{}{}
+            where 1=1{}{}{}{}{}{}{}
             order by ins_key
-            limit {}", key_gt, time_ge, time_lt, limit);
+            limit {}", time_ge, time_lt, key_gt, key_ge, key_lt, key_le, key_like, limit);
         let p = params! {
             "id_like" => f_para.id_like().to_string(),
         };
