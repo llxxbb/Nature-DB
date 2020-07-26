@@ -50,6 +50,18 @@ impl MetaCache for MetaCacheImpl {
                 let meta: Meta = def.try_into()?;
                 match meta.get_meta_type() {
                     MetaType::Multi => {
+                        if meta.is_state() {
+                            let msg = format!("{} could not be state", &para);
+                            return Err(NatureError::VerifyError(msg));
+                        }
+                        let sub = get_sub(&meta)?;
+                        sub.into_iter().for_each(|one| input.push(one));
+                    }
+                    MetaType::Loop => {
+                        if !meta.is_state() {
+                            let msg = format!("{} must be state", &para);
+                            return Err(NatureError::VerifyError(msg));
+                        }
                         let sub = get_sub(&meta)?;
                         sub.into_iter().for_each(|one| input.push(one));
                     }
@@ -67,8 +79,17 @@ impl MetaCache for MetaCacheImpl {
             got.push((para, meta.clone()));
         }
         if got.len() > 0 {
+            let check = &got[1..];
+            for one in check {
+                if one.1.is_state() {
+                    let msg = format!("{} could not be state when it is a sub-meta", one.1.meta_string());
+                    return Err(NatureError::VerifyError(msg));
+                }
+            }
             let mut cache = CACHE.lock().unwrap();
-            got.iter().for_each(|one| { cache.insert(one.0.to_string(), one.1.clone()); });
+            got.iter().for_each(|one| {
+                cache.insert(one.0.to_string(), one.1.clone());
+            });
             Ok(got[0].1.clone())
         } else {
             get_none(meta_str)
@@ -131,15 +152,14 @@ mod test {
 
     use super::*;
 
-    #[test]
+    #[tokio::test]
     #[ignore]
-    fn cache_mater_test() {
+    async fn cache_mater_test() {
         {   // clear cache
             let mut c = CACHE.lock().unwrap();
             c.clear();
         }
-        let runtime = tokio::runtime::Runtime::new();
-        let _rtn = runtime.unwrap().block_on(C_M.get("B:child:1", &MetaMock {})).unwrap();
+        let _rtn = C_M.get("B:child:1", &MetaMock {}).await.unwrap();
         {
             let mut c = CACHE.lock().unwrap();
             assert_eq!(3, c.len());
@@ -152,15 +172,44 @@ mod test {
         }
     }
 
-    #[test]
+    #[tokio::test]
     #[ignore]
-    fn cache_sub_meta_test() {
+    async fn cache_sub_meta_test() {
         {   // clear cache
             let mut c = CACHE.lock().unwrap();
             c.clear();
         }
-        let runtime = tokio::runtime::Runtime::new();
-        let _rtn = runtime.unwrap().block_on(C_M.get("M:sub:1", &MetaMock {})).unwrap();
+        let rtn = C_M.get("L:sub-has-state:1", &MetaMock {}).await.err().unwrap();
+        assert_eq!(NatureError::VerifyError("B:sub-state:1 could not be state when it is a sub-meta".to_string()), rtn);
+        {
+            let c = CACHE.lock().unwrap();
+            assert_eq!(0, c.len());
+        }
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn loop_must_be_state_test() {
+        {   // clear cache
+            let mut c = CACHE.lock().unwrap();
+            c.clear();
+        }
+        let rtn = C_M.get("L:state-not-set:1", &MetaMock {}).await.err().unwrap();
+        assert_eq!(NatureError::VerifyError("L:state-not-set:1 must be state".to_string()), rtn);
+        {
+            let c = CACHE.lock().unwrap();
+            assert_eq!(0, c.len());
+        }
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn cache_sub_meta_has_state_test() {
+        {   // clear cache
+            let mut c = CACHE.lock().unwrap();
+            c.clear();
+        }
+        let _rtn = C_M.get("M:sub:1", &MetaMock {}).await.unwrap();
         {
             let mut c = CACHE.lock().unwrap();
             assert_eq!(4, c.len());
@@ -237,6 +286,28 @@ mod test {
                     rtn.config = serde_json::to_string(&setting).unwrap();
                     rtn
                 }
+                "L:state-not-set:1" => {
+                    let mut rtn = RawMeta::default();
+                    rtn.meta_key = "state-not-set".to_string();
+                    rtn.meta_type = "L".to_string();
+                    rtn
+                }
+                "L:sub-has-state:1" => {
+                    let mut set: BTreeSet<String> = BTreeSet::new();
+                    set.insert("B:sub-1:1".to_owned());
+                    set.insert("B:sub-state:1".to_owned());
+                    let setting = MetaSetting {
+                        is_state: true,
+                        master: None,
+                        multi_meta: set,
+                        cache_saved: false,
+                    };
+                    let mut rtn = RawMeta::default();
+                    rtn.meta_key = "sub-has-state".to_string();
+                    rtn.meta_type = "L".to_string();
+                    rtn.config = serde_json::to_string(&setting).unwrap();
+                    rtn
+                }
                 "B:sub-1:1" => {
                     let mut rtn = RawMeta::default();
                     rtn.meta_key = "sub-1".to_string();
@@ -260,6 +331,12 @@ mod test {
                 "B:sub-end:1" => {
                     let mut rtn = RawMeta::default();
                     rtn.meta_key = "sub-end".to_string();
+                    rtn
+                }
+                "B:sub-state:1" => {
+                    let mut rtn = RawMeta::default();
+                    rtn.meta_key = "sub-state".to_string();
+                    rtn.config = r#"{"is_state":true}"#.to_string();
                     rtn
                 }
                 "B:child:1" => {
