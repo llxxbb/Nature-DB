@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use chrono::{Local, TimeZone};
-use mysql_async::{Params, Value};
+use mysql_async::Value;
 
 use nature_common::*;
 
@@ -158,34 +158,38 @@ impl InstanceDaoImpl {
 impl KeyRange for InstanceDaoImpl {
     /// ins_key > and between time range
     async fn get_by_key_range(&self, f_para: &KeyCondition) -> Result<Vec<Instance>> {
-        let key_like = if f_para.key_gt.eq("") {
-            if f_para.meta.is_empty() {
-                "".to_string()
-            } else {
-                format!(" and ins_key like '{}%'", f_para.meta)
-            }
+        let key_like = if f_para.meta.is_empty() {
+            ""
         } else {
-            format!(" and ins_key like '{}'", f_para.id_like())
+            " and ins_key like :meta"
         };
-        let key_gt = if f_para.key_gt.eq("") { "".to_string() } else {
-            format!(" and ins_key > '{}'", f_para.key_gt)
+        let key_gt = if f_para.key_gt.eq("") { "" } else {
+            " and ins_key > :key_gt"
         };
-        let key_ge = if f_para.key_ge.eq("") { "".to_string() } else {
-            format!(" and ins_key >= '{}'", f_para.key_ge)
+        let key_ge = if f_para.key_ge.eq("") { "" } else {
+            " and ins_key >= :key_ge"
         };
-        let key_lt = if f_para.key_lt.eq("") { "".to_string() } else {
-            format!(" and ins_key < '{}'", f_para.key_lt)
+        let key_lt = if f_para.key_lt.eq("") { "" } else {
+            " and ins_key < :key_lt"
         };
-        let key_le = if f_para.key_le.eq("") { "".to_string() } else {
-            format!(" and ins_key <= '{}'", f_para.key_le)
+        let key_le = if f_para.key_le.eq("") { "" } else {
+            " and ins_key <= :key_le"
         };
         let time_ge = match f_para.time_ge {
-            Some(ge) => format!(" and create_time >= '{}'", Local.timestamp_millis(ge)),
-            None => "".to_string()
+            Some(_) => " and create_time >= :time_ge",
+            None => ""
+        };
+        let time_ge_v = match f_para.time_ge {
+            Some(ge) => ge,
+            None => 0
         };
         let time_lt = match f_para.time_lt {
-            Some(lt) => format!(" and create_time < '{}'", Local.timestamp_millis(lt)),
-            None => "".to_string()
+            Some(_) => " and create_time < :time_lt",
+            None => ""
+        };
+        let time_lt_v = match f_para.time_lt {
+            Some(lt) => lt,
+            None => 0
         };
         let limit = if f_para.limit < *QUERY_SIZE_LIMIT {
             f_para.limit
@@ -194,9 +198,20 @@ impl KeyRange for InstanceDaoImpl {
             FROM instances
             where 1=1{}{}{}{}{}{}{}
             order by ins_key
-            limit {}", time_ge, time_lt, key_gt, key_ge, key_lt, key_le, key_like, limit);
+            limit :limit", time_ge, time_lt, key_gt, key_ge, key_lt, key_le, key_like);
 
-        let result = MySql::fetch(sql, Params::Empty, RawInstance::from).await?;
+        let p = params! {
+            "para" => f_para.meta.to_string() + "%",
+            "key_gt" => f_para.key_gt.to_string(),
+            "key_ge" => f_para.key_ge.to_string(),
+            "key_lt" => f_para.key_lt.to_string(),
+            "key_le" => f_para.key_le.to_string(),
+            "time_ge" => Local.timestamp_millis(time_ge_v).naive_local(),
+            "time_lt" => Local.timestamp_millis(time_lt_v).naive_local(),
+            "limit" => limit,
+        };
+        dbg!(&sql);
+        let result = MySql::fetch(sql, p, RawInstance::from).await?;
         let mut rtn: Vec<Instance> = vec![];
         for one in result {
             rtn.push(one.to()?)
@@ -250,7 +265,7 @@ mod test {
         env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
         let mut ins = Instance::new("sale/order").unwrap();
         ins.id = 760228;
-        let _= InstanceDaoImpl::insert(&ins).await;
+        let _ = InstanceDaoImpl::insert(&ins).await;
 
         let ge_t = 1588508143000;
         let ge = Local.timestamp_millis(ge_t);
@@ -267,6 +282,36 @@ mod test {
             time_ge: None,
             time_lt: None,
             limit: 100,
+        };
+        let dao = InstanceDaoImpl {};
+
+        let result = dao.get_by_key_range(&para).await;
+        assert!(result.is_ok());
+        let vec = result.unwrap();
+        dbg!(vec);
+    }
+
+    #[allow(dead_code)]
+    #[tokio::test]
+    #[ignore]
+    async fn query_by_range() {
+        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
+        let para = KeyCondition {
+            id: "".to_string(),
+            meta: "".to_string(),
+            key_gt: "B:sale/order:1|".to_string(),
+            key_ge: "".to_string(),
+            key_lt: "B:sale/order:2|".to_string(),
+            key_le: "".to_string(),
+            para: "".to_string(),
+            state_version: 0,
+            time_ge: Some(
+                1596033636000,
+            ),
+            time_lt: Some(
+                1596033637000,
+            ),
+            limit: 20,
         };
         let dao = InstanceDaoImpl {};
 
