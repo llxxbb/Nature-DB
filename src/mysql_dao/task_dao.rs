@@ -85,7 +85,17 @@ impl TaskDao for TaskDaoImpl {
 
         let rd = RawTaskError::from_raw(err, raw);
         let p: Vec<(String, Value)> = rd.into();
-        let num: usize = MySql::idu(sql, p).await?;
+        let num: usize = match MySql::idu(sql, p).await {
+            Ok(num) => {
+                self.delete(&raw.task_id).await?;
+                num
+            }
+            Err(NatureError::DaoDuplicated(_)) => {
+                self.delete(&raw.task_id).await?;
+                0
+            }
+            Err(e) => return Err(e)
+        };
         Ok(num)
     }
 
@@ -173,23 +183,26 @@ impl TaskDao for TaskDaoImpl {
 mod test {
     use std::env;
 
-    use tokio::runtime::Runtime;
-
     use crate::CONN_STR;
 
     use super::*;
 
-    #[test]
+    #[tokio::test]
     #[ignore]
-    fn insert_repeat_test() {
+    async fn insert_repeat_test() {
         env::set_var("DATABASE_URL", CONN_STR);
-        let mut runtime = Runtime::new().unwrap();
         let mut task = RawTask::default();
-        let _num = runtime.block_on(D_T.delete("lxb")).unwrap();
+        let _num = D_T.delete("lxb").await.unwrap();
         task.task_id = "lxb".to_string();
-        let num = runtime.block_on(D_T.insert(&task)).unwrap();
+        let num = D_T.insert(&task).await.unwrap();
         assert_eq!(1, num);
-        let num = runtime.block_on(D_T.insert(&task)).unwrap();
+        let num = D_T.insert(&task).await.unwrap();
         assert_eq!(0, num);
+        let get_task = D_T.get("lxb").await.unwrap();
+        assert!(get_task.is_some());
+        let num = D_T.raw_to_error(&NatureError::LogicalError("my test".to_string()), &task).await.unwrap();
+        assert_eq!(1, num);
+        let get_task = D_T.get("lxb").await.unwrap();
+        assert!(get_task.is_none());
     }
 }

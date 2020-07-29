@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use chrono::{Local, TimeZone};
-use mysql_async::Value;
+use mysql_async::{Params, Value};
 
 use nature_common::*;
 
@@ -158,7 +158,13 @@ impl InstanceDaoImpl {
 impl KeyRange for InstanceDaoImpl {
     /// ins_key > and between time range
     async fn get_by_key_range(&self, f_para: &KeyCondition) -> Result<Vec<Instance>> {
-        let key_like = if f_para.key_gt.eq("") { "".to_string() } else {
+        let key_like = if f_para.key_gt.eq("") {
+            if f_para.meta.is_empty() {
+                "".to_string()
+            } else {
+                format!(" and ins_key like '{}%'", f_para.meta)
+            }
+        } else {
             format!(" and ins_key like '{}'", f_para.id_like())
         };
         let key_gt = if f_para.key_gt.eq("") { "".to_string() } else {
@@ -189,10 +195,8 @@ impl KeyRange for InstanceDaoImpl {
             where 1=1{}{}{}{}{}{}{}
             order by ins_key
             limit {}", time_ge, time_lt, key_gt, key_ge, key_lt, key_le, key_like, limit);
-        let p = params! {
-            "id_like" => f_para.id_like().to_string(),
-        };
-        let result = MySql::fetch(sql, p, RawInstance::from).await?;
+
+        let result = MySql::fetch(sql, Params::Empty, RawInstance::from).await?;
         let mut rtn: Vec<Instance> = vec![];
         for one in result {
             rtn.push(one.to()?)
@@ -242,11 +246,15 @@ mod test {
 
     #[allow(dead_code)]
     #[tokio::test]
-    async fn query_by_meta_test() {
+    async fn query_by_range_test() {
+        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
+        let mut ins = Instance::new("sale/order").unwrap();
+        ins.id = 760228;
+        let _= InstanceDaoImpl::insert(&ins).await;
+
         let ge_t = 1588508143000;
         let ge = Local.timestamp_millis(ge_t);
         dbg!(ge);
-        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
         let para = KeyCondition {
             id: "".to_string(),
             meta: "B:sale/order:1".to_string(),
@@ -256,12 +264,15 @@ mod test {
             key_le: "".to_string(),
             para: "".to_string(),
             state_version: 0,
-            time_ge: Some(ge_t),
-            time_lt: Some(1588508144000),
+            time_ge: None,
+            time_lt: None,
             limit: 100,
         };
         let dao = InstanceDaoImpl {};
+
         let result = dao.get_by_key_range(&para).await;
-        let _ = dbg!(result);
+        assert!(result.is_ok());
+        let vec = result.unwrap();
+        dbg!(vec);
     }
 }
