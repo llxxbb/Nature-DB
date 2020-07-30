@@ -41,6 +41,14 @@ impl RawInstance {
             None => HashSet::new(),
             Some(ref s) => serde_json::from_str::<HashSet<String>>(s)?
         };
+        let time = match Local.from_local_datetime(&self.create_time).single() {
+            Some(t) => t,
+            None => {
+                let msg = format!("instance create time error: {}", self.ins_key);
+                error!("{}", msg);
+                return Err(NatureError::VerifyError(msg));
+            }
+        };
         Ok(Instance {
             id: key.id,
             data: BizObject {
@@ -53,7 +61,7 @@ impl RawInstance {
                 from,
                 para: key.para.clone(),
             },
-            create_time: self.create_time.timestamp_millis(),
+            create_time: time.timestamp_millis(),
         })
     }
 
