@@ -201,7 +201,7 @@ impl KeyRange for InstanceDaoImpl {
             limit :limit", time_ge, time_lt, key_gt, key_ge, key_lt, key_le, key_like);
 
         let p = params! {
-            "para" => f_para.meta.to_string() + "%",
+            "meta" => f_para.meta.to_string() + "%",
             "key_gt" => f_para.key_gt.to_string(),
             "key_ge" => f_para.key_ge.to_string(),
             "key_lt" => f_para.key_lt.to_string(),
@@ -232,7 +232,7 @@ mod test {
     #[test]
     #[allow(dead_code)]
     fn get_last_state_test() {
-        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
+        env::set_var("DATABASE_URL", "mysql://root@localhost/nature?serverTimezone=Asia/Shanghai");
         let para = KeyCondition::new(0, "B:score/trainee/all-subject:1", "002", 0);
         let result = Runtime::new().unwrap().block_on(InstanceDaoImpl::get_last_state(&para));
         let _ = dbg!(result);
@@ -241,7 +241,7 @@ mod test {
     #[test]
     #[allow(dead_code)]
     fn query_by_id() {
-        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
+        env::set_var("DATABASE_URL", "mysql://root@localhost/nature?serverTimezone=Asia/Shanghai");
         let para = KeyCondition {
             id: "3827f37003127855b32ea022daa04cd".to_string(),
             meta: "B:sale/order:1".to_string(),
@@ -262,7 +262,7 @@ mod test {
     #[allow(dead_code)]
     #[tokio::test]
     async fn query_by_range_test() {
-        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
+        env::set_var("DATABASE_URL", "mysql://root@localhost/nature?serverTimezone=Asia/Shanghai");
         let mut ins = Instance::new("sale/order").unwrap();
         ins.id = 760228;
         let _ = InstanceDaoImpl::insert(&ins).await;
@@ -295,7 +295,7 @@ mod test {
     #[tokio::test]
     #[ignore]
     async fn query_by_range() {
-        env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
+        env::set_var("DATABASE_URL", "mysql://root@localhost/nature?serverTimezone=Asia/Shanghai");
         let para = KeyCondition {
             id: "".to_string(),
             meta: "".to_string(),
@@ -306,10 +306,10 @@ mod test {
             para: "".to_string(),
             state_version: 0,
             time_ge: Some(
-                1596033636000,
+                1596033633000,
             ),
             time_lt: Some(
-                1596033637000,
+                1596033634000,
             ),
             limit: 20,
         };
@@ -320,4 +320,5 @@ mod test {
         let vec = result.unwrap();
         dbg!(vec);
     }
+
 }
