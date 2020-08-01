@@ -1,33 +1,34 @@
 use std::collections::HashSet;
+use nature_common::is_default;
 
 /// select an upstream
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 pub struct FlowSelector {
-    #[serde(skip_serializing_if = "HashSet::is_empty")]
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub state_all: HashSet<String>,
-    #[serde(skip_serializing_if = "HashSet::is_empty")]
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub state_any: HashSet<String>,
-    #[serde(skip_serializing_if = "HashSet::is_empty")]
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub state_none: HashSet<String>,
-    #[serde(skip_serializing_if = "HashSet::is_empty")]
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub context_all: HashSet<String>,
-    #[serde(skip_serializing_if = "HashSet::is_empty")]
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub context_any: HashSet<String>,
-    #[serde(skip_serializing_if = "HashSet::is_empty")]
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub context_none: HashSet<String>,
-    #[serde(skip_serializing_if = "HashSet::is_empty")]
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub sys_context_all: HashSet<String>,
-    #[serde(skip_serializing_if = "HashSet::is_empty")]
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub sys_context_any: HashSet<String>,
-    #[serde(skip_serializing_if = "HashSet::is_empty")]
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub sys_context_none: HashSet<String>,
 }

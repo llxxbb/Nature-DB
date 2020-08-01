@@ -5,19 +5,19 @@ use crate::relation_target::RelationTarget;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 pub struct RelationSettings {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub selector: Option<FlowSelector>,
     /// array executor will share the convert task
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub executor: Option<Executor>,
     /// filter will execute before executor,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub filter_before: Vec<Executor>,
     /// filter will execute after executor,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub filter_after: Vec<Executor>,
     /// if the downstream is state meta, when `is_main` is set to true, the upstream's id will be used as downstream's id

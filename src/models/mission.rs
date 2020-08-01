@@ -27,10 +27,10 @@ pub struct Mission {
 pub struct MissionRaw {
     pub to: String,
     pub executor: Executor,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub filter_before: Vec<Executor>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
     pub filter_after: Vec<Executor>,
     #[serde(skip_serializing_if = "is_default")]
