@@ -286,6 +286,7 @@ mod test {
         let dao = InstanceDaoImpl {};
 
         let result = dao.get_by_key_range(&para).await;
+        dbg!(&result);
         assert!(result.is_ok());
         let vec = result.unwrap();
         dbg!(vec);
