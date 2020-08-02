@@ -58,8 +58,8 @@ impl MetaCache for MetaCacheImpl {
                         sub.into_iter().for_each(|one| input.push(one));
                     }
                     MetaType::Loop => {
-                        if !meta.is_state() {
-                            let msg = format!("{} must be state", &para);
+                        if meta.is_state() {
+                            let msg = format!("{} must not be state", &para);
                             return Err(NatureError::VerifyError(msg));
                         }
                         let sub = get_sub(&meta)?;
