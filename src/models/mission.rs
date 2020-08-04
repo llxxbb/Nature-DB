@@ -304,6 +304,7 @@ mod test {
         let target = RelationTarget {
             states: state.clone(),
             append_para: vec![],
+            context_name: "".to_string()
         };
         let mut relation = Relation::default();
         relation.from = "a".to_string();
