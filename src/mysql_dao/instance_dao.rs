@@ -128,7 +128,7 @@ impl InstanceDaoImpl {
         if !mission.to.is_state() {
             return Ok(None);
         }
-        let para_part = &mission.target_demand.copy_para;
+        let para_part = &mission.target_demand.append_para;
         let para_id = if para_part.len() > 0 {
             let id = get_para_and_key_from_para(&from.para, para_part)?.0;
             mission.sys_context.insert(CONTEXT_TARGET_INSTANCE_PARA.to_string(), id.to_string());

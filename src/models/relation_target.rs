@@ -7,5 +7,5 @@ pub struct RelationTarget {
     pub states: Option<TargetState>,
     #[serde(skip_serializing_if = "is_default")]
     #[serde(default)]
-    pub copy_para: Vec<u8>,
+    pub append_para: Vec<u8>,
 }
