@@ -3,7 +3,7 @@ use std::ops::Sub;
 
 use chrono::{Local, TimeZone};
 
-use nature_common::{DynamicConverter, Executor, get_para_and_key_from_para, Instance, is_default, Meta, MetaType, Result};
+use nature_common::{CONTEXT_DYNAMIC_PARA, DynamicConverter, Executor, get_para_and_key_from_para, Instance, is_default, Meta, MetaType, Result};
 
 use crate::{MetaCache, MetaDao, Relation};
 use crate::flow_tool::ContextChecker;
@@ -123,23 +123,11 @@ impl Mission {
                     continue;
                 }
             }
-            let m = Mission {
-                to: r.to.clone(),
-                executor: r.executor.clone(),
-                filter_before: r.filter_before.clone(),
-                filter_after: r.filter_after.clone(),
-                target_demand: r.target.clone(),
-                use_upstream_id: r.use_upstream_id,
-                delay: match get_delay(instance, r) {
-                    Ok(d) => d,
-                    Err(e) => {
-                        warn!("relation will be ignored, R: {}, E:{} ", r.relation_string(), e);
-                        continue;
-                    }
-                },
-                sys_context: instance.sys_context.clone(),
-                id_bridge: r.id_bridge,
-            };
+            let mut m = Mission::from(r.clone());
+            if let Err(e) = init_by_instance(&mut m, &instance, r) {
+                warn!("relation will be ignored, R: {}, E:{} ", r.relation_string(), e);
+                continue;
+            }
             // debug!("instance meta: {}, selected relation is {}", instance.meta, r.relation_string());
             rtn.push(m);
         }
@@ -161,6 +149,48 @@ impl Mission {
             id_bridge: raw.id_bridge,
         };
         Ok(rtn)
+    }
+}
+
+fn init_by_instance(m: &mut Mission, instance: &Instance, r: &Relation) -> Result<()> {
+    m.delay = get_delay(instance, r)?;
+    m.sys_context = instance.sys_context.clone();
+    // replace para.dynamically. sys_context format : "[[\"p1\":\"v1\"],[\"p2\":\"v2\"]...]"
+    match instance.sys_context.get(CONTEXT_DYNAMIC_PARA) {
+        Some(paras) => {
+            let paras: Vec<(String, String)> = serde_json::from_str(paras)?;
+            if paras.is_empty() {
+                return Ok(());
+            }
+            for para in paras {
+                debug!("para dynamic will be replaced from {} to {} for relation: {:?}", para.0, para.1, r);
+                m.executor.settings = m.executor.settings.replace(&para.0, &para.1);
+                m.filter_before.iter_mut().for_each(|one| {
+                    one.settings = one.settings.replace(&para.0, &para.1);
+                });
+                m.filter_after.iter_mut().for_each(|one| {
+                    one.settings = one.settings.replace(&para.0, &para.1);
+                });
+            }
+        }
+        None => ()
+    }
+    Ok(())
+}
+
+impl From<Relation> for Mission {
+    fn from(r: Relation) -> Self {
+        Mission {
+            to: r.to.clone(),
+            executor: r.executor.clone(),
+            filter_before: r.filter_before.clone(),
+            filter_after: r.filter_after.clone(),
+            target_demand: r.target.clone(),
+            use_upstream_id: r.use_upstream_id,
+            delay: 0,
+            sys_context: Default::default(),
+            id_bridge: r.id_bridge,
+        }
     }
 }
 
@@ -186,6 +216,13 @@ mod test {
     use crate::models::relation_target::RelationTarget;
 
     use super::*;
+
+    #[test]
+    #[ignore]
+    fn para_test() {
+        assert_eq!("/a/b/c", "/a/${hello}/c".replace("${hello}", "b"));
+        assert_eq!("/a/b/c", "/a/:hello:/c".replace(":hello:", "b"));
+    }
 
     #[test]
     fn get_delay_test() {
