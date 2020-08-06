@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fmt::Debug;
 
 use chrono::prelude::*;
@@ -10,7 +11,7 @@ use nature_common::*;
 use crate::models::define::*;
 use crate::TaskDao;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
 pub struct RawTask {
     pub task_id: String,
     pub task_key: String,
@@ -79,12 +80,18 @@ impl RawTask {
     }
 
 
-    pub async fn save_batch<T>(news: &[RawTask], old_id: &str, task: &T) -> Result<()>
+    pub async fn save_batch<T>(news: &mut Vec<RawTask>, old_id: &str, task: &T) -> Result<()>
         where T: TaskDao
     {
-        for v in news {
-            let _num = task.insert(v).await?;
+        let mut will_deleted: HashSet<RawTask> = HashSet::new();
+        for v in news.iter() {
+            let num = task.insert(&v).await?;
+            // drop repeated task avoid data consistent problem, retry.exe will pick it up
+            if num != 1 {
+                will_deleted.insert(v.clone());
+            }
         }
+        news.retain(|one| will_deleted.get(&one) != Some(&one));
         task.finish_task(old_id).await?;
         Ok(())
     }
@@ -124,5 +131,31 @@ impl Into<Vec<(String, Value)>> for RawTask {
             "execute_time" => self.execute_time,
             "retried_times" => self.retried_times,
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::collections::HashSet;
+
+    #[derive(Clone, Eq, Hash, PartialEq)]
+    struct MyTest(String);
+
+    #[test]
+    #[ignore]
+    fn vec_test() {
+        let mut input: Vec<MyTest> = vec![
+            MyTest("a".to_string()),
+            MyTest("b".to_string()),
+            MyTest("a".to_string()),
+        ];
+        let mut will_deleted: HashSet<MyTest> = HashSet::new();
+        for v in input.iter() {
+            if v.0 == "b" {
+                will_deleted.insert(v.clone());
+            }
+        }
+        input.retain(|one| will_deleted.get(&one) != Some(&one));
+        assert_eq!(2, input.len());
     }
 }
