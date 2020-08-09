@@ -9,6 +9,7 @@ pub use meta_dao::*;
 use nature_common::{NatureError, Result};
 pub use relation_dao::*;
 pub use task_dao::*;
+pub mod task_check;
 
 lazy_static! {
    static ref POOL : Pool = get_conn();
