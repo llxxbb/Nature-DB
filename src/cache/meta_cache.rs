@@ -38,54 +38,55 @@ impl MetaCache for MetaCacheImpl {
             };
         };
         let mut got: Vec<(String, Meta)> = vec![];
-        let mut input: Vec<String> = vec![];
-        input.push(meta_str.to_string());
+        let mut input: Vec<(String, ProcessType)> = vec![];
+        input.push((meta_str.to_string(), ProcessType::Any));
         loop {
             let para = input.pop();
             if para.is_none() {
                 break;
             }
             let para = para.unwrap();
-            let meta = if let Some(def) = getter.get(&para).await? {
+            let meta = if let Some(def) = getter.get(&para.0).await? {
                 let meta: Meta = def.try_into()?;
+                if para.1 == ProcessType::NotState && meta.is_state() {
+                    let msg = format!("{} could not be state", &para.0);
+                    return Err(NatureError::VerifyError(msg));
+                }
                 match meta.get_meta_type() {
                     MetaType::Multi => {
                         if meta.is_state() {
-                            let msg = format!("{} could not be state", &para);
+                            let msg = format!("{} must not be state", &para.0);
                             return Err(NatureError::VerifyError(msg));
                         }
                         let sub = get_sub(&meta)?;
-                        sub.into_iter().for_each(|one| input.push(one));
+                        sub.into_iter().for_each(|one| input.push((one, ProcessType::NotState)));
                     }
                     MetaType::Loop => {
                         if meta.is_state() {
-                            let msg = format!("{} must not be state", &para);
+                            let msg = format!("{} must not be state", &para.0);
                             return Err(NatureError::VerifyError(msg));
                         }
                         let sub = get_sub(&meta)?;
-                        sub.into_iter().for_each(|one| input.push(one));
+                        if sub.len() == 1 {
+                            sub.into_iter().for_each(|one| input.push((one, ProcessType::Any)));
+                        } else {
+                            sub.into_iter().for_each(|one| input.push((one, ProcessType::NotState)));
+                        }
                     }
                     _ => {
                         match get_master(&meta)? {
                             None => {}
-                            Some(master) => input.push(master),
+                            Some(master) => input.push((master, ProcessType::Any)),
                         }
                     }
                 }
                 meta
             } else {
-                get_none(&para)?
+                get_none(&para.0)?
             };
-            got.push((para, meta.clone()));
+            got.push((para.0, meta.clone()));
         }
         if got.len() > 0 {
-            let check = &got[1..];
-            for one in check {
-                if one.1.is_state() {
-                    let msg = format!("{} could not be state when it is a sub-meta", one.1.meta_string());
-                    return Err(NatureError::VerifyError(msg));
-                }
-            }
             let mut cache = CACHE.lock().unwrap();
             got.iter().for_each(|one| {
                 cache.insert(one.0.to_string(), one.1.clone());
@@ -95,6 +96,12 @@ impl MetaCache for MetaCacheImpl {
             get_none(meta_str)
         }
     }
+}
+
+#[derive(Eq, PartialEq)]
+enum ProcessType {
+    Any,
+    NotState,
 }
 
 fn get_none(meta_str: &str) -> Result<Meta> {
@@ -122,9 +129,17 @@ fn get_sub(m: &Meta) -> Result<Vec<String>> {
     match m.get_setting() {
         None => Err(NatureError::VerifyError("Multi-Meta must define sub-metas".to_string())),
         Some(setting) => {
-            match setting.multi_meta.len() {
+            let vec: Vec<String> = setting.multi_meta.into_iter().collect();
+            let err = vec.iter().any(|one| {
+                MetaType::check_type(one, MetaType::Loop).is_ok()
+                    || MetaType::check_type(one, MetaType::Multi).is_ok()
+            });
+            if err {
+                return Err(NatureError::VerifyError("MetaType: Multi or Loop can't be as sub meta".to_string()));
+            }
+            match vec.len() {
                 0 => Err(NatureError::VerifyError("sub-meta number should great than 0".to_string())),
-                _n => Ok(setting.multi_meta.into_iter().collect())
+                _n => Ok(vec)
             }
         }
     }
@@ -174,13 +189,13 @@ mod test {
 
     #[tokio::test]
     #[ignore]
-    async fn cache_sub_meta_test() {
+    async fn loop_must_not_state() {
         {   // clear cache
             let mut c = CACHE.lock().unwrap();
             c.clear();
         }
-        let rtn = C_M.get("L:sub-has-state:1", &MetaMock {}).await.err().unwrap();
-        assert_eq!(NatureError::VerifyError("B:sub-state:1 could not be state when it is a sub-meta".to_string()), rtn);
+        let rtn = C_M.get("L:state:1", &MetaMock {}).await.err().unwrap();
+        assert_eq!(NatureError::VerifyError("L:state:1 must not be state".to_string()), rtn);
         {
             let c = CACHE.lock().unwrap();
             assert_eq!(0, c.len());
@@ -189,13 +204,13 @@ mod test {
 
     #[tokio::test]
     #[ignore]
-    async fn loop_must_be_state_test() {
+    async fn loop_hss_none_sub() {
         {   // clear cache
             let mut c = CACHE.lock().unwrap();
             c.clear();
         }
-        let rtn = C_M.get("L:state-not-set:1", &MetaMock {}).await.err().unwrap();
-        assert_eq!(NatureError::VerifyError("L:state-not-set:1 must be state".to_string()), rtn);
+        let rtn = C_M.get("L:none_sub:1", &MetaMock {}).await.err().unwrap();
+        assert_eq!(NatureError::VerifyError("sub-meta number should great than 0".to_string()), rtn);
         {
             let c = CACHE.lock().unwrap();
             assert_eq!(0, c.len());
@@ -204,23 +219,104 @@ mod test {
 
     #[tokio::test]
     #[ignore]
-    async fn cache_sub_meta_has_state_test() {
+    async fn loop_has_multi_sub_include_state() {
         {   // clear cache
             let mut c = CACHE.lock().unwrap();
             c.clear();
         }
-        let _rtn = C_M.get("M:sub:1", &MetaMock {}).await.unwrap();
+        let rtn = C_M.get("L:multi-include-state:1", &MetaMock {}).await.err().unwrap();
+        assert_eq!(NatureError::VerifyError("B:sub-state:1 could not be state".to_string()), rtn);
         {
+            let c = CACHE.lock().unwrap();
+            assert_eq!(0, c.len());
+        }
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn loop_has_multi_sub_no_state() {
+        {   // clear cache
             let mut c = CACHE.lock().unwrap();
-            assert_eq!(4, c.len());
-            let x = c.get("M:sub:1").unwrap();
-            assert_eq!(x.meta_string(), "M:sub:1");
-            let x = c.get("B:sub-1:1").unwrap();
-            assert_eq!(x.meta_string(), "B:sub-1:1");
-            let x = c.get("M:sub-2:1").unwrap();
-            assert_eq!(x.meta_string(), "M:sub-2:1");
-            let x = c.get("B:sub-end:1").unwrap();
-            assert_eq!(x.meta_string(), "B:sub-end:1");
+            c.clear();
+        }
+        let _rtn = C_M.get("L:multi:1", &MetaMock {}).await.unwrap();
+        {
+            let c = CACHE.lock().unwrap();
+            assert_eq!(3, c.len());
+        }
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn loop_has_one_sub_but_state() {
+        {   // clear cache
+            let mut c = CACHE.lock().unwrap();
+            c.clear();
+        }
+        let _rtn = C_M.get("L:one-state:1", &MetaMock {}).await.unwrap();
+        {
+            let c = CACHE.lock().unwrap();
+            assert_eq!(2, c.len());
+        }
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn multi_must_not_state() {
+        {   // clear cache
+            let mut c = CACHE.lock().unwrap();
+            c.clear();
+        }
+        let rtn = C_M.get("M:state:1", &MetaMock {}).await.err().unwrap();
+        assert_eq!(NatureError::VerifyError("M:state:1 must not be state".to_string()), rtn);
+        {
+            let c = CACHE.lock().unwrap();
+            assert_eq!(0, c.len());
+        }
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn multi_hss_none_sub() {
+        {   // clear cache
+            let mut c = CACHE.lock().unwrap();
+            c.clear();
+        }
+        let rtn = C_M.get("M:none_sub:1", &MetaMock {}).await.err().unwrap();
+        assert_eq!(NatureError::VerifyError("sub-meta number should great than 0".to_string()), rtn);
+        {
+            let c = CACHE.lock().unwrap();
+            assert_eq!(0, c.len());
+        }
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn multi_one_state() {
+        {   // clear cache
+            let mut c = CACHE.lock().unwrap();
+            c.clear();
+        }
+        let rtn = C_M.get("M:one-state:1", &MetaMock {}).await.err().unwrap();
+        assert_eq!(NatureError::VerifyError("B:sub-state:1 could not be state".to_string()), rtn);
+        {
+            let c = CACHE.lock().unwrap();
+            assert_eq!(0, c.len());
+        }
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn sub_is_multi_or_loop() {
+        {   // clear cache
+            let mut c = CACHE.lock().unwrap();
+            c.clear();
+        }
+        let rtn = C_M.get("M:sub:1", &MetaMock {}).await.err().unwrap();
+        assert_eq!(NatureError::VerifyError("MetaType: Multi or Loop can't be as sub meta".to_string()), rtn);
+        {
+            let c = CACHE.lock().unwrap();
+            assert_eq!(0, c.len());
         }
     }
 
@@ -270,6 +366,94 @@ mod test {
     impl MetaDao for MetaMock {
         async fn get(&self, m: &str) -> Result<Option<RawMeta>> {
             let rtn = match m {
+                "L:state:1" => {
+                    let mut rtn = RawMeta::default();
+                    rtn.meta_key = "state".to_string();
+                    rtn.meta_type = "L".to_string();
+                    rtn.config = r#"{"is_state":true}"#.to_string();
+                    rtn
+                }
+                "L:none_sub:1" => {
+                    let mut rtn = RawMeta::default();
+                    rtn.meta_key = "none_sub".to_string();
+                    rtn.meta_type = "L".to_string();
+                    rtn
+                }
+                "L:multi-include-state:1" => {
+                    let mut set: BTreeSet<String> = BTreeSet::new();
+                    set.insert("B:sub-1:1".to_owned());
+                    set.insert("B:sub-state:1".to_owned());
+                    let setting = MetaSetting {
+                        is_state: false,
+                        master: None,
+                        multi_meta: set,
+                        cache_saved: false,
+                    };
+                    let mut rtn = RawMeta::default();
+                    rtn.meta_key = "sub-has-state".to_string();
+                    rtn.meta_type = "L".to_string();
+                    rtn.config = serde_json::to_string(&setting).unwrap();
+                    rtn
+                }
+                "L:one-state:1" => {
+                    let mut set: BTreeSet<String> = BTreeSet::new();
+                    set.insert("B:sub-state:1".to_owned());
+                    let setting = MetaSetting {
+                        is_state: false,
+                        master: None,
+                        multi_meta: set,
+                        cache_saved: false,
+                    };
+                    let mut rtn = RawMeta::default();
+                    rtn.meta_key = "one-state".to_string();
+                    rtn.meta_type = "L".to_string();
+                    rtn.config = serde_json::to_string(&setting).unwrap();
+                    rtn
+                }
+                "L:multi:1" => {
+                    let mut set: BTreeSet<String> = BTreeSet::new();
+                    set.insert("B:sub-1:1".to_owned());
+                    set.insert("B:sub-end:1".to_owned());
+                    let setting = MetaSetting {
+                        is_state: false,
+                        master: None,
+                        multi_meta: set,
+                        cache_saved: false,
+                    };
+                    let mut rtn = RawMeta::default();
+                    rtn.meta_key = "multi".to_string();
+                    rtn.meta_type = "L".to_string();
+                    rtn.config = serde_json::to_string(&setting).unwrap();
+                    rtn
+                }
+                "M:state:1" => {
+                    let mut rtn = RawMeta::default();
+                    rtn.meta_key = "state".to_string();
+                    rtn.meta_type = "M".to_string();
+                    rtn.config = r#"{"is_state":true}"#.to_string();
+                    rtn
+                }
+                "M:none_sub:1" => {
+                    let mut rtn = RawMeta::default();
+                    rtn.meta_key = "none_sub".to_string();
+                    rtn.meta_type = "M".to_string();
+                    rtn
+                }
+                "M:one-state:1" => {
+                    let mut set: BTreeSet<String> = BTreeSet::new();
+                    set.insert("B:sub-state:1".to_owned());
+                    let setting = MetaSetting {
+                        is_state: false,
+                        master: None,
+                        multi_meta: set,
+                        cache_saved: false,
+                    };
+                    let mut rtn = RawMeta::default();
+                    rtn.meta_key = "one-state".to_string();
+                    rtn.meta_type = "M".to_string();
+                    rtn.config = serde_json::to_string(&setting).unwrap();
+                    rtn
+                }
                 "M:sub:1" => {
                     let mut set: BTreeSet<String> = BTreeSet::new();
                     set.insert("B:sub-1:1".to_owned());
@@ -283,28 +467,6 @@ mod test {
                     let mut rtn = RawMeta::default();
                     rtn.meta_key = "sub".to_string();
                     rtn.meta_type = "M".to_string();
-                    rtn.config = serde_json::to_string(&setting).unwrap();
-                    rtn
-                }
-                "L:state-not-set:1" => {
-                    let mut rtn = RawMeta::default();
-                    rtn.meta_key = "state-not-set".to_string();
-                    rtn.meta_type = "L".to_string();
-                    rtn
-                }
-                "L:sub-has-state:1" => {
-                    let mut set: BTreeSet<String> = BTreeSet::new();
-                    set.insert("B:sub-1:1".to_owned());
-                    set.insert("B:sub-state:1".to_owned());
-                    let setting = MetaSetting {
-                        is_state: true,
-                        master: None,
-                        multi_meta: set,
-                        cache_saved: false,
-                    };
-                    let mut rtn = RawMeta::default();
-                    rtn.meta_key = "sub-has-state".to_string();
-                    rtn.meta_type = "L".to_string();
                     rtn.config = serde_json::to_string(&setting).unwrap();
                     rtn
                 }
