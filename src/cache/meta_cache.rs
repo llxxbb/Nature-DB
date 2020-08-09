@@ -67,11 +67,7 @@ impl MetaCache for MetaCacheImpl {
                             return Err(NatureError::VerifyError(msg));
                         }
                         let sub = get_sub(&meta)?;
-                        if sub.len() == 1 {
-                            sub.into_iter().for_each(|one| input.push((one, ProcessType::Any)));
-                        } else {
-                            sub.into_iter().for_each(|one| input.push((one, ProcessType::NotState)));
-                        }
+                        sub.into_iter().for_each(|one| input.push((one, ProcessType::NotState)));
                     }
                     _ => {
                         match get_master(&meta)? {
@@ -189,7 +185,7 @@ mod test {
 
     #[tokio::test]
     #[ignore]
-    async fn loop_must_not_state() {
+    async fn loop_self_must_not_state() {
         {   // clear cache
             let mut c = CACHE.lock().unwrap();
             c.clear();
@@ -249,14 +245,11 @@ mod test {
     #[tokio::test]
     #[ignore]
     async fn loop_has_one_sub_but_state() {
-        {   // clear cache
-            let mut c = CACHE.lock().unwrap();
-            c.clear();
-        }
-        let _rtn = C_M.get("L:one-state:1", &MetaMock {}).await.unwrap();
+        let rtn = C_M.get("L:one-state:1", &MetaMock {}).await.err().unwrap();
+        assert_eq!(NatureError::VerifyError("B:sub-state:1 could not be state".to_string()), rtn);
         {
             let c = CACHE.lock().unwrap();
-            assert_eq!(2, c.len());
+            assert_eq!(0, c.len());
         }
     }
 
@@ -327,6 +320,7 @@ mod test {
             master: Some("abc".to_string()),
             multi_meta: Default::default(),
             cache_saved: false,
+            output_last: false
         };
         let mut m = Meta::from_string("B:test:3").unwrap();
         let _ = m.set_setting(&setting.to_json().unwrap());
@@ -350,6 +344,7 @@ mod test {
             master: None,
             multi_meta: set,
             cache_saved: false,
+            output_last: false
         };
         let mut m = Meta::from_string("B:test:3").unwrap();
         let _ = m.set_setting(&setting.to_json().unwrap());
@@ -388,6 +383,7 @@ mod test {
                         master: None,
                         multi_meta: set,
                         cache_saved: false,
+                        output_last: false
                     };
                     let mut rtn = RawMeta::default();
                     rtn.meta_key = "sub-has-state".to_string();
@@ -403,6 +399,7 @@ mod test {
                         master: None,
                         multi_meta: set,
                         cache_saved: false,
+                        output_last: false
                     };
                     let mut rtn = RawMeta::default();
                     rtn.meta_key = "one-state".to_string();
@@ -419,6 +416,7 @@ mod test {
                         master: None,
                         multi_meta: set,
                         cache_saved: false,
+                        output_last: false
                     };
                     let mut rtn = RawMeta::default();
                     rtn.meta_key = "multi".to_string();
@@ -447,6 +445,7 @@ mod test {
                         master: None,
                         multi_meta: set,
                         cache_saved: false,
+                        output_last: false
                     };
                     let mut rtn = RawMeta::default();
                     rtn.meta_key = "one-state".to_string();
@@ -463,6 +462,7 @@ mod test {
                         master: None,
                         multi_meta: set,
                         cache_saved: false,
+                        output_last: false
                     };
                     let mut rtn = RawMeta::default();
                     rtn.meta_key = "sub".to_string();
@@ -483,6 +483,7 @@ mod test {
                         master: None,
                         multi_meta: set,
                         cache_saved: false,
+                        output_last: false
                     };
                     let mut rtn = RawMeta::default();
                     rtn.meta_key = "sub-2".to_string();
@@ -507,6 +508,7 @@ mod test {
                         master: Some("B:master:1".to_string()),
                         multi_meta: Default::default(),
                         cache_saved: false,
+                        output_last: false
                     };
                     let mut rtn = RawMeta::default();
                     rtn.meta_key = "child".to_string();
@@ -519,6 +521,7 @@ mod test {
                         master: Some("B:master-master:1".to_string()),
                         multi_meta: Default::default(),
                         cache_saved: false,
+                        output_last: false
                     };
                     let mut rtn = RawMeta::default();
                     rtn.meta_key = "master".to_string();
