@@ -50,7 +50,8 @@ create TABLE `task` (
 	`execute_time`	DATETIME NOT NULL,
 	`retried_times`	SMALLINT NOT NULL,
 	UNIQUE KEY `task_un` (`task_key`,`task_type`,`task_for`),
-	PRIMARY KEY(`task_id`)
+	PRIMARY KEY(`task_id`),
+	KEY `task_create_time_IDX` (`create_time`,`task_state`) USING BTREE
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 create TABLE `task_error` (

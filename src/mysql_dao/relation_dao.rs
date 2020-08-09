@@ -140,8 +140,6 @@ mod test {
 
     use std::env;
 
-    use tokio::runtime::Runtime;
-
     use nature_common::{Meta, setup_logger};
 
     use crate::{C_M, CONN_STR};
@@ -149,39 +147,37 @@ mod test {
     use super::*;
 
     /// need db connection
-    #[test]
+    #[tokio::test]
     #[ignore]
-    fn relation_test() {
+    async fn relation_test() {
         env::set_var("DATABASE_URL", CONN_STR);
         let _ = setup_logger();
 
-        let mut runtime = Runtime::new().unwrap();
-
         // clear before test
         debug!("--delete first-----------------");
-        let _ = runtime.block_on(D_R.delete_by_biz("B:from:1", "B:to:1"));
+        let _ = D_R.delete_by_biz("B:from:1", "B:to:1").await;
 
         // get null
         debug!("--will get none-----------------");
         let meta = "B:from:1";
-        let rtn = runtime.block_on(D_R.get_relations(meta, &*C_M, &*D_M)).unwrap();
+        let rtn = D_R.get_relations(meta, &*C_M, &*D_M).await.unwrap();
         assert_eq!(rtn.is_empty(), true);
 
         // insert
         debug!("--insert one-----------------");
-        let _ = runtime.block_on(D_R.insert_by_biz("B:from:1", "B:to:1", "url", "http"));
-        let rtn = runtime.block_on(D_R.get_relations(meta, &MCMock {}, &*D_M)).unwrap();
+        let _ = D_R.insert_by_biz("B:from:1", "B:to:1", "url", "http").await;
+        let rtn = D_R.get_relations(meta, &MCMock {}, &*D_M).await.unwrap();
         assert_eq!(rtn.len(), 1);
 
         // update flag
         debug!("--update it-----------------");
-        let _ = runtime.block_on(D_R.update_flag("B:from:1", "B:to:1", 0));
-        let rtn = runtime.block_on(D_R.get_relations(meta, &MCMock {}, &*D_M)).unwrap();
+        let _ = D_R.update_flag("B:from:1", "B:to:1", 0).await;
+        let rtn = D_R.get_relations(meta, &MCMock {}, &*D_M).await.unwrap();
         assert_eq!(rtn.is_empty(), true);
 
         // delete after test
         debug!("--delete it after used-----------------");
-        let _ = runtime.block_on(D_R.delete_by_biz("B:from:1", "B:to:1"));
+        let _ = D_R.delete_by_biz("B:from:1", "B:to:1").await;
     }
 
     #[derive(Copy, Clone)]
