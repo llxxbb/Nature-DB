@@ -125,6 +125,13 @@ impl InstanceDaoImpl {
 
     /// get downstream instance through upstream instance
     pub async fn get_last_target(from: &Instance, mission: &mut Mission) -> Result<Option<Instance>> {
+        // init for MetaType::loop --------------------
+        if mission.to.get_meta_type() == MetaType::Loop
+            && mission.to.meta_string() == from.meta {
+            debug!("make MetaType::Loop as last state for {}", from.meta);
+            return Ok(Some(from.clone()));
+        }
+        // normal ---------------------------
         if !mission.to.is_state() {
             return Ok(None);
         }
@@ -320,7 +327,5 @@ mod test {
         assert!(result.is_ok());
         let vec = result.unwrap();
         dbg!(&vec);
-
     }
-
 }
