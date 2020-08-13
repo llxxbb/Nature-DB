@@ -1,4 +1,4 @@
-use chrono::NaiveDateTime;
+use chrono::{NaiveDateTime, Local};
 
 use nature_common::Result;
 
@@ -8,18 +8,39 @@ pub struct TaskChecker;
 
 impl TaskChecker {
     pub async fn check(cfg: &Condition) -> Result<usize> {
-        let sql = r"SELECT count(1) as num
+        let task_gt = if cfg.key_gt.eq("") { "" } else {
+            " and task_key > :task_gt"
+        };
+        let task_lt = if cfg.key_lt.eq("") { "" } else {
+            " and task_key < :task_lt"
+        };
+        let time_ge = match cfg.time_ge {
+            Some(_) => " and create_time >= :time_ge",
+            None => ""
+        };
+        let time_ge_v = match cfg.time_ge {
+            Some(ge) => ge,
+            None => Local::now().naive_local()
+        };
+        let time_lt = match cfg.time_lt {
+            Some(_) => " and create_time < :time_lt",
+            None => ""
+        };
+        let time_lt_v = match cfg.time_lt {
+            Some(lt) => lt,
+            None => Local::now().naive_local()
+        };
+
+        let sql = format!("SELECT count(1) as num
                 FROM nature.task
-                WHERE task_key > :task_gt and task_key < :task_lt
-                    and create_time >= :time_ge and create_time < :time_lt
+                WHERE 1=1{}{}{}{}
                     and task_state = :state
-                    and task_state = :state
-            ";
+            ", time_ge, time_lt, task_gt, task_lt);
         let p = params! {
             "task_gt" => cfg.key_gt.to_string(),
             "task_lt" => cfg.key_lt.to_string(),
-            "time_ge" => cfg.time_ge,
-            "time_lt" => cfg.time_lt,
+            "time_ge" => time_ge_v,
+            "time_lt" => time_lt_v,
             "state" => cfg.state,
         };
         let vec = MySql::fetch(sql, p, mysql_async::from_row).await?;
@@ -27,12 +48,11 @@ impl TaskChecker {
     }
 }
 
-
 pub struct Condition {
     pub key_gt: String,
     pub key_lt: String,
-    pub time_ge: NaiveDateTime,
-    pub time_lt: NaiveDateTime,
+    pub time_ge: Option<NaiveDateTime>,
+    pub time_lt: Option<NaiveDateTime>,
     pub state: i8,
 }
 
@@ -56,8 +76,8 @@ mod test {
         let condition = Condition {
             key_gt: "".to_string(),
             key_lt: "".to_string(),
-            time_ge: Local::now().naive_local(),
-            time_lt: Local::now().naive_local(),
+            time_ge: Some(Local::now().naive_local()),
+            time_lt: Some(Local::now().naive_local()),
             state: 1,
         };
         let num = TaskChecker::check(&condition).await.unwrap();
@@ -71,13 +91,13 @@ mod test {
         let _ = setup_logger();
 
         let condition = Condition {
-            key_gt: "B:sale/item/count/tag_second:1".to_string(),
-            key_lt: "B:sale/item/count/tag_second:2".to_string(),
-            time_ge: Local.ymd(2020, 8, 7).and_hms(0, 0, 0).naive_local(),
-            time_lt: Local::now().naive_local(),
+            key_gt: "B:sale/item/count:1|0|".to_string(),
+            key_lt: "B:sale/item/count:2|0|".to_string(),
+            time_ge: Some(Local.ymd(2020, 8, 7).and_hms(0, 0, 0).naive_local()),
+            time_lt: Some(Local::now().naive_local()),
             state: 1,
         };
         let num = TaskChecker::check(&condition).await.unwrap();
-        assert_eq!(5, num)
+        assert_eq!(6, num)
     }
 }
