@@ -128,6 +128,7 @@ impl InstanceDaoImpl {
         // init for MetaType::loop --------------------
         if mission.to.get_meta_type() == MetaType::Loop
             && mission.to.meta_string() == from.meta {
+            // make it as last, don't care whether it would be used or not
             debug!("make MetaType::Loop as last state for {}", from.meta);
             return Ok(Some(from.clone()));
         }
