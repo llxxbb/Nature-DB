@@ -20,7 +20,7 @@ create TABLE `meta` (
 create TABLE `relation` (
 	`from_meta`	VARCHAR ( 255 ) NOT NULL,
 	`to_meta`	VARCHAR ( 255 ) NOT NULL,
-	`settings`  VARCHAR ( 1023 ) NOT NULL,
+	`settings`  VARCHAR ( 2047 ) NOT NULL,
 	`flag`      INTEGER DEFAULT 1 NOT NULL,
 	PRIMARY KEY(`from_meta`,`to_meta`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
