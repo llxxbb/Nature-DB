@@ -269,6 +269,7 @@ mod test {
 
     #[allow(dead_code)]
     #[tokio::test]
+    #[ignore]
     async fn query_by_range_test() {
         env::set_var("DATABASE_URL", "mysql://root@localhost/nature");
         let mut ins = Instance::new("sale/order").unwrap();
