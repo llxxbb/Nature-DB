@@ -15,7 +15,7 @@ impl TaskChecker {
             " and task_key < :task_lt"
         };
         let time_ge = match cfg.time_ge {
-            Some(_) => " and create_time >= :time_ge",
+            Some(_) => " and (create_time >= :time_ge or execute_time >= :time_ge)",
             None => ""
         };
         let time_ge_v = match cfg.time_ge {
@@ -23,14 +23,13 @@ impl TaskChecker {
             None => Local::now().naive_local()
         };
         let time_lt = match cfg.time_lt {
-            Some(_) => " and create_time < :time_lt",
+            Some(_) => " and (create_time < :time_lt or execute_time < :time_lt)",
             None => ""
         };
         let time_lt_v = match cfg.time_lt {
             Some(lt) => lt,
             None => Local::now().naive_local()
         };
-
         let sql = format!("SELECT count(1) as num
                 FROM nature.task
                 WHERE 1=1{}{}{}{}
