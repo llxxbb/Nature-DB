@@ -14,16 +14,18 @@ impl TaskChecker {
         let task_lt = if cfg.key_lt.eq("") { "" } else {
             " and task_key < :task_lt"
         };
+        // execute_time is closer to instance.create_time so does not use task.create_time.
         let time_ge = match cfg.time_ge {
-            Some(_) => " and (create_time >= :time_ge or execute_time >= :time_ge)",
+            Some(_) => " and execute_time >= :time_ge",
             None => ""
         };
         let time_ge_v = match cfg.time_ge {
             Some(ge) => ge,
             None => Local::now().naive_local()
         };
+        // create_time is closer to instance.create_time so does not use task.execute_time.
         let time_lt = match cfg.time_lt {
-            Some(_) => " and (create_time < :time_lt or execute_time < :time_lt)",
+            Some(_) => " and create_time < :time_lt",
             None => ""
         };
         let time_lt_v = match cfg.time_lt {
