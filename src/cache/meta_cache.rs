@@ -31,12 +31,15 @@ impl MetaCache for MetaCacheImpl {
             warn!("{}", error);
             return Err(error);
         }
+        // load from cache
         {   // An explicit scope to avoid cache.insert error
             let mut cache = CACHE.lock().unwrap();
             if let Some(x) = cache.get(meta_str) {
                 return Ok(x.clone());
             };
         };
+
+        // load from db
         let mut got: Vec<(String, Meta)> = vec![];
         let mut input: Vec<(String, ProcessType)> = vec![];
         input.push((meta_str.to_string(), ProcessType::Any));
