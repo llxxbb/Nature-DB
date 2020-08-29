@@ -147,9 +147,9 @@ impl InstanceDaoImpl {
         } else {
             "".to_string()
         };
-        let mut id: u128 = match mission.sys_context.get(&*CONTEXT_TARGET_INSTANCE_ID) {
+        let mut id: ID = match mission.sys_context.get(&*CONTEXT_TARGET_INSTANCE_ID) {
             // context have target id
-            Some(state_id) => u128::from_str_radix(state_id, 16)?,
+            Some(state_id) => id_from_hex_str(state_id)?,
             None => 0,
         };
         if id == 0 {
